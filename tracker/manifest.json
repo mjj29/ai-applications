@@ -1,0 +1,16 @@
+{
+  "name": "Mana Tracker",
+  "short_name": "Mana Track",
+  "description": "Track mana and other resources for card games",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#1e1e2e",
+  "theme_color": "#1e1e2e",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    }
+  ]
+}

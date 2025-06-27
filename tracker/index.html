@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mana Tracker</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1e1e2e">
+</head>
+<body>
+    <div class="container">
+        <h1>Mana Tracker</h1>
+        
+        <div class="config-section">
+            <button id="configBtn" class="config-button">Configure</button>
+            <button id="historyBtn" class="history-button">History</button>
+            <button id="resetBtn" class="reset-button">Reset All</button>
+        </div>
+        
+        <div id="trackerContainer" class="tracker-container">
+            <!-- Trackers will be dynamically added here -->
+        </div>
+        
+        <div id="configModal" class="modal">
+            <div class="modal-content">
+                <h2>Configure Trackers</h2>
+                <div class="tracker-config">
+                    <h3>Built-in Trackers</h3>
+                    <div class="checkbox-group">
+                        <label><input type="checkbox" data-type="White"> White</label>
+                        <label><input type="checkbox" data-type="Blue"> Blue</label>
+                        <label><input type="checkbox" data-type="Black"> Black</label>
+                        <label><input type="checkbox" data-type="Red"> Red</label>
+                        <label><input type="checkbox" data-type="Green"> Green</label>
+                        <label><input type="checkbox" data-type="Colorless"> Colorless</label>
+                        <label><input type="checkbox" data-type="Storm"> Storm</label>
+                        <label><input type="checkbox" data-type="Discards"> Discards</label>
+                        <label><input type="checkbox" data-type="Pact Triggers"> Pact Triggers</label>
+                    </div>
+                    
+                    <h3>Custom Trackers</h3>
+                    <div id="customTrackers" class="custom-trackers">
+                        <!-- Custom trackers will be added here -->
+                    </div>
+                    
+                    <div class="add-custom-tracker">
+                        <input type="text" id="customTrackerName" placeholder="New tracker name">
+                        <button id="addCustomTracker">Add</button>
+                    </div>
+                </div>
+                <div class="modal-buttons">
+                    <button id="saveConfig">Save</button>
+                    <button id="cancelConfig">Cancel</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="historyModal" class="modal">
+            <div class="modal-content history-modal">
+                <h2>History</h2>
+                <div class="history-container">
+                    <table id="historyTable">
+                        <thead id="historyTableHead">
+                            <!-- Headers will be generated dynamically -->
+                        </thead>
+                        <tbody id="historyTableBody">
+                            <!-- History entries will be added here dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="modal-buttons">
+                    <button id="closeHistory">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
