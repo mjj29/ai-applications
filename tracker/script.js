@@ -141,7 +141,13 @@ function setupEventListeners() {
         if (value < 2) e.target.value = 2;
         if (value > 100) e.target.value = 100;
         dieSides = parseInt(e.target.value);
+        updateDieRollerText();
         saveDieSettings();
+    });
+    
+    // Also update on input to provide immediate feedback
+    document.getElementById('dieSides').addEventListener('input', () => {
+        updateDieRollerText();
     });
     
     // Close modals when clicking outside
@@ -804,8 +810,25 @@ function showDieRollerModal() {
     const dieSidesInput = document.getElementById('dieSides');
     dieSidesInput.value = dieSides;
     
+    // Update title and button text based on sides
+    updateDieRollerText();
+    
     // Show the modal
     dieRollerModal.style.display = 'block';
+}
+
+function updateDieRollerText() {
+    const sides = parseInt(document.getElementById('dieSides').value);
+    const modalTitle = document.querySelector('#dieRollerModal h2');
+    const rollButton = document.getElementById('rollDieBtn');
+    
+    if (sides === 2) {
+        modalTitle.textContent = 'Coin Flip';
+        rollButton.textContent = 'Flip';
+    } else {
+        modalTitle.textContent = 'Die Roller';
+        rollButton.textContent = 'Roll';
+    }
 }
 
 function rollDie() {
@@ -819,7 +842,13 @@ function rollDie() {
     // Generate random result after a short delay (for animation effect)
     setTimeout(() => {
         const result = Math.floor(Math.random() * sides) + 1;
-        resultElement.textContent = result;
+        
+        // Display Heads/Tails for 2-sided die (coin)
+        if (sides === 2) {
+            resultElement.textContent = result === 1 ? 'Heads' : 'Tails';
+        } else {
+            resultElement.textContent = result;
+        }
         
         // Remove the animation class after it completes
         setTimeout(() => {
