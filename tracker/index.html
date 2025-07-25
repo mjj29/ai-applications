@@ -16,6 +16,7 @@
         <div class="config-section">
             <button id="configBtn" class="config-button">Configure</button>
             <button id="historyBtn" class="history-button">History</button>
+            <button id="dieRollerBtn" class="die-roller-button">Roll Die</button>
             <button id="resetBtn" class="reset-button">Reset All</button>
         </div>
         
@@ -72,6 +73,27 @@
                 </div>
                 <div class="modal-buttons">
                     <button id="closeHistory">Close</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="dieRollerModal" class="modal">
+            <div class="modal-content die-roller-modal">
+                <h2>Die Roller</h2>
+                <div class="die-roller-container">
+                    <div class="die-result-container">
+                        <div id="dieResult" class="die-result">?</div>
+                    </div>
+                    <div class="die-config">
+                        <label for="dieSides">Number of sides:</label>
+                        <input type="number" id="dieSides" min="2" value="6" max="100">
+                    </div>
+                    <div class="die-actions">
+                        <button id="rollDieBtn" class="roll-die-btn">Roll</button>
+                    </div>
+                </div>
+                <div class="modal-buttons">
+                    <button id="closeDieRoller">Close</button>
                 </div>
             </div>
         </div>

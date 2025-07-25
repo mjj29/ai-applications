@@ -4,6 +4,7 @@ const STATE_COOKIE_NAME = 'manaTracker_state';
 const HISTORY_COOKIE_NAME = 'manaTracker_history';
 const CONFIG_COOKIE_NAME = 'manaTracker_config';
 const CUSTOM_TRACKERS_COOKIE_NAME = 'manaTracker_customTrackers';
+const DIE_SIDES_COOKIE_NAME = 'manaTracker_dieSides';
 
 // Default tracker types with colors
 const DEFAULT_TRACKER_TYPES = {
@@ -50,10 +51,12 @@ let state = {};
 let history = [];
 let activeTrackers = [];
 let customTrackers = [];
+let dieSides = 6;
 
 // DOM elements
 const configModal = document.getElementById('configModal');
 const historyModal = document.getElementById('historyModal');
+const dieRollerModal = document.getElementById('dieRollerModal');
 const trackerContainer = document.getElementById('trackerContainer');
 const historyTableBody = document.getElementById('historyTableBody');
 
@@ -75,6 +78,11 @@ function setupEventListeners() {
     document.getElementById('historyBtn').addEventListener('click', () => {
         renderHistory();
         historyModal.style.display = 'block';
+    });
+    
+    // Die Roller button
+    document.getElementById('dieRollerBtn').addEventListener('click', () => {
+        showDieRollerModal();
     });
 
     // Reset button
@@ -120,12 +128,31 @@ function setupEventListeners() {
         }
     });
     
+    // Die Roller modal buttons
+    document.getElementById('rollDieBtn').addEventListener('click', rollDie);
+    document.getElementById('closeDieRoller').addEventListener('click', () => {
+        dieRollerModal.style.display = 'none';
+        saveDieSettings();
+    });
+    
+    // Number of sides input change
+    document.getElementById('dieSides').addEventListener('change', (e) => {
+        const value = parseInt(e.target.value);
+        if (value < 2) e.target.value = 2;
+        if (value > 100) e.target.value = 100;
+        dieSides = parseInt(e.target.value);
+        saveDieSettings();
+    });
+    
     // Close modals when clicking outside
     window.addEventListener('click', (event) => {
         if (event.target === configModal) {
             configModal.style.display = 'none';
         } else if (event.target === historyModal) {
             historyModal.style.display = 'none';
+        } else if (event.target === dieRollerModal) {
+            dieRollerModal.style.display = 'none';
+            saveDieSettings();
         }
     });
 }
@@ -143,6 +170,19 @@ function loadFromCookies() {
     } else {
         // Default to first 5 tracker types if no cookie exists
         activeTrackers = Object.keys(DEFAULT_TRACKER_TYPES).slice(0, 5);
+    }
+
+    // Load die sides
+    const dieSidesCookie = getCookie(DIE_SIDES_COOKIE_NAME);
+    if (dieSidesCookie) {
+        try {
+            dieSides = parseInt(dieSidesCookie);
+            // Ensure it's within valid range
+            if (isNaN(dieSides) || dieSides < 2) dieSides = 6;
+            if (dieSides > 100) dieSides = 100;
+        } catch (e) {
+            dieSides = 6; // Default to 6 sides
+        }
     }
 
     // Load state
@@ -245,6 +285,7 @@ function saveToCookies() {
     setCookie(HISTORY_COOKIE_NAME, JSON.stringify(history), COOKIE_EXPIRATION_DAYS);
     setCookie(CONFIG_COOKIE_NAME, JSON.stringify(activeTrackers), COOKIE_EXPIRATION_DAYS);
     setCookie(CUSTOM_TRACKERS_COOKIE_NAME, JSON.stringify(customTrackers), COOKIE_EXPIRATION_DAYS);
+    setCookie(DIE_SIDES_COOKIE_NAME, dieSides.toString(), COOKIE_EXPIRATION_DAYS);
 }
 
 // Render all active trackers
@@ -755,4 +796,43 @@ function calculateBrightness(color) {
     // For hex or other colors, convert to RGB and use the brightness formula
     // This is a simplified implementation, might not work for all color formats
     return 127; // Default middle brightness
+}
+
+// Die roller functions
+function showDieRollerModal() {
+    // Update the input field with current sides
+    const dieSidesInput = document.getElementById('dieSides');
+    dieSidesInput.value = dieSides;
+    
+    // Show the modal
+    dieRollerModal.style.display = 'block';
+}
+
+function rollDie() {
+    const resultElement = document.getElementById('dieResult');
+    const sides = parseInt(document.getElementById('dieSides').value);
+    
+    // Add animation class
+    resultElement.classList.add('rolling');
+    resultElement.textContent = '?';
+    
+    // Generate random result after a short delay (for animation effect)
+    setTimeout(() => {
+        const result = Math.floor(Math.random() * sides) + 1;
+        resultElement.textContent = result;
+        
+        // Remove the animation class after it completes
+        setTimeout(() => {
+            resultElement.classList.remove('rolling');
+        }, 400);
+    }, 150);
+}
+
+function saveDieSettings() {
+    dieSides = parseInt(document.getElementById('dieSides').value);
+    // Ensure it's within valid range
+    if (isNaN(dieSides) || dieSides < 2) dieSides = 6;
+    if (dieSides > 100) dieSides = 100;
+    
+    setCookie(DIE_SIDES_COOKIE_NAME, dieSides.toString(), COOKIE_EXPIRATION_DAYS);
 }
