@@ -25,11 +25,12 @@
   --font-mono:   'Cascadia Code', 'Fira Code', monospace;
 }
 
+html { height: 100%; }
 body {
   font-family: var(--font);
   background:  var(--bg);
   color:       var(--text);
-  min-height:  100vh;
+  height:      100%;
   display:     flex;
   flex-direction: column;
 }
@@ -38,7 +39,7 @@ body {
 #app {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100%;
 }
 
 #topbar {

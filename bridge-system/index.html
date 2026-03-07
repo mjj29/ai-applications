@@ -41,10 +41,12 @@
           <button class="editor-subtab-btn active" data-subtab="subtab-edit">Edit</button>
           <button class="editor-subtab-btn" data-subtab="subtab-position">Position</button>
           <button class="editor-subtab-btn" data-subtab="subtab-lookup">Lookup</button>
+          <button class="editor-subtab-btn" data-subtab="subtab-print">Print</button>
         </div>
         <div id="subtab-edit"     class="editor-subtab active" style="padding:1.2rem"></div>
         <div id="subtab-position" class="editor-subtab"        style="padding:1.2rem"></div>
         <div id="subtab-lookup"   class="editor-subtab"        style="padding:1.2rem"></div>
+        <div id="subtab-print"    class="editor-subtab"        style="padding:0.75rem 1.2rem 0"></div>
       </div>
 
     </div>
@@ -170,9 +172,8 @@
   .system-item-active { border-color: var(--accent); }
 
   #view-editor { height: 100%; }
-  .editor-subtab { display: none; flex: 1; overflow: hidden; }
-  .editor-subtab.active { display: block; }
-  .editor-subtab > div { height: 100%; }
+  .editor-subtab { display: none; overflow: hidden; }
+  .editor-subtab.active { display: flex; flex-direction: column; flex: 1; min-height: 0; }
   #editor-subtab-bar {
     display: flex;
     gap: 2px;

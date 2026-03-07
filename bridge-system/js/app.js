@@ -8,13 +8,14 @@ import { listSystems, createSystem, getActiveSystem, setActiveId,
 import { renderEditor, initAddBidModal, initAddVariantModal, initCopyToModal } from './editor.js';
 import { renderPosition } from './position.js';
 import { renderLookup }   from './lookup.js';
+import { renderPrint }    from './print.js';
 import { flash } from './ui.js';
 
 // ─── Navigation ───────────────────────────────────────────────────────────────
 
 const VIEWS = ['view-editor', 'view-systems'];
 
-const SUBTABS = ['subtab-edit', 'subtab-position', 'subtab-lookup'];
+const SUBTABS = ['subtab-edit', 'subtab-position', 'subtab-lookup', 'subtab-print'];
 
 function setSubtab(id) {
   SUBTABS.forEach(t => document.getElementById(t).classList.toggle('active', t === id));
@@ -27,6 +28,7 @@ function renderSubtab(id) {
   if (id === 'subtab-edit')     renderEditor(document.getElementById('subtab-edit'));
   if (id === 'subtab-position') renderPosition(document.getElementById('subtab-position'));
   if (id === 'subtab-lookup')   renderLookup(document.getElementById('subtab-lookup'));
+  if (id === 'subtab-print')    renderPrint(document.getElementById('subtab-print'));
 }
 
 function activeSubtab() {
