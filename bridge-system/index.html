@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bridge System Editor</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- Top bar -->
+  <header id="topbar">
+    <h1>Bridge System <span>Editor</span></h1>
+    <span id="system-name-display">(no system)</span>
+    <nav id="nav">
+      <button data-view="view-systems">Systems</button>
+      <button data-view="view-editor">Edit</button>
+    </nav>
+  </header>
+
+  <!-- Main content area -->
+  <div id="main">
+    <div id="content" style="padding:0;display:flex;flex-direction:column;overflow:hidden;height:100%">
+
+      <!-- Systems list panel -->
+      <div id="view-systems" class="panel" style="padding:1.2rem;overflow-y:auto;flex:1">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+          <h2>My Systems</h2>
+          <div style="display:flex;gap:0.5rem">
+            <button class="btn btn-primary" id="btn-new-system">+ New System</button>
+            <button class="btn"             id="btn-import-system">Import JSON</button>
+          </div>
+        </div>
+        <div id="systems-list"></div>
+      </div>
+
+      <!-- Editor panel with sub-tabs -->
+      <div id="view-editor" class="panel" style="padding:0;flex:1;overflow:hidden;display:flex;flex-direction:column">
+        <div id="editor-subtab-bar">
+          <button class="editor-subtab-btn active" data-subtab="subtab-edit">Edit</button>
+          <button class="editor-subtab-btn" data-subtab="subtab-position">Position</button>
+          <button class="editor-subtab-btn" data-subtab="subtab-lookup">Lookup</button>
+        </div>
+        <div id="subtab-edit"     class="editor-subtab active" style="padding:1.2rem"></div>
+        <div id="subtab-position" class="editor-subtab"        style="padding:1.2rem"></div>
+        <div id="subtab-lookup"   class="editor-subtab"        style="padding:1.2rem"></div>
+      </div>
+
+    </div>
+  </div><!-- #main -->
+
+</div><!-- #app -->
+
+<!-- ── Modals ──────────────────────────────────────────────────────────────── -->
+
+<!-- Add bid modal -->
+<div id="modal-add-bid" class="modal-backdrop hidden">
+  <div class="modal">
+    <h2>Add Bid</h2>
+    <input type="hidden" id="add-bid-parent-id">    <input type="hidden" id="add-bid-section" value="openings">    <div class="form-group">
+      <label>Call (e.g. 1C, 2H, 3N, P, X, XX)</label>
+      <input type="text" id="add-bid-call" placeholder="1C" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="form-group">
+      <label>Description (optional)</label>
+      <input type="text" id="add-bid-desc" placeholder="Short description">
+    </div>
+    <div style="display:flex;gap:0.5rem">
+      <div class="form-group" style="flex:1">
+        <label>HCP min</label>
+        <input type="number" id="add-bid-hcp-min" min="0" max="37" placeholder="">
+      </div>
+      <div class="form-group" style="flex:1">
+        <label>HCP max</label>
+        <input type="number" id="add-bid-hcp-max" min="0" max="37" placeholder="">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" id="btn-add-bid-cancel">Cancel</button>
+      <button class="btn btn-primary" id="btn-add-bid-confirm">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add variant modal -->
+<div id="modal-add-variant" class="modal-backdrop hidden">
+  <div class="modal">
+    <h2>Add Variant</h2>
+    <input type="hidden" id="var-node-id">
+    <input type="hidden" id="var-variant-index" value="-1">
+    <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:0.75rem">
+      Conditions refer to the <strong style="color:var(--text)">opening position</strong> — the seat and vulnerability when the auction started, not the seat of whoever made this bid.
+      Leave fields blank to keep the base value.
+    </p>
+    <div style="display:flex;gap:0.5rem">
+      <div class="form-group" style="flex:1">
+        <label>Opening seat</label>
+        <input type="text" id="var-seats" placeholder="e.g. 1,2 or 3,4 (blank=all)">
+        <small style="color:var(--text-muted);font-size:0.72rem">Position when partner opened</small>
+      </div>
+      <div class="form-group" style="flex:1">
+        <label>Opening vulnerability</label>
+        <select id="var-vul">
+          <option value="">Any</option>
+          <option value="nv">NV</option>
+          <option value="vul">Vul</option>
+          <option value="nv,vul">NV or Vul</option>
+          <option value="fav">Fav</option>
+          <option value="unfav">Unfav</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;gap:0.5rem">
+      <div class="form-group" style="flex:1">
+        <label>HCP min override</label>
+        <input type="number" id="var-hcp-min" min="0" max="37" placeholder="">
+      </div>
+      <div class="form-group" style="flex:1">
+        <label>HCP max override</label>
+        <input type="number" id="var-hcp-max" min="0" max="37" placeholder="">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Announce override</label>
+      <input type="text" id="var-announce" placeholder="e.g. 9-11">
+    </div>
+    <div class="form-group">
+      <label>Description override</label>
+      <input type="text" id="var-desc" placeholder="Leave blank to inherit">
+    </div>
+    <div class="form-group">
+      <label>Notes</label>
+      <input type="text" id="var-notes" placeholder="e.g. system off — wide range">
+    </div>
+    <div class="modal-footer">
+      <button class="btn" id="btn-add-variant-cancel">Cancel</button>
+      <button class="btn btn-primary" id="btn-add-variant-confirm">Add Variant</button>
+    </div>
+  </div>
+</div>
+
+<!-- Copy-to modal -->
+<div id="modal-copy-to" class="modal-backdrop hidden">
+  <div class="modal" style="width:500px;max-height:80vh;display:flex;flex-direction:column">
+    <h2>Copy to…</h2>
+    <input type="hidden" id="copy-from-id">
+    <p style="font-size:0.82rem;color:var(--text-muted);margin:0 0 0.5rem">
+      Select a destination. The bid and all its responses will be duplicated there.
+    </p>
+    <div id="copy-to-list" style="flex:1;overflow-y:auto;border:1px solid var(--border);border-radius:4px;padding:0.2rem;min-height:180px;max-height:55vh;margin-bottom:0.75rem"></div>
+    <div class="modal-footer">
+      <button class="btn" id="btn-copy-to-cancel">Cancel</button>
+      <button class="btn btn-primary" id="btn-copy-to-confirm">Copy here</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Extra styles for systems list ─────────────────────────────────────────── -->
+<style>
+  .system-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.5rem;
+    transition: border-color 0.15s;
+  }
+  .system-item:hover { border-color: var(--accent-dim); }
+  .system-item-active { border-color: var(--accent); }
+
+  #view-editor { height: 100%; }
+  .editor-subtab { display: none; flex: 1; overflow: hidden; }
+  .editor-subtab.active { display: block; }
+  .editor-subtab > div { height: 100%; }
+  #editor-subtab-bar {
+    display: flex;
+    gap: 2px;
+    padding: 0.4rem 0.75rem 0;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .editor-subtab-btn {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.85rem;
+    padding: 0.3rem 0.9rem 0.4rem;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .editor-subtab-btn:hover { color: var(--text); }
+  .editor-subtab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* Compact variant badge shown in tree node headers */
+  .variant-badge {
+    display: inline-block;
+    font-size: 0.68rem;
+    padding: 0.08rem 0.32rem;
+    border-radius: 99px;
+    background: rgba(243,156,18,0.1);
+    color: var(--yellow);
+    border: 1px solid rgba(243,156,18,0.3);
+    white-space: nowrap;
+    margin-left: 0.15rem;
+    flex-shrink: 0;
+  }
+  /* Active (currently resolved) variant gets a brighter highlight */
+  .variant-badge-active {
+    background: rgba(243,156,18,0.25);
+    border-color: var(--yellow);
+    font-weight: 600;
+  }
+
+  /* HCP range shown inline in tree node header */
+  .node-hcp {
+    color: var(--accent);
+    font-size: 0.78rem;
+    font-family: var(--font-mono);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* Variant sub-tree block (shown when a variant changes continuations) */
+  .variant-tree-section {
+    margin-top: 0.35rem;
+    margin-left: 0.1rem;
+    border-left: 2px solid rgba(243,156,18,0.35);
+    padding-left: 0.65rem;
+  }
+  .variant-tree-label {
+    font-size: 0.72rem;
+    color: var(--yellow);
+    font-weight: 600;
+    padding: 0.15rem 0 0.2rem 0;
+    opacity: 0.9;
+    letter-spacing: 0.02em;
+  }
+
+  /* Drag-and-drop states */
+  .bid-node-header.dragging    { opacity: 0.45; }
+  .bid-node-header.drag-over   { outline: 2px solid var(--accent); background: rgba(74,158,255,0.12); }
+  .bid-tree.drag-over-zone     { outline: 2px dashed var(--accent); outline-offset: 2px; border-radius: 4px; background: rgba(74,158,255,0.05); }
+</style>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

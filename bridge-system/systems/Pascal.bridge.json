@@ -1,0 +1,678 @@
+{
+  "id": "e0eae966-358d-4fc6-b0f0-c878b2723a5e",
+  "name": "Pascal",
+  "metadata": {
+    "authors": [],
+    "notes": "",
+    "modified": "2026-03-07T21:45:22.398Z",
+    "format": "v1"
+  },
+  "conventions": {
+    "continuations-over-1nt": {
+      "id": "continuations-over-1nt",
+      "name": "Continuations over 1NT",
+      "description": "",
+      "tags": [],
+      "nodes": [
+        {
+          "id": "dc7c3429-c466-4b98-92e0-c3089d374db5",
+          "call": {
+            "type": "bid",
+            "level": 2,
+            "strain": "C"
+          },
+          "meaning": {
+            "description": "5 card puppet stayman"
+          },
+          "variants": [],
+          "continuations": {
+            "type": "tbd"
+          },
+          "competitive": []
+        },
+        {
+          "id": "ac72ae12-2c3c-4bc1-ac94-10ee06782c45",
+          "call": {
+            "type": "bid",
+            "level": 2,
+            "strain": "D"
+          },
+          "meaning": {
+            "description": "Transfer"
+          },
+          "variants": [],
+          "continuations": {
+            "type": "tbd"
+          },
+          "competitive": []
+        },
+        {
+          "id": "c2548494-e8ab-4e05-b638-ba1c74d8d532",
+          "call": {
+            "type": "bid",
+            "level": 2,
+            "strain": "H"
+          },
+          "meaning": {
+            "description": "Transfer"
+          },
+          "variants": [],
+          "continuations": {
+            "type": "tbd"
+          },
+          "competitive": []
+        }
+      ]
+    }
+  },
+  "openings": [
+    {
+      "id": "b78e6d6c-6564-45c5-957e-023afaa608c0",
+      "call": {
+        "type": "bid",
+        "level": 1,
+        "strain": "C"
+      },
+      "meaning": {
+        "description": "11-15 no 5 card major",
+        "hcp": [
+          11,
+          15
+        ],
+        "shape": "no 5cM",
+        "announce": "Could be 0"
+      },
+      "variants": [],
+      "continuations": {
+        "type": "nodes",
+        "nodes": [
+          {
+            "id": "b58bf0f3-b63a-4431-ad8e-47cf8dbbaca1",
+            "call": {
+              "type": "bid",
+              "level": 1,
+              "strain": "D"
+            },
+            "meaning": {
+              "description": "relay",
+              "hcp": [
+                0,
+                8
+              ],
+              "alert": true
+            },
+            "variants": [],
+            "continuations": {
+              "type": "nodes",
+              "nodes": [
+                {
+                  "id": "994d4712-bc4c-4b5a-a8d4-032b78c19c08",
+                  "call": {
+                    "type": "bid",
+                    "level": 1,
+                    "strain": "N"
+                  },
+                  "meaning": {
+                    "description": "Balanced",
+                    "hcp": [
+                      12,
+                      15
+                    ]
+                  },
+                  "variants": [
+                    {
+                      "condition": {
+                        "seats": [
+                          1,
+                          2
+                        ],
+                        "vul": [
+                          "vul"
+                        ]
+                      },
+                      "meaningOverride": {
+                        "hcp": [
+                          11,
+                          13
+                        ]
+                      }
+                    }
+                  ],
+                  "continuations": {
+                    "type": "ref",
+                    "conventionId": "continuations-over-1nt"
+                  },
+                  "competitive": []
+                }
+              ]
+            },
+            "competitive": []
+          },
+          {
+            "id": "a988e5f9-ae07-4903-80b1-47c016f46da6",
+            "call": {
+              "type": "bid",
+              "level": 1,
+              "strain": "H"
+            },
+            "meaning": {
+              "description": "relay",
+              "hcp": [
+                9,
+                14
+              ],
+              "alert": true
+            },
+            "variants": [],
+            "continuations": {
+              "type": "nodes",
+              "nodes": [
+                {
+                  "id": "d6828b8f-2eec-4557-b7ca-479af55b36aa",
+                  "call": {
+                    "type": "bid",
+                    "level": 1,
+                    "strain": "N"
+                  },
+                  "meaning": {
+                    "description": "Balanced",
+                    "hcp": [
+                      12,
+                      15
+                    ]
+                  },
+                  "variants": [
+                    {
+                      "condition": {
+                        "seats": [
+                          1,
+                          2
+                        ],
+                        "vul": [
+                          "vul"
+                        ]
+                      },
+                      "meaningOverride": {
+                        "hcp": [
+                          11,
+                          13
+                        ]
+                      }
+                    }
+                  ],
+                  "continuations": {
+                    "type": "ref",
+                    "conventionId": "continuations-over-1nt"
+                  },
+                  "competitive": []
+                }
+              ]
+            },
+            "competitive": []
+          },
+          {
+            "id": "119acf20-bab9-49bc-8ae1-9d5e3d4af851",
+            "call": {
+              "type": "bid",
+              "level": 1,
+              "strain": "S"
+            },
+            "meaning": {
+              "description": "relay",
+              "hcp": [
+                15,
+                null
+              ],
+              "alert": true
+            },
+            "variants": [],
+            "continuations": {
+              "type": "nodes",
+              "nodes": [
+                {
+                  "id": "a90297d9-c2f1-46f9-8839-a8d32ee222bb",
+                  "call": {
+                    "type": "bid",
+                    "level": 1,
+                    "strain": "N"
+                  },
+                  "meaning": {
+                    "description": "Balanced",
+                    "hcp": [
+                      12,
+                      15
+                    ]
+                  },
+                  "variants": [
+                    {
+                      "condition": {
+                        "seats": [
+                          1,
+                          2
+                        ],
+                        "vul": [
+                          "vul"
+                        ]
+                      },
+                      "meaningOverride": {
+                        "hcp": [
+                          11,
+                          13
+                        ]
+                      }
+                    }
+                  ],
+                  "continuations": {
+                    "type": "ref",
+                    "conventionId": "continuations-over-1nt"
+                  },
+                  "competitive": []
+                }
+              ]
+            },
+            "competitive": []
+          }
+        ]
+      },
+      "competitive": []
+    },
+    {
+      "id": "5c347cfc-ee6a-42a5-9bd3-d362064d8a9a",
+      "call": {
+        "type": "bid",
+        "level": 1,
+        "strain": "N"
+      },
+      "meaning": {
+        "description": "Balanced",
+        "hcp": [
+          12,
+          15
+        ],
+        "announce": "12-15"
+      },
+      "variants": [
+        {
+          "condition": {
+            "seats": [
+              1,
+              2
+            ],
+            "vul": [
+              "nv"
+            ]
+          },
+          "meaningOverride": {
+            "hcp": [
+              9,
+              11
+            ],
+            "announce": "9-11"
+          }
+        },
+        {
+          "condition": {
+            "seats": [
+              1,
+              2
+            ],
+            "vul": [
+              "vul"
+            ]
+          },
+          "meaningOverride": {
+            "hcp": [
+              14,
+              16
+            ],
+            "announce": "14-16"
+          }
+        },
+        {
+          "condition": {
+            "seats": [
+              3
+            ],
+            "vul": [
+              "nv"
+            ]
+          },
+          "meaningOverride": {
+            "hcp": [
+              9,
+              15
+            ],
+            "announce": "9-15"
+          }
+        }
+      ],
+      "continuations": {
+        "type": "ref",
+        "conventionId": "continuations-over-1nt"
+      },
+      "competitive": []
+    },
+    {
+      "id": "7766d4e2-ec31-4e7d-9018-cccd140ffbf7",
+      "call": {
+        "type": "bid",
+        "level": 1,
+        "strain": "D"
+      },
+      "meaning": {
+        "description": "16+ any shape, below game forcing",
+        "hcp": [
+          16,
+          null
+        ],
+        "alert": true
+      },
+      "variants": [],
+      "continuations": {
+        "type": "nodes",
+        "nodes": [
+          {
+            "id": "cbd574e4-f62a-44f7-9405-36516876a341",
+            "call": {
+              "type": "bid",
+              "level": 1,
+              "strain": "H"
+            },
+            "meaning": {
+              "description": "relay",
+              "hcp": [
+                0,
+                8
+              ],
+              "alert": true
+            },
+            "variants": [],
+            "continuations": {
+              "type": "nodes",
+              "nodes": [
+                {
+                  "id": "df35d7c6-6efa-4805-8409-09976f8109ca",
+                  "call": {
+                    "type": "bid",
+                    "level": 1,
+                    "strain": "N"
+                  },
+                  "meaning": {
+                    "description": "Balanced",
+                    "hcp": [
+                      16,
+                      19
+                    ]
+                  },
+                  "variants": [
+                    {
+                      "condition": {
+                        "seats": [
+                          1,
+                          2
+                        ],
+                        "vul": [
+                          "vul"
+                        ]
+                      },
+                      "meaningOverride": {
+                        "hcp": [
+                          17,
+                          19
+                        ]
+                      }
+                    }
+                  ],
+                  "continuations": {
+                    "type": "ref",
+                    "conventionId": "continuations-over-1nt"
+                  },
+                  "competitive": []
+                }
+              ]
+            },
+            "competitive": []
+          }
+        ]
+      },
+      "competitive": []
+    },
+    {
+      "id": "c430ca11-833f-40be-80c1-ae8acd981dc1",
+      "call": {
+        "type": "bid",
+        "level": 2,
+        "strain": "C"
+      },
+      "meaning": {
+        "description": "Weak Diamonds or the majors, weak or GF or 20-23 bal",
+        "hcp": [
+          4,
+          null
+        ],
+        "shape": "6+D or 5/4 H+S",
+        "alert": true
+      },
+      "variants": [],
+      "continuations": {
+        "type": "tbd"
+      },
+      "competitive": []
+    },
+    {
+      "id": "cc0556e7-d894-4cc5-a5c9-e12e3e9c8316",
+      "call": {
+        "type": "bid",
+        "level": 1,
+        "strain": "S"
+      },
+      "meaning": {
+        "description": "Spades",
+        "hcp": [
+          11,
+          15
+        ],
+        "shape": "5+ S",
+        "alert": true
+      },
+      "variants": [],
+      "continuations": {
+        "type": "tbd"
+      },
+      "competitive": []
+    },
+    {
+      "id": "5d07fdfa-4b20-4446-8ad1-607087ad6735",
+      "call": {
+        "type": "bid",
+        "level": 1,
+        "strain": "H"
+      },
+      "meaning": {
+        "description": "Hearts",
+        "hcp": [
+          11,
+          15
+        ],
+        "shape": "5+H",
+        "alert": true
+      },
+      "variants": [],
+      "continuations": {
+        "type": "tbd"
+      },
+      "competitive": []
+    },
+    {
+      "id": "16677a3c-1ca9-4c3a-8eea-e17bd30e0001",
+      "call": {
+        "type": "bid",
+        "level": 2,
+        "strain": "D"
+      },
+      "meaning": {
+        "description": "Weak Hearts or the blacks weak or GF",
+        "hcp": [
+          4,
+          null
+        ],
+        "shape": "6+H or 5/4 S+C",
+        "alert": true
+      },
+      "variants": [],
+      "continuations": {
+        "type": "tbd"
+      },
+      "competitive": []
+    },
+    {
+      "id": "4e0132c3-f474-44ab-a5bd-f95af3bf9dfc",
+      "call": {
+        "type": "bid",
+        "level": 2,
+        "strain": "H"
+      },
+      "meaning": {
+        "description": "Weak S or the minors weak or GF",
+        "alert": true
+      },
+      "variants": [],
+      "continuations": {
+        "type": "tbd"
+      },
+      "competitive": []
+    },
+    {
+      "id": "6d1f6f74-0384-4a9b-a863-9fd148d80fa7",
+      "call": {
+        "type": "bid",
+        "level": 2,
+        "strain": "S"
+      },
+      "meaning": {
+        "description": "Weak C or H+minor weak or GF",
+        "hcp": [
+          4,
+          null
+        ],
+        "shape": "6+C or 5/4 H+minor",
+        "alert": true
+      },
+      "variants": [],
+      "continuations": {
+        "type": "tbd"
+      },
+      "competitive": []
+    },
+    {
+      "id": "de40e953-6029-47b5-8c28-ada5b51715b0",
+      "call": {
+        "type": "bid",
+        "level": 2,
+        "strain": "N"
+      },
+      "meaning": {
+        "description": "D+S weak or GF",
+        "hcp": [
+          4,
+          null
+        ],
+        "shape": "5/4 D+S",
+        "alert": true
+      },
+      "variants": [],
+      "continuations": {
+        "type": "tbd"
+      },
+      "competitive": []
+    },
+    {
+      "id": "e251dbfa-8111-4616-b1a2-a70e750720f6",
+      "call": {
+        "type": "bid",
+        "level": 3,
+        "strain": "C"
+      },
+      "meaning": {
+        "description": "GF C or weak D",
+        "hcp": [
+          4,
+          null
+        ],
+        "shape": "6+ C or 7+ D",
+        "alert": true
+      },
+      "variants": [],
+      "continuations": {
+        "type": "tbd"
+      },
+      "competitive": []
+    },
+    {
+      "id": "ecdae04c-870c-4d7b-b461-b3805ffbe675",
+      "call": {
+        "type": "bid",
+        "level": 3,
+        "strain": "D"
+      },
+      "meaning": {
+        "description": "GF D or weak H",
+        "hcp": [
+          4,
+          null
+        ],
+        "shape": "6+ D or 7+ H",
+        "alert": true
+      },
+      "variants": [],
+      "continuations": {
+        "type": "tbd"
+      },
+      "competitive": []
+    },
+    {
+      "id": "d6593ac2-7734-4064-8835-e3017860ccd0",
+      "call": {
+        "type": "bid",
+        "level": 3,
+        "strain": "H"
+      },
+      "meaning": {
+        "description": "GF H or weak S",
+        "hcp": [
+          4,
+          null
+        ],
+        "shape": "6+ H or 7+ S",
+        "alert": true
+      },
+      "variants": [],
+      "continuations": {
+        "type": "tbd"
+      },
+      "competitive": []
+    },
+    {
+      "id": "00de0259-e055-4d6f-80d0-508feab5cb28",
+      "call": {
+        "type": "bid",
+        "level": 3,
+        "strain": "S"
+      },
+      "meaning": {
+        "description": "GF S or  gambling minor",
+        "hcp": [
+          4,
+          null
+        ],
+        "shape": "6+ S or 7+ C or D",
+        "alert": true
+      },
+      "variants": [],
+      "continuations": {
+        "type": "tbd"
+      },
+      "competitive": []
+    }
+  ]
+}
