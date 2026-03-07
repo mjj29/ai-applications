@@ -326,10 +326,53 @@ Use it as the authoritative current state.
 
 When the user asks you to make changes, call the update_system tool with the complete updated system.
 
-Rules:
-- Preserve ALL existing node \`id\` fields exactly (they are UUIDs used as references).
-- Preserve the system \`id\` field exactly.
-- For new bid nodes generate a new UUID.
+## Exact JSON schema
+
+A system object:
+{
+  "id": "<uuid>",
+  "name": "System name",
+  "metadata": { "authors": [], "notes": "", "modified": "<iso date>", "format": "v1" },
+  "openings":    [ ...bid nodes ],
+  "overcalls":   [ ...bid nodes ],
+  "conventions": { "<uuid>": { "id": "<uuid>", "name": "Stayman", "description": "", "tags": [], "nodes": [ ...bid nodes ] } },
+  "carding": {
+    "signals":  [ { "context": "Partner leads", "method": "Attitude: high=enc", "notes": "" } ],
+    "discards": [ ...same shape ],
+    "leads":    [ ...same shape ]
+  }
+}
+
+A bid node:
+{
+  "id": "<uuid — MUST be unique, generate with crypto.randomUUID()>",
+  "call": one of:
+    { "type": "bid", "level": 1, "strain": "C" }   strains: C D H S N (notrump)
+    { "type": "pass" }
+    { "type": "double" }
+    { "type": "redouble" },
+  "meaning": {
+    "description": "Natural, 12-14 HCP",
+    "hcp": [12, 14],          // or null
+    "shape": "4441",          // or null/omit
+    "forcing": "game",        // "game" | "one round" | null
+    "announce": "12-14",      // announced bid text, or null
+    "alert": false,
+    "notes": ""
+  },
+  "variants": [],             // seat/vul condition overrides — usually []
+  "continuations": one of:
+    { "type": "tbd" }                                    no responses defined yet
+    { "type": "end" }                                    sign-off, no continuations
+    { "type": "nodes", "nodes": [ ...bid nodes ] }       inline responses
+    { "type": "ref", "conventionId": "<uuid>" }          delegates to a convention
+  "competitive": []
+}
+
+## Rules
+- Every node MUST have a unique \`id\` (UUID). Generate new ones for new nodes; preserve existing ones exactly.
+- Preserve the system \`id\` exactly.
+- Bids in a continuations.nodes array represent responses to the parent bid.
 - Only change what the user explicitly requests; leave everything else intact.
 - If a request is ambiguous, ask a clarifying question rather than guessing.`;
 
