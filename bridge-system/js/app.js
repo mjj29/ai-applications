@@ -4,7 +4,7 @@
 'use strict';
 
 import { listSystems, createSystem, getActiveSystem, setActiveId,
-         deleteSystem, exportSystem, importSystemFromJSON,
+         deleteSystem, exportSystem, importSystemFromJSON, saveSystem,
          syncFromCloud, currentUser,
          publishSystem, unpublishSystem, cloneSystem,
          listCollaborators, addCollaborator, removeCollaborator,
@@ -96,6 +96,18 @@ function visibilityBadge(sys, userId) {
   return `<span class="sys-badge sys-badge-private" title="Private — only you">private</span>`;
 }
 
+async function uploadLocalSystems() {
+  const locals = listSystems().filter(s => !s._cloud);
+  if (!locals.length) { flash('No local-only systems to upload', 'ok'); return; }
+  let ok = 0;
+  for (const sys of locals) {
+    try { await saveSystem(sys); ok++; }
+    catch (e) { console.warn('Upload failed for', sys.name, e); }
+  }
+  flash(`Uploaded ${ok} of ${locals.length} system(s) to cloud`, 'ok');
+  renderSystemsList();
+}
+
 async function renderSystemsList() {
   const container = document.getElementById('systems-list');
   const user = await currentUser();
@@ -143,14 +155,32 @@ async function renderSystemsList() {
     }).join('');
   };
 
-  container.innerHTML = syncBanner + renderList(systems, user);
+  const localOnly = systems.filter(s => !s._cloud);
+  const uploadBanner = (user && localOnly.length)
+    ? `<div style="background:rgba(243,156,18,0.1);border:1px solid rgba(243,156,18,0.35);border-radius:var(--radius);padding:0.6rem 0.85rem;margin-bottom:0.75rem;font-size:0.82rem;display:flex;align-items:center;gap:0.75rem">
+        <span>⚠ ${localOnly.length} system(s) exist only in this browser.</span>
+        <button class="btn btn-sm btn-primary" id="btn-upload-all">☁ Upload all to cloud</button>
+       </div>`
+    : '';
+
+  container.innerHTML = syncBanner + uploadBanner + renderList(systems, user);
+
+  document.getElementById('btn-upload-all')?.addEventListener('click', uploadLocalSystems);
 
   // Async sync if logged in — refresh the list after
   if (user) {
     syncFromCloud().then(synced => {
       const statusEl = document.getElementById('sync-status');
       if (statusEl) statusEl.textContent = `✓ Cloud sync complete · ${synced.length} system(s)`;
-      container.innerHTML = renderList(synced, user);
+      const stillLocal = synced.filter(s => !s._cloud);
+      const newBanner = (stillLocal.length)
+        ? `<div style="background:rgba(243,156,18,0.1);border:1px solid rgba(243,156,18,0.35);border-radius:var(--radius);padding:0.6rem 0.85rem;margin-bottom:0.75rem;font-size:0.82rem;display:flex;align-items:center;gap:0.75rem">
+            <span>⚠ ${stillLocal.length} system(s) exist only in this browser.</span>
+            <button class="btn btn-sm btn-primary" id="btn-upload-all">☁ Upload all to cloud</button>
+           </div>`
+        : '';
+      container.innerHTML = newBanner + renderList(synced, user);
+      document.getElementById('btn-upload-all')?.addEventListener('click', uploadLocalSystems);
       attachSystemActions(container, user);
     }).catch(e => {
       const statusEl = document.getElementById('sync-status');
