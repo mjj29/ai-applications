@@ -132,25 +132,56 @@ create policy "collaborators: self select"
 -- ── Back-fill systems policies that depend on collaborators ──────────────────
 -- These are defined here (after the collaborators table exists) to avoid the
 -- "relation does not exist" error that occurs if they are placed earlier.
+--
+-- IMPORTANT: we use security definer helper functions to break the circular
+-- RLS dependency:  systems policy → queries collaborators → collaborators policy
+-- → queries systems → … (infinite recursion).
+-- A security definer function runs as its owner (bypassing RLS), so the chain
+-- is cut at exactly one level.
+
+create or replace function public.is_collaborator(sys_id uuid)
+returns boolean language sql security definer stable as $$
+  select exists (
+    select 1 from public.collaborators
+    where system_id = sys_id and user_id = auth.uid()
+  );
+$$;
+
+create or replace function public.is_collaborator_editor(sys_id uuid)
+returns boolean language sql security definer stable as $$
+  select exists (
+    select 1 from public.collaborators
+    where system_id = sys_id and user_id = auth.uid() and role = 'editor'
+  );
+$$;
+
+create or replace function public.is_system_owner(sys_id uuid)
+returns boolean language sql security definer stable as $$
+  select exists (
+    select 1 from public.systems
+    where id = sys_id and owner_id = auth.uid()
+  );
+$$;
+
+-- Drop and re-create the two collaborator-referencing systems policies
+drop policy if exists "systems: collaborator select" on public.systems;
+drop policy if exists "systems: collaborator update" on public.systems;
 
 create policy "systems: collaborator select"
   on public.systems for select
-  using (
-    exists (
-      select 1 from public.collaborators c
-      where c.system_id = id and c.user_id = auth.uid()
-    )
-  );
+  using (public.is_collaborator(id));
 
 create policy "systems: collaborator update"
   on public.systems for update
-  using (
-    exists (
-      select 1 from public.collaborators c
-      where c.system_id = id and c.user_id = auth.uid()
-        and c.role = 'editor'
-    )
-  );
+  using (public.is_collaborator_editor(id));
+
+-- Drop and re-create the collaborators owner policy (also used is_system_owner)
+drop policy if exists "collaborators: owner all" on public.collaborators;
+
+create policy "collaborators: owner all"
+  on public.collaborators for all
+  using  (public.is_system_owner(system_id))
+  with check (public.is_system_owner(system_id));
 
 
 -- ── 4. find_user_by_email RPC ─────────────────────────────────────────────────
