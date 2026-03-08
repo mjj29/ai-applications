@@ -17,6 +17,7 @@
       <button data-view="view-systems">Systems</button>
       <button data-view="view-editor">Edit</button>
     </nav>
+    <div id="auth-bar"></div>
   </header>
 
   <!-- Main content area -->
@@ -174,6 +175,48 @@
   </div>
 </div>
 
+<!-- Share / Publish modal -->
+<div id="modal-share" class="modal-backdrop hidden">
+  <div class="modal" style="width:520px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden">
+    <h2>Share &amp; Publish — <span id="share-system-name"></span></h2>
+
+    <div style="border:1px solid var(--border);border-radius:var(--radius);padding:0.85rem;margin-bottom:1rem;background:var(--surface-2,var(--surface))">>
+      <div style="font-weight:500;margin-bottom:0.5rem">🌐 Public link</div>
+      <div id="share-pub-section"></div>
+    </div>
+
+    <div style="flex:1;overflow-y:auto">
+      <div style="font-weight:500;margin-bottom:0.4rem">👥 Collaborators</div>
+      <div id="share-collabs" style="margin-bottom:0.75rem"></div>
+      <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap">
+        <input type="email" id="collab-email" placeholder="Collaborator email" style="flex:1;min-width:160px">
+        <select id="collab-role" style="flex-shrink:0">
+          <option value="editor">Editor</option>
+          <option value="viewer">Viewer</option>
+        </select>
+        <button class="btn btn-sm btn-primary" id="btn-add-collab">Add</button>
+      </div>
+    </div>
+
+    <div class="modal-footer" style="flex-shrink:0">
+      <button class="btn" id="btn-share-close">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Public system preview modal -->
+<div id="modal-public-preview" class="modal-backdrop hidden">
+  <div class="modal" style="width:440px">
+    <h2>📋 <span id="preview-system-name"></span></h2>
+    <p id="preview-desc" style="color:var(--text-muted);font-size:0.85rem;margin-bottom:1rem"></p>
+    <p style="font-size:0.85rem">This is a shared system. You can clone it into your own account to edit it.</p>
+    <div class="modal-footer">
+      <button class="btn" id="btn-preview-close">Cancel</button>
+      <button class="btn btn-primary" id="btn-preview-clone">Clone to my account</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── Extra styles for systems list ─────────────────────────────────────────── -->
 <style>
   .system-item {
@@ -261,7 +304,37 @@
   .bid-node-header.drag-over   { outline: 2px solid var(--accent); background: rgba(74,158,255,0.12); }
   .bid-tree.drag-over-zone     { outline: 2px dashed var(--accent); outline-offset: 2px; border-radius: 4px; background: rgba(74,158,255,0.05); }
 
+  /* ── Auth bar ─────────────────────────────────────────────────────────────── */
+  #topbar { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+  #auth-bar { margin-left: auto; display: flex; align-items: center; gap: 0.5rem; }
+  .auth-user { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; }
+  .auth-avatar { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; }
+  .auth-name { color: var(--text); font-weight: 500; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* ── Visibility badges ────────────────────────────────────────────────────── */
+  .sys-badge {
+    display: inline-block;
+    font-size: 0.68rem;
+    padding: 0.09rem 0.4rem;
+    border-radius: 99px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+  .sys-badge-local   { background: rgba(255,255,255,0.07); color: var(--text-muted); border: 1px solid rgba(255,255,255,0.12); }
+  .sys-badge-private { background: rgba(120,120,120,0.12); color: #999; border: 1px solid rgba(120,120,120,0.25); }
+  .sys-badge-shared  { background: rgba(243,156,18,0.12);  color: var(--yellow,#f39c12); border: 1px solid rgba(243,156,18,0.3); }
+  .sys-badge-public  { background: rgba(46,204,113,0.12);  color: #2ecc71; border: 1px solid rgba(46,204,113,0.3); }
+
+  .sys-pub-link { color: var(--accent); text-decoration: none; font-size: 0.8rem; }
+  .sys-pub-link:hover { text-decoration: underline; }
+
+  /* ── Collaborator rows in share modal ────────────────────────────────────── */
+  .collab-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+  .collab-row:last-child { border-bottom: none; }
+
   /* Convention library modal entries */
+
   .lib-entry {
     display: flex;
     align-items: flex-start;
