@@ -12,7 +12,8 @@ import { flash } from './ui.js';
 const SETTINGS_KEY  = 'bridge_ai_settings';
 const DEFAULT_MODEL = 'claude-3-5-sonnet-20241022';
 
-let chatMessages = [];   // Anthropic messages array (in-memory, per session)
+let chatMessages  = [];   // Anthropic messages array (in-memory, per session)
+let _chatSystemId = null; // system ID for which the chat DOM was last built
 
 function getSettings() {
   try { return JSON.parse(localStorage.getItem(SETTINGS_KEY)) ?? {}; } catch { return {}; }
@@ -35,12 +36,22 @@ function countNodes(sys) {
 // ─── Public ───────────────────────────────────────────────────────────────────
 
 export function renderChat(container) {
-  chatMessages = [];
   // Do NOT set display inline — the CSS class controls display:flex/none for tab switching.
   container.style.overflow = 'hidden';
 
   const sys = getActiveSystem();
   const s   = getSettings();
+
+  // If the DOM is already built for this system, just refresh the tree and return.
+  // This preserves chat history and scroll position across tab switches.
+  if (container.querySelector('#chat-messages') && _chatSystemId === (sys?.id ?? null)) {
+    refreshTree(sys);
+    return;
+  }
+
+  // New system (or first render) — reset history and rebuild DOM.
+  chatMessages  = [];
+  _chatSystemId = sys?.id ?? null;
 
   // Wrap in a full-height inner div so the flex layout doesn't depend on the
   // container itself being a flex parent (which can't be set inline safely).
