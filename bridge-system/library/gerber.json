@@ -1,0 +1,121 @@
+{
+  "id": "gerber",
+  "name": "Gerber",
+  "description": "4♣ jump asks for aces directly over a NT bid. Responses: 4♦=0 or 4 aces, 4♥=1, 4♠=2, 4NT=3. Follow-up 5♣ asks for kings.",
+  "tags": ["slam", "aces", "gerber", "notrump"],
+  "nodes": [
+    {
+      "id": "ger-4c",
+      "call": { "type": "bid", "level": 4, "strain": "C" },
+      "meaning": { "description": "Gerber — asking for aces (directly over NT)", "alert": true },
+      "variants": [],
+      "competitive": [],
+      "continuations": {
+        "type": "nodes",
+        "nodes": [
+          {
+            "id": "ger-4c-4d",
+            "call": { "type": "bid", "level": 4, "strain": "D" },
+            "meaning": { "description": "0 or 4 aces" },
+            "variants": [], "competitive": [],
+            "continuations": {
+              "type": "nodes",
+              "nodes": [
+                {
+                  "id": "ger-4c-4d-5c",
+                  "call": { "type": "bid", "level": 5, "strain": "C" },
+                  "meaning": { "description": "Asking for kings", "alert": true },
+                  "variants": [], "competitive": [],
+                  "continuations": { "type": "ref", "conventionId": "gerber-kings" }
+                }
+              ]
+            }
+          },
+          {
+            "id": "ger-4c-4h",
+            "call": { "type": "bid", "level": 4, "strain": "H" },
+            "meaning": { "description": "1 ace" },
+            "variants": [], "competitive": [],
+            "continuations": {
+              "type": "nodes",
+              "nodes": [
+                {
+                  "id": "ger-4c-4h-5c",
+                  "call": { "type": "bid", "level": 5, "strain": "C" },
+                  "meaning": { "description": "Asking for kings", "alert": true },
+                  "variants": [], "competitive": [],
+                  "continuations": { "type": "ref", "conventionId": "gerber-kings" }
+                }
+              ]
+            }
+          },
+          {
+            "id": "ger-4c-4s",
+            "call": { "type": "bid", "level": 4, "strain": "S" },
+            "meaning": { "description": "2 aces" },
+            "variants": [], "competitive": [],
+            "continuations": {
+              "type": "nodes",
+              "nodes": [
+                {
+                  "id": "ger-4c-4s-5c",
+                  "call": { "type": "bid", "level": 5, "strain": "C" },
+                  "meaning": { "description": "Asking for kings", "alert": true },
+                  "variants": [], "competitive": [],
+                  "continuations": { "type": "ref", "conventionId": "gerber-kings" }
+                }
+              ]
+            }
+          },
+          {
+            "id": "ger-4c-4n",
+            "call": { "type": "bid", "level": 4, "strain": "N" },
+            "meaning": { "description": "3 aces" },
+            "variants": [], "competitive": [],
+            "continuations": { "type": "tbd" }
+          }
+        ]
+      }
+    },
+    {
+      "id": "ger-5c-kings",
+      "call": { "type": "bid", "level": 5, "strain": "C" },
+      "meaning": { "description": "Asking for kings (follow-up after Gerber ace response)", "alert": true },
+      "variants": [],
+      "competitive": [],
+      "continuations": {
+        "type": "nodes",
+        "nodes": [
+          {
+            "id": "ger-5c-5d",
+            "call": { "type": "bid", "level": 5, "strain": "D" },
+            "meaning": { "description": "0 or 4 kings" },
+            "variants": [], "competitive": [],
+            "continuations": { "type": "tbd" }
+          },
+          {
+            "id": "ger-5c-5h",
+            "call": { "type": "bid", "level": 5, "strain": "H" },
+            "meaning": { "description": "1 king" },
+            "variants": [], "competitive": [],
+            "continuations": { "type": "tbd" }
+          },
+          {
+            "id": "ger-5c-5s",
+            "call": { "type": "bid", "level": 5, "strain": "S" },
+            "meaning": { "description": "2 kings" },
+            "variants": [], "competitive": [],
+            "continuations": { "type": "tbd" }
+          },
+          {
+            "id": "ger-5c-5n",
+            "call": { "type": "bid", "level": 5, "strain": "N" },
+            "meaning": { "description": "3 kings" },
+            "variants": [], "competitive": [],
+            "continuations": { "type": "tbd" }
+          }
+        ]
+      }
+    }
+  ]
+}

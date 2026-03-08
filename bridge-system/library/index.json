@@ -1,0 +1,32 @@
+[
+  {
+    "id": "stayman",
+    "name": "Stayman",
+    "description": "2♣ response to 1NT asking for a 4-card major. Opener rebids 2♦ (no major), 2♥ (4+ hearts), or 2♠ (4+ spades, denies 4 hearts).",
+    "tags": ["notrump", "majors", "stayman"]
+  },
+  {
+    "id": "jacoby-transfers",
+    "name": "Jacoby Transfers",
+    "description": "2♦/2♥ responses to 1NT transferring to hearts/spades. Allows opener to declare major-suit contracts and shows 5+ cards.",
+    "tags": ["notrump", "majors", "transfers"]
+  },
+  {
+    "id": "blackwood",
+    "name": "Blackwood",
+    "description": "4NT asks partner for aces. Responses: 5♣=0 or 4, 5♦=1, 5♥=2, 5♠=3. Follow-up 5NT asks for kings.",
+    "tags": ["slam", "aces", "blackwood"]
+  },
+  {
+    "id": "gerber",
+    "name": "Gerber",
+    "description": "4♣ jump asks for aces after partner's NT bid. Responses: 4♦=0 or 4, 4♥=1, 4♠=2, 4NT=3. Follow-up 5♣ asks for kings.",
+    "tags": ["slam", "aces", "gerber", "notrump"]
+  },
+  {
+    "id": "negative-doubles",
+    "name": "Negative Doubles",
+    "description": "Double of opponent's suit overcall showing the unbid major(s) and competitive values (~6+ HCP). Opener treats it as takeout.",
+    "tags": ["competitive", "doubles", "defensive"]
+  }
+]

@@ -8,6 +8,7 @@ import { callToHTML, callToString, parseCall, parseSequence, makeBidNode,
          sortNodes, variantBadgeText } from './model.js';
 import { getActiveSystem, saveSystem } from './store.js';
 import { flash }  from './ui.js';
+import { fetchLibraryIndex, fetchLibraryConvention } from './library.js';
 
 // ─── State ───────────────────────────────────────────────────────────────────
 
@@ -197,7 +198,10 @@ export function renderEditor(container) {
         <div style="border-top:1px solid var(--border);margin-top:1.25rem;padding-top:1rem;padding-bottom:2rem">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem">
             <h2 style="font-size:1rem;margin:0">Convention Library</h2>
-            <button class="btn btn-sm btn-primary" id="btn-add-convention">+ Convention</button>
+            <div style="display:flex;gap:0.4rem">
+              <button class="btn btn-sm" id="btn-browse-library">📚 Library</button>
+              <button class="btn btn-sm btn-primary" id="btn-add-convention">+ Convention</button>
+            </div>
           </div>
           <div id="editor-conventions"></div>
         </div>
@@ -214,6 +218,10 @@ export function renderEditor(container) {
 
   document.getElementById('btn-add-opening').addEventListener('click',  () => showAddBidModal(null, 'openings'));
   document.getElementById('btn-add-overcall').addEventListener('click', () => showAddBidModal(null, 'overcalls'));
+  document.getElementById('btn-browse-library').addEventListener('click', () => {
+    showLibraryModal();
+  });
+
   document.getElementById('btn-add-convention').addEventListener('click', () => {
     const name = prompt('Convention name:')?.trim();
     if (!name) return;
@@ -1122,6 +1130,85 @@ function showConventionForm(conv) {
     renderConventionsSection();
     formCol.innerHTML = `<div class="empty-state" style="padding:2rem 0"><div class="big">←</div>Select a bid or rule to edit it.</div>`;
   });
+}
+
+// ─── Convention Library modal ─────────────────────────────────────────────────
+
+function showLibraryModal() {
+  const backdrop = document.getElementById('modal-conv-library');
+  if (!backdrop) return;
+  backdrop.classList.remove('hidden');
+  document.getElementById('btn-conv-library-close').onclick = () => backdrop.classList.add('hidden');
+  backdrop.addEventListener('click', e => { if (e.target === backdrop) backdrop.classList.add('hidden'); }, { once: true });
+  renderLibraryList();
+}
+
+async function renderLibraryList() {
+  const container = document.getElementById('conv-library-list');
+  if (!container) return;
+  container.innerHTML = `<div style="text-align:center;padding:1.5rem;color:var(--text-muted)">Loading…</div>`;
+
+  let entries;
+  try {
+    entries = await fetchLibraryIndex();
+  } catch (e) {
+    container.innerHTML = `<div style="color:var(--danger,#e55);padding:0.75rem">${e.message}</div>`;
+    return;
+  }
+
+  const sys = getActiveSystem();
+  const existing = new Set(Object.keys(sys?.conventions ?? {}));
+
+  container.innerHTML = entries.map(entry => {
+    const alreadyIn = existing.has(entry.id);
+    const tags = (entry.tags ?? [])
+      .map(t => `<span class="lib-tag">${t}</span>`).join('');
+    return `
+      <div class="lib-entry${alreadyIn ? ' lib-entry-imported' : ''}" data-lib-entry="${entry.id}">
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:500;margin-bottom:0.2rem">${entry.name}</div>
+          <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:0.3rem">${entry.description ?? ''}</div>
+          <div>${tags}</div>
+        </div>
+        <div style="flex-shrink:0;margin-left:0.75rem;text-align:center">
+          <button class="btn btn-sm${alreadyIn ? '' : ' btn-primary'}"
+            data-lib-import="${entry.id}" data-lib-name="${entry.name}">
+            ${alreadyIn ? '↺ Re-import' : 'Import'}
+          </button>
+          ${alreadyIn ? `<span class="lib-imported-badge">✓ in library</span>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+
+  container.querySelectorAll('[data-lib-import]').forEach(btn => {
+    btn.addEventListener('click', () =>
+      importConventionFromLibrary(btn.dataset.libImport, btn.dataset.libName));
+  });
+}
+
+async function importConventionFromLibrary(id, name) {
+  const sys = getActiveSystem();
+  if (!sys) return;
+
+  if (!sys.conventions) sys.conventions = {};
+  if (sys.conventions[id]) {
+    if (!confirm(`"${name}" is already in your library. Re-import and overwrite it?`)) return;
+  }
+
+  let conv;
+  try {
+    conv = await fetchLibraryConvention(id);
+  } catch (e) {
+    flash(`Import failed: ${e.message}`, 'err');
+    return;
+  }
+
+  sys.conventions[conv.id] = conv;
+  saveSystem(sys);
+  flash(`Imported "${name}" into Convention Library`, 'ok');
+  renderConventionsSection();
+  // Refresh the modal list to update the "in library" badges
+  renderLibraryList();
 }
 
 // ─── Competitive ──────────────────────────────────────────────────────────────

@@ -1,0 +1,133 @@
+{
+  "id": "stayman",
+  "name": "Stayman",
+  "description": "2♣ response to 1NT asking for a 4-card major. Opener rebids 2♦ (no major), 2♥ (4+ hearts), or 2♠ (4+ spades, denies 4 hearts).",
+  "tags": ["notrump", "majors", "stayman"],
+  "nodes": [
+    {
+      "id": "stm-2c",
+      "call": { "type": "bid", "level": 2, "strain": "C" },
+      "meaning": { "description": "Stayman — asks for 4-card major", "alert": true },
+      "variants": [],
+      "competitive": [],
+      "continuations": {
+        "type": "nodes",
+        "nodes": [
+          {
+            "id": "stm-2c-2d",
+            "call": { "type": "bid", "level": 2, "strain": "D" },
+            "meaning": { "description": "No 4-card major" },
+            "variants": [],
+            "competitive": [],
+            "continuations": {
+              "type": "nodes",
+              "nodes": [
+                {
+                  "id": "stm-2c-2d-2h",
+                  "call": { "type": "bid", "level": 2, "strain": "H" },
+                  "meaning": { "description": "5+ hearts, invitational" },
+                  "variants": [], "competitive": [],
+                  "continuations": { "type": "tbd" }
+                },
+                {
+                  "id": "stm-2c-2d-2s",
+                  "call": { "type": "bid", "level": 2, "strain": "S" },
+                  "meaning": { "description": "5+ spades, invitational" },
+                  "variants": [], "competitive": [],
+                  "continuations": { "type": "tbd" }
+                },
+                {
+                  "id": "stm-2c-2d-2n",
+                  "call": { "type": "bid", "level": 2, "strain": "N" },
+                  "meaning": { "description": "Invitational, balanced, no 4-card major" },
+                  "variants": [], "competitive": [],
+                  "continuations": { "type": "tbd" }
+                },
+                {
+                  "id": "stm-2c-2d-3n",
+                  "call": { "type": "bid", "level": 3, "strain": "N" },
+                  "meaning": { "description": "To play — game values, no major fit" },
+                  "variants": [], "competitive": [],
+                  "continuations": { "type": "end" }
+                }
+              ]
+            }
+          },
+          {
+            "id": "stm-2c-2h",
+            "call": { "type": "bid", "level": 2, "strain": "H" },
+            "meaning": { "description": "4+ hearts (may also hold 4 spades)" },
+            "variants": [],
+            "competitive": [],
+            "continuations": {
+              "type": "nodes",
+              "nodes": [
+                {
+                  "id": "stm-2c-2h-2s",
+                  "call": { "type": "bid", "level": 2, "strain": "S" },
+                  "meaning": { "description": "4 spades, 4 hearts — pick the major" },
+                  "variants": [], "competitive": [],
+                  "continuations": { "type": "tbd" }
+                },
+                {
+                  "id": "stm-2c-2h-3h",
+                  "call": { "type": "bid", "level": 3, "strain": "H" },
+                  "meaning": { "description": "Invitational raise, 4+ hearts" },
+                  "variants": [], "competitive": [],
+                  "continuations": { "type": "tbd" }
+                },
+                {
+                  "id": "stm-2c-2h-4h",
+                  "call": { "type": "bid", "level": 4, "strain": "H" },
+                  "meaning": { "description": "To play — game, 4+ hearts" },
+                  "variants": [], "competitive": [],
+                  "continuations": { "type": "end" }
+                },
+                {
+                  "id": "stm-2c-2h-3n",
+                  "call": { "type": "bid", "level": 3, "strain": "N" },
+                  "meaning": { "description": "To play — no major fit, game values" },
+                  "variants": [], "competitive": [],
+                  "continuations": { "type": "end" }
+                }
+              ]
+            }
+          },
+          {
+            "id": "stm-2c-2s",
+            "call": { "type": "bid", "level": 2, "strain": "S" },
+            "meaning": { "description": "4+ spades, denies 4 hearts" },
+            "variants": [],
+            "competitive": [],
+            "continuations": {
+              "type": "nodes",
+              "nodes": [
+                {
+                  "id": "stm-2c-2s-3s",
+                  "call": { "type": "bid", "level": 3, "strain": "S" },
+                  "meaning": { "description": "Invitational raise, 4+ spades" },
+                  "variants": [], "competitive": [],
+                  "continuations": { "type": "tbd" }
+                },
+                {
+                  "id": "stm-2c-2s-4s",
+                  "call": { "type": "bid", "level": 4, "strain": "S" },
+                  "meaning": { "description": "To play — game, 4+ spades" },
+                  "variants": [], "competitive": [],
+                  "continuations": { "type": "end" }
+                },
+                {
+                  "id": "stm-2c-2s-3n",
+                  "call": { "type": "bid", "level": 3, "strain": "N" },
+                  "meaning": { "description": "To play — no spade fit, game values" },
+                  "variants": [], "competitive": [],
+                  "continuations": { "type": "end" }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

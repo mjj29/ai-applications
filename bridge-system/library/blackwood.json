@@ -1,0 +1,117 @@
+{
+  "id": "blackwood",
+  "name": "Blackwood",
+  "description": "4NT asks partner for aces. Responses: 5♣=0 or 4 aces, 5♦=1, 5♥=2, 5♠=3. Follow-up 5NT asks for kings (6♣=0, 6♦=1, 6♥=2, 6♠=3, 6NT=4).",
+  "tags": ["slam", "aces", "blackwood"],
+  "nodes": [
+    {
+      "id": "bw-4n",
+      "call": { "type": "bid", "level": 4, "strain": "N" },
+      "meaning": { "description": "Blackwood — asking for aces", "alert": true },
+      "variants": [],
+      "competitive": [],
+      "continuations": {
+        "type": "nodes",
+        "nodes": [
+          {
+            "id": "bw-4n-5c",
+            "call": { "type": "bid", "level": 5, "strain": "C" },
+            "meaning": { "description": "0 or 4 aces" },
+            "variants": [], "competitive": [],
+            "continuations": {
+              "type": "nodes",
+              "nodes": [
+                {
+                  "id": "bw-4n-5c-5n",
+                  "call": { "type": "bid", "level": 5, "strain": "N" },
+                  "meaning": { "description": "5NT — asking for kings", "alert": true },
+                  "variants": [], "competitive": [],
+                  "continuations": { "type": "ref", "conventionId": "blackwood-kings" }
+                }
+              ]
+            }
+          },
+          {
+            "id": "bw-4n-5d",
+            "call": { "type": "bid", "level": 5, "strain": "D" },
+            "meaning": { "description": "1 ace" },
+            "variants": [], "competitive": [],
+            "continuations": { "type": "tbd" }
+          },
+          {
+            "id": "bw-4n-5h",
+            "call": { "type": "bid", "level": 5, "strain": "H" },
+            "meaning": { "description": "2 aces" },
+            "variants": [], "competitive": [],
+            "continuations": {
+              "type": "nodes",
+              "nodes": [
+                {
+                  "id": "bw-4n-5h-5n",
+                  "call": { "type": "bid", "level": 5, "strain": "N" },
+                  "meaning": { "description": "5NT — asking for kings (all aces held)", "alert": true },
+                  "variants": [], "competitive": [],
+                  "continuations": { "type": "ref", "conventionId": "blackwood-kings" }
+                }
+              ]
+            }
+          },
+          {
+            "id": "bw-4n-5s",
+            "call": { "type": "bid", "level": 5, "strain": "S" },
+            "meaning": { "description": "3 aces" },
+            "variants": [], "competitive": [],
+            "continuations": { "type": "tbd" }
+          }
+        ]
+      }
+    },
+    {
+      "id": "bw-5n",
+      "call": { "type": "bid", "level": 5, "strain": "N" },
+      "meaning": { "description": "5NT — asking for kings (grand-slam try, all aces held)", "alert": true },
+      "variants": [],
+      "competitive": [],
+      "continuations": {
+        "type": "nodes",
+        "nodes": [
+          {
+            "id": "bw-5n-6c",
+            "call": { "type": "bid", "level": 6, "strain": "C" },
+            "meaning": { "description": "0 kings" },
+            "variants": [], "competitive": [],
+            "continuations": { "type": "tbd" }
+          },
+          {
+            "id": "bw-5n-6d",
+            "call": { "type": "bid", "level": 6, "strain": "D" },
+            "meaning": { "description": "1 king" },
+            "variants": [], "competitive": [],
+            "continuations": { "type": "tbd" }
+          },
+          {
+            "id": "bw-5n-6h",
+            "call": { "type": "bid", "level": 6, "strain": "H" },
+            "meaning": { "description": "2 kings" },
+            "variants": [], "competitive": [],
+            "continuations": { "type": "tbd" }
+          },
+          {
+            "id": "bw-5n-6s",
+            "call": { "type": "bid", "level": 6, "strain": "S" },
+            "meaning": { "description": "3 kings" },
+            "variants": [], "competitive": [],
+            "continuations": { "type": "tbd" }
+          },
+          {
+            "id": "bw-5n-6n",
+            "call": { "type": "bid", "level": 6, "strain": "N" },
+            "meaning": { "description": "4 kings" },
+            "variants": [], "competitive": [],
+            "continuations": { "type": "end" }
+          }
+        ]
+      }
+    }
+  ]
+}

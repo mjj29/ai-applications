@@ -1,0 +1,140 @@
+{
+  "id": "negative-doubles",
+  "name": "Negative Doubles",
+  "description": "Double of opponent's suit overcall showing the unbid major(s) and competitive values (~6+ HCP). Opener treats it as takeout and bids accordingly.",
+  "tags": ["competitive", "doubles", "defensive"],
+  "nodes": [
+    {
+      "id": "nd-x-over-1d",
+      "call": { "type": "double" },
+      "meaning": {
+        "description": "Negative double over 1♦ overcall — shows both majors (4+ hearts AND 4+ spades), 6+ HCP",
+        "alert": true,
+        "hcp": [6, null]
+      },
+      "variants": [],
+      "competitive": [],
+      "continuations": {
+        "type": "nodes",
+        "nodes": [
+          {
+            "id": "nd-x-1d-1h",
+            "call": { "type": "bid", "level": 1, "strain": "H" },
+            "meaning": { "description": "4+ hearts; may have 4 spades — doubler picks major" },
+            "variants": [], "competitive": [],
+            "continuations": { "type": "tbd" }
+          },
+          {
+            "id": "nd-x-1d-1s",
+            "call": { "type": "bid", "level": 1, "strain": "S" },
+            "meaning": { "description": "4+ spades — doubler picks spades" },
+            "variants": [], "competitive": [],
+            "continuations": { "type": "tbd" }
+          },
+          {
+            "id": "nd-x-1d-1n",
+            "call": { "type": "bid", "level": 1, "strain": "N" },
+            "meaning": { "description": "Minimum opener, no 4-card major, stopper in overcalled suit" },
+            "variants": [], "competitive": [],
+            "continuations": { "type": "tbd" }
+          },
+          {
+            "id": "nd-x-1d-2c",
+            "call": { "type": "bid", "level": 2, "strain": "C" },
+            "meaning": { "description": "Minimum, no 4-card major, long clubs" },
+            "variants": [], "competitive": [],
+            "continuations": { "type": "tbd" }
+          }
+        ]
+      }
+    },
+    {
+      "id": "nd-x-over-1h",
+      "call": { "type": "double" },
+      "meaning": {
+        "description": "Negative double over 1♥ overcall — shows exactly 4 spades, 6+ HCP",
+        "alert": true,
+        "hcp": [6, null]
+      },
+      "variants": [],
+      "competitive": [],
+      "continuations": {
+        "type": "nodes",
+        "nodes": [
+          {
+            "id": "nd-x-1h-1s",
+            "call": { "type": "bid", "level": 1, "strain": "S" },
+            "meaning": { "description": "4+ spades — the suit shown by the double" },
+            "variants": [], "competitive": [],
+            "continuations": { "type": "tbd" }
+          },
+          {
+            "id": "nd-x-1h-1n",
+            "call": { "type": "bid", "level": 1, "strain": "N" },
+            "meaning": { "description": "Minimum, stopper in hearts, no 4+ spades" },
+            "variants": [], "competitive": [],
+            "continuations": { "type": "tbd" }
+          },
+          {
+            "id": "nd-x-1h-2n",
+            "call": { "type": "bid", "level": 2, "strain": "N" },
+            "meaning": { "description": "18–19 HCP balanced, stopper in hearts" },
+            "variants": [], "competitive": [],
+            "continuations": { "type": "tbd" }
+          },
+          {
+            "id": "nd-x-1h-2h",
+            "call": { "type": "bid", "level": 2, "strain": "H" },
+            "meaning": { "description": "Cue-bid — game-forcing, invites further description" },
+            "variants": [], "competitive": [],
+            "continuations": { "type": "tbd" }
+          }
+        ]
+      }
+    },
+    {
+      "id": "nd-x-over-1s",
+      "call": { "type": "double" },
+      "meaning": {
+        "description": "Negative double over 1♠ overcall — shows 4+ hearts (and possibly a minor), 6+ HCP",
+        "alert": true,
+        "hcp": [6, null]
+      },
+      "variants": [],
+      "competitive": [],
+      "continuations": {
+        "type": "nodes",
+        "nodes": [
+          {
+            "id": "nd-x-1s-2h",
+            "call": { "type": "bid", "level": 2, "strain": "H" },
+            "meaning": { "description": "4 hearts — the suit shown by the double" },
+            "variants": [], "competitive": [],
+            "continuations": { "type": "tbd" }
+          },
+          {
+            "id": "nd-x-1s-1n",
+            "call": { "type": "bid", "level": 1, "strain": "N" },
+            "meaning": { "description": "Minimum, stopper in spades" },
+            "variants": [], "competitive": [],
+            "continuations": { "type": "tbd" }
+          },
+          {
+            "id": "nd-x-1s-2n",
+            "call": { "type": "bid", "level": 2, "strain": "N" },
+            "meaning": { "description": "18–19 HCP balanced, stopper in spades" },
+            "variants": [], "competitive": [],
+            "continuations": { "type": "tbd" }
+          },
+          {
+            "id": "nd-x-1s-2s",
+            "call": { "type": "bid", "level": 2, "strain": "S" },
+            "meaning": { "description": "Cue-bid — game-forcing, invites further description" },
+            "variants": [], "competitive": [],
+            "continuations": { "type": "tbd" }
+          }
+        ]
+      }
+    }
+  ]
+}

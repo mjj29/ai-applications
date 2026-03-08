@@ -160,6 +160,20 @@
   </div>
 </div>
 
+<!-- Convention library modal -->
+<div id="modal-conv-library" class="modal-backdrop hidden">
+  <div class="modal" style="width:600px;max-height:82vh;display:flex;flex-direction:column;overflow:hidden">
+    <h2 style="flex-shrink:0">📚 Convention Library</h2>
+    <p style="font-size:0.82rem;color:var(--text-muted);margin:0 0 0.75rem;flex-shrink:0">
+      Import a convention into your system's local library. You can edit it freely after importing.
+    </p>
+    <div id="conv-library-list" style="flex:1;overflow-y:auto;min-height:120px"></div>
+    <div class="modal-footer" style="flex-shrink:0">
+      <button class="btn" id="btn-conv-library-close">Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── Extra styles for systems list ─────────────────────────────────────────── -->
 <style>
   .system-item {
@@ -246,6 +260,38 @@
   .bid-node-header.dragging    { opacity: 0.45; }
   .bid-node-header.drag-over   { outline: 2px solid var(--accent); background: rgba(74,158,255,0.12); }
   .bid-tree.drag-over-zone     { outline: 2px dashed var(--accent); outline-offset: 2px; border-radius: 4px; background: rgba(74,158,255,0.05); }
+
+  /* Convention library modal entries */
+  .lib-entry {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.65rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 0.4rem;
+    background: var(--surface);
+    transition: border-color 0.15s;
+  }
+  .lib-entry:hover { border-color: var(--accent-dim); }
+  .lib-entry-imported { border-color: var(--accent-dim); }
+  .lib-tag {
+    display: inline-block;
+    font-size: 0.7rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 99px;
+    background: rgba(74,158,255,0.1);
+    color: var(--accent);
+    border: 1px solid rgba(74,158,255,0.2);
+    margin: 0.15rem 0.15rem 0 0;
+  }
+  .lib-imported-badge {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--green, #4caf50);
+    text-align: center;
+    margin-top: 0.2rem;
+  }
 </style>
 
 <script type="module" src="js/app.js"></script>

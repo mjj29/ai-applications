@@ -1,0 +1,142 @@
+{
+  "id": "jacoby-transfers",
+  "name": "Jacoby Transfers",
+  "description": "2♦/2♥ responses to 1NT transferring to hearts/spades. Allows opener to declare the major. Super-accept (jump to 3-level) shows 4-card support and maximum.",
+  "tags": ["notrump", "majors", "transfers"],
+  "nodes": [
+    {
+      "id": "jt-2d",
+      "call": { "type": "bid", "level": 2, "strain": "D" },
+      "meaning": { "description": "Jacoby transfer to hearts — 5+ hearts", "alert": true, "announce": "Transfer" },
+      "variants": [],
+      "competitive": [],
+      "continuations": {
+        "type": "nodes",
+        "nodes": [
+          {
+            "id": "jt-2d-2h",
+            "call": { "type": "bid", "level": 2, "strain": "H" },
+            "meaning": { "description": "Completing transfer (routine)" },
+            "variants": [],
+            "competitive": [],
+            "continuations": {
+              "type": "nodes",
+              "nodes": [
+                {
+                  "id": "jt-2d-2h-p",
+                  "call": { "type": "pass" },
+                  "meaning": { "description": "To play — weak hand, 5+ hearts" },
+                  "variants": [], "competitive": [],
+                  "continuations": { "type": "end" }
+                },
+                {
+                  "id": "jt-2d-2h-2n",
+                  "call": { "type": "bid", "level": 2, "strain": "N" },
+                  "meaning": { "description": "Invitational — 5 hearts, balanced" },
+                  "variants": [], "competitive": [],
+                  "continuations": { "type": "tbd" }
+                },
+                {
+                  "id": "jt-2d-2h-3h",
+                  "call": { "type": "bid", "level": 3, "strain": "H" },
+                  "meaning": { "description": "Invitational — 6+ hearts" },
+                  "variants": [], "competitive": [],
+                  "continuations": { "type": "tbd" }
+                },
+                {
+                  "id": "jt-2d-2h-3n",
+                  "call": { "type": "bid", "level": 3, "strain": "N" },
+                  "meaning": { "description": "Choice of game — 5 hearts, game values" },
+                  "variants": [], "competitive": [],
+                  "continuations": { "type": "tbd" }
+                },
+                {
+                  "id": "jt-2d-2h-4h",
+                  "call": { "type": "bid", "level": 4, "strain": "H" },
+                  "meaning": { "description": "To play — 6+ hearts, game values" },
+                  "variants": [], "competitive": [],
+                  "continuations": { "type": "end" }
+                }
+              ]
+            }
+          },
+          {
+            "id": "jt-2d-3h",
+            "call": { "type": "bid", "level": 3, "strain": "H" },
+            "meaning": { "description": "Super-accept — 4-card heart support, maximum (17 HCP)" },
+            "variants": [],
+            "competitive": [],
+            "continuations": { "type": "tbd" }
+          }
+        ]
+      }
+    },
+    {
+      "id": "jt-2h",
+      "call": { "type": "bid", "level": 2, "strain": "H" },
+      "meaning": { "description": "Jacoby transfer to spades — 5+ spades", "alert": true, "announce": "Transfer" },
+      "variants": [],
+      "competitive": [],
+      "continuations": {
+        "type": "nodes",
+        "nodes": [
+          {
+            "id": "jt-2h-2s",
+            "call": { "type": "bid", "level": 2, "strain": "S" },
+            "meaning": { "description": "Completing transfer (routine)" },
+            "variants": [],
+            "competitive": [],
+            "continuations": {
+              "type": "nodes",
+              "nodes": [
+                {
+                  "id": "jt-2h-2s-p",
+                  "call": { "type": "pass" },
+                  "meaning": { "description": "To play — weak hand, 5+ spades" },
+                  "variants": [], "competitive": [],
+                  "continuations": { "type": "end" }
+                },
+                {
+                  "id": "jt-2h-2s-2n",
+                  "call": { "type": "bid", "level": 2, "strain": "N" },
+                  "meaning": { "description": "Invitational — 5 spades, balanced" },
+                  "variants": [], "competitive": [],
+                  "continuations": { "type": "tbd" }
+                },
+                {
+                  "id": "jt-2h-2s-3s",
+                  "call": { "type": "bid", "level": 3, "strain": "S" },
+                  "meaning": { "description": "Invitational — 6+ spades" },
+                  "variants": [], "competitive": [],
+                  "continuations": { "type": "tbd" }
+                },
+                {
+                  "id": "jt-2h-2s-3n",
+                  "call": { "type": "bid", "level": 3, "strain": "N" },
+                  "meaning": { "description": "Choice of game — 5 spades, game values" },
+                  "variants": [], "competitive": [],
+                  "continuations": { "type": "tbd" }
+                },
+                {
+                  "id": "jt-2h-2s-4s",
+                  "call": { "type": "bid", "level": 4, "strain": "S" },
+                  "meaning": { "description": "To play — 6+ spades, game values" },
+                  "variants": [], "competitive": [],
+                  "continuations": { "type": "end" }
+                }
+              ]
+            }
+          },
+          {
+            "id": "jt-2h-3s",
+            "call": { "type": "bid", "level": 3, "strain": "S" },
+            "meaning": { "description": "Super-accept — 4-card spade support, maximum (17 HCP)" },
+            "variants": [],
+            "competitive": [],
+            "continuations": { "type": "tbd" }
+          }
+        ]
+      }
+    }
+  ]
+}
