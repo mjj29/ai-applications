@@ -9,10 +9,11 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY, SITE_URL } from './config.js';
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
-    // Persist session in localStorage automatically
     persistSession: true,
-    // After GitHub OAuth redirect, Supabase reads the fragment and restores the session
     detectSessionInUrl: true,
+    // The default Web Locks implementation can deadlock in non-React ESM apps.
+    // This no-op lock is safe for a single-user SPA (no competing tabs issue).
+    lock: (_name, _acquireTimeout, fn) => fn(),
   },
 });
 
