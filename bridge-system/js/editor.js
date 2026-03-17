@@ -611,6 +611,7 @@ function showEditForm(node, sys) {
             `<option value="${c.id}" ${node.continuations?.conventionId === c.id ? 'selected' : ''}>${c.name}</option>`
           ).join('')}
         </select>
+        <div id="f-cont-ref-params" style="margin-top:0.35rem"></div>
       </div>
     </div>
 
@@ -633,7 +634,48 @@ function showEditForm(node, sys) {
   // Continuation type toggle
   document.getElementById('f-cont-type').addEventListener('change', (e) => {
     document.getElementById('f-cont-ref-row').classList.toggle('hidden', e.target.value !== 'ref');
+    _updateRefParams();
   });
+
+  // Convention reference param bindings
+  const _refInitialParams = node.continuations?.type === 'ref' ? (node.continuations.params ?? {}) : {};
+  const _updateRefParams = () => {
+    const convId = document.getElementById('f-cont-ref')?.value;
+    const s = getActiveSystem();
+    const conv = convId ? s?.conventions?.[convId] : null;
+    const ps   = conv?.params ?? [];
+    const container = document.getElementById('f-cont-ref-params');
+    if (!container) return;
+    if (!ps.length) { container.innerHTML = ''; return; }
+    container.innerHTML = ps.map(p => {
+      const val = _refInitialParams[p.name] ?? '';
+      const input = p.type === 'strain'
+        ? `<select data-param-binding="${p.name}"
+                   style="font-size:0.8rem;padding:0.15rem 0.3rem;background:var(--surface);
+                          border:1px solid var(--border);color:var(--text);border-radius:3px">
+             <option value="">— unset —</option>
+             <option value="C" ${val==='C'?'selected':''}>\u2663 Clubs</option>
+             <option value="D" ${val==='D'?'selected':''}>\u2666 Diamonds</option>
+             <option value="H" ${val==='H'?'selected':''}>\u2665 Hearts</option>
+             <option value="S" ${val==='S'?'selected':''}>\u2660 Spades</option>
+             <option value="N" ${val==='N'?'selected':''}>NT</option>
+           </select>`
+        : p.type === 'level'
+        ? `<input type="number" min="1" max="7" data-param-binding="${p.name}" value="${val}"
+                  style="width:50px;font-size:0.8rem;background:var(--surface);border:1px solid var(--border);
+                         color:var(--text);border-radius:3px;padding:0.15rem 0.3rem">`
+        : `<input type="text" data-param-binding="${p.name}" value="${val}"
+                  style="width:90px;font-size:0.8rem;background:var(--surface);border:1px solid var(--border);
+                         color:var(--text);border-radius:3px;padding:0.15rem 0.3rem" placeholder="—">`;
+      return `<div style="display:flex;align-items:center;gap:0.5rem;margin-top:0.3rem">
+        <code style="font-size:0.78rem;color:var(--accent);min-width:5rem">{${p.name}}</code>
+        <span style="font-size:0.78rem;color:var(--text-muted);flex:1">${p.label || p.name}</span>
+        ${input}
+      </div>`;
+    }).join('');
+  };
+  document.getElementById('f-cont-ref').addEventListener('change', _updateRefParams);
+  _updateRefParams();
 
   document.getElementById('btn-save-node').addEventListener('click',   () => saveNode(node));
   document.getElementById('btn-delete-node').addEventListener('click', () => deleteNode(node));
@@ -755,8 +797,14 @@ function saveNode(node) {
   if (notes)   meaning.notes    = notes;
 
   let continuations;
-  if (contType === 'ref')   continuations = { type: 'ref', conventionId: contRef };
-  else if (contType === 'end')  continuations = { type: 'end' };
+  if (contType === 'ref') {
+    const bindings = {};
+    document.querySelectorAll('#f-cont-ref-params [data-param-binding]').forEach(el => {
+      if (el.value) bindings[el.dataset.paramBinding] = el.value;
+    });
+    continuations = { type: 'ref', conventionId: contRef,
+      ...(Object.keys(bindings).length ? { params: bindings } : {}) };
+  } else if (contType === 'end')  continuations = { type: 'end' };
   else if (contType === 'nodes') {
     // preserve existing nodes
     continuations = node.continuations?.type === 'nodes' ? node.continuations : { type: 'nodes', nodes: [] };
@@ -1040,6 +1088,9 @@ function renderConventionsSection() {
     convHeader.style.cssText = 'display:flex;align-items:center;gap:0.5rem;padding:0.35rem 0.6rem;background:rgba(74,158,255,0.07);cursor:pointer;user-select:none';
     convHeader.innerHTML = `
       <span style="flex:1;font-size:0.88rem;font-weight:500;color:var(--accent)">${conv.name}</span>
+      ${conv.params?.length
+        ? `<span style="font-size:0.72rem;color:var(--text-muted);font-family:var(--font-mono)">{${conv.params.map(p => p.name).join(', ')}}</span>`
+        : ''}
       <span style="font-size:0.72rem;color:var(--text-muted);font-family:monospace">${conv.id}</span>
       <button class="btn btn-sm" data-conv-edit="${conv.id}" title="Edit metadata">✎</button>
       <button class="btn btn-sm btn-primary" data-conv-add="${conv.id}" title="Add response to convention">＋</button>
@@ -1092,6 +1143,30 @@ function renderConventionsSection() {
   }
 }
 
+function createParamRow(p = { name: '', label: '', type: 'strain' }) {
+  const row = document.createElement('div');
+  row.className = 'conv-param-row';
+  row.style.cssText = 'display:flex;gap:0.4rem;align-items:center;margin-bottom:0.35rem';
+  row.innerHTML = `
+    <input type="text" data-param-name placeholder="name" value="${p.name}"
+           title="Identifier used in bid calls as {name}"
+           style="width:90px;font-family:var(--font-mono);font-size:0.8rem;padding:0.2rem 0.4rem;
+                  background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:3px">
+    <input type="text" data-param-label placeholder="label" value="${p.label ?? ''}"
+           style="flex:1;font-size:0.8rem;padding:0.2rem 0.4rem;
+                  background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:3px">
+    <select data-param-type
+            style="width:70px;font-size:0.8rem;padding:0.2rem;
+                   background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:3px">
+      <option value="strain" ${!p.type || p.type==='strain' ? 'selected' : ''}>strain</option>
+      <option value="level"  ${p.type==='level'             ? 'selected' : ''}>level</option>
+      <option value="text"   ${p.type==='text'              ? 'selected' : ''}>text</option>
+    </select>
+    <button class="btn btn-sm btn-danger" data-remove-param title="Remove">✕</button>`;
+  row.querySelector('[data-remove-param]').addEventListener('click', () => row.remove());
+  return row;
+}
+
 function showConventionForm(conv) {
   const formCol = document.getElementById('editor-form');
   if (!formCol) return;
@@ -1113,9 +1188,28 @@ function showConventionForm(conv) {
       <label>ID <small style="color:var(--text-muted)">(used in convention references, cannot change)</small></label>
       <input type="text" value="${conv.id}" readonly style="opacity:0.55;cursor:default">
     </div>
+    <div style="margin-top:0.75rem;border-top:1px solid var(--border);padding-top:0.75rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem">
+        <span style="font-size:0.8rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em">Parameters</span>
+        <button class="btn btn-sm" id="btn-add-conv-param">＋ Add</button>
+      </div>
+      <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.5rem">
+        Use <code style="font-size:0.73rem;color:var(--accent)">{name}</code> as a bid call inside this convention,
+        e.g. <code style="font-size:0.73rem;color:var(--accent)">4{suit}</code> for a parameterised sign-off.
+        When linking to this convention you can optionally bind the parameter; leave it unset to show the placeholder.
+      </div>
+      <div id="conv-params-list"></div>
+    </div>
     <div style="margin-top:1rem">
       <button class="btn btn-primary" id="btn-save-conv">Save</button>
     </div>`;
+
+  const paramsList = formCol.querySelector('#conv-params-list');
+  for (const p of conv.params ?? []) paramsList.appendChild(createParamRow(p));
+
+  formCol.querySelector('#btn-add-conv-param').addEventListener('click', () => {
+    paramsList.appendChild(createParamRow());
+  });
 
   document.getElementById('btn-save-conv').addEventListener('click', () => {
     const s = getActiveSystem();
@@ -1125,6 +1219,11 @@ function showConventionForm(conv) {
     c.name        = document.getElementById('conv-name').value.trim() || c.name;
     c.description = document.getElementById('conv-desc').value.trim();
     c.tags        = document.getElementById('conv-tags').value.split(',').map(t => t.trim()).filter(Boolean);
+    c.params      = [...formCol.querySelectorAll('.conv-param-row')].map(row => ({
+      name:  row.querySelector('[data-param-name]').value.trim().replace(/[^a-zA-Z0-9_]/g, ''),
+      label: row.querySelector('[data-param-label]').value.trim(),
+      type:  row.querySelector('[data-param-type]').value,
+    })).filter(p => p.name);
     saveSystem(s);
     flash('Saved', 'ok');
     renderConventionsSection();

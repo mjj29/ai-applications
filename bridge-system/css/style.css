@@ -161,12 +161,12 @@ body {
 .call-pass     { color: var(--text-muted); }
 .call-double   { color: var(--yellow); font-weight: 700; }
 .call-redouble { color: var(--green);  font-weight: 700; }
-.call-bid      { }
 .suit-club     { color: var(--club);    }
 .suit-spade    { color: var(--spade);   }
 .suit-heart    { color: var(--heart);   }
 .suit-diamond  { color: var(--diamond); }
 .suit-nt       { color: var(--accent);  }
+.call-param    { color: var(--yellow); font-style: italic; } /* parameterised placeholder */
 
 .bid-meaning {
   color: var(--text-muted);

@@ -46,7 +46,7 @@ export function makeBidNode(id, call, opts = {}) {
 }
 
 export function makeConvention(id, name, nodes = [], opts = {}) {
-  return { id, name, description: opts.description ?? '', tags: opts.tags ?? [], source: opts.source ?? null, nodes };
+  return { id, name, description: opts.description ?? '', tags: opts.tags ?? [], source: opts.source ?? null, params: opts.params ?? [], nodes };
 }
 
 export function makeSystem(id, name) {
@@ -72,7 +72,11 @@ export function callToString(call) {
     case 'pass':     return 'P';
     case 'double':   return 'X';
     case 'redouble': return 'XX';
-    case 'bid':      return `${call.level}${SUIT_SYMBOLS[call.strain] ?? call.strain}`;
+    case 'bid': {
+      const lvl = call.levelParam ? `{${call.levelParam}}` : call.level;
+      if (call.strainParam) return `${lvl}{${call.strainParam}}`;
+      return `${lvl}${SUIT_SYMBOLS[call.strain] ?? call.strain}`;
+    }
     default:         return '?';
   }
 }
@@ -84,9 +88,14 @@ export function callToHTML(call) {
     case 'double':   return '<span class="call-double">X</span>';
     case 'redouble': return '<span class="call-redouble">XX</span>';
     case 'bid': {
+      const lvlHtml = call.levelParam
+        ? `<span class="call-param">{${call.levelParam}}</span>`
+        : `<span class="call-level">${call.level}</span>`;
+      if (call.strainParam)
+        return `<span class="call-bid">${lvlHtml}<span class="call-param">{${call.strainParam}}</span></span>`;
       const sym   = SUIT_SYMBOLS[call.strain] ?? call.strain;
       const cls   = SUIT_CLASSES[call.strain] ?? '';
-      return `<span class="call-bid"><span class="call-level">${call.level}</span><span class="${cls}">${sym}</span></span>`;
+      return `<span class="call-bid">${lvlHtml}<span class="${cls}">${sym}</span></span>`;
     }
     default: return '?';
   }
@@ -113,7 +122,24 @@ export function interventionToString(iv) {
  * Returns a Call object or null.
  */
 export function parseCall(str) {
-  const s = str.trim().toUpperCase();
+  const raw = str.trim();
+  const PARAM = '[a-zA-Z][a-zA-Z0-9_]*';
+  const STRAIN_RE = '[CDHSN]|NT';
+  // {levelParam}{strainParam}
+  const ppMatch = raw.match(new RegExp(`^\\{(${PARAM})\\}\\{(${PARAM})\\}$`));
+  if (ppMatch)
+    return { type: 'bid', level: null, strain: null, levelParam: ppMatch[1], strainParam: ppMatch[2] };
+  // {levelParam}STRAIN  e.g. {game}S or {game}NT
+  const psMatch = raw.match(new RegExp(`^\\{(${PARAM})\\}(${STRAIN_RE})$`, 'i'));
+  if (psMatch) {
+    const strain = psMatch[2].toUpperCase() === 'NT' ? 'N' : psMatch[2].toUpperCase();
+    return { type: 'bid', level: null, strain, levelParam: psMatch[1] };
+  }
+  // LEVEL{strainParam}  e.g. 4{suit}
+  const lpMatch = raw.match(new RegExp(`^([1-7])\\{(${PARAM})\\}$`));
+  if (lpMatch)
+    return { type: 'bid', level: parseInt(lpMatch[1]), strain: null, strainParam: lpMatch[2] };
+  const s = raw.toUpperCase();
   if (s === 'P' || s === 'PASS')    return PASS;
   if (s === 'X' || s === 'DBL')     return DOUBLE;
   if (s === 'XX' || s === 'RDBL')   return REDOUBLE;
@@ -170,7 +196,10 @@ export function callSortKey(call) {
     case 'pass':     return -3;
     case 'double':   return -2;
     case 'redouble': return -1;
-    case 'bid':      return call.level * 10 + (STRAIN_ORDER[call.strain] ?? 5);
+    case 'bid':
+      if (call.levelParam) return 80 + (call.strainParam ? 9 : STRAIN_ORDER[call.strain] ?? 5);
+      if (call.strainParam) return call.level * 10 + 9;
+      return call.level * 10 + (STRAIN_ORDER[call.strain] ?? 5);
     default:         return 998;
   }
 }

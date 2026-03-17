@@ -193,13 +193,57 @@ export function resolve(node, ctx, conventions = {}) {
 function resolveBaseNodes(continuation, conventions) {
   if (!continuation) return [];
   if (continuation.type === 'nodes') return continuation.nodes;
-  if (continuation.type === 'ref')   return resolveRef(continuation.conventionId, conventions);
+  if (continuation.type === 'ref')
+    return resolveRef(continuation.conventionId, conventions, continuation.params);
   return [];
 }
 
-function resolveRef(conventionId, conventions) {
+function resolveRef(conventionId, conventions, params) {
   const conv = conventions[conventionId];
-  return conv?.nodes ?? [];
+  if (!conv) return [];
+  const nodes = conv.nodes ?? [];
+  if (!params || Object.keys(params).length === 0) return nodes;
+  return nodes.map(n => materializeNodeParams(n, params));
+}
+
+// Substitute bound param values into a call (leaves placeholder if param unbound)
+function materializeCall(call, params) {
+  if (!call || call.type !== 'bid') return call;
+  const hasLevelParam  = !!call.levelParam;
+  const hasStrainParam = !!call.strainParam;
+  if (!hasLevelParam && !hasStrainParam) return call;
+
+  let level  = call.level;
+  let strain = call.strain;
+  const dropKeys = {};
+
+  if (hasLevelParam) {
+    const bound = params[call.levelParam];
+    if (bound !== undefined) { level = parseInt(bound); dropKeys.levelParam = true; }
+  }
+  if (hasStrainParam) {
+    const bound = params[call.strainParam];
+    if (bound !== undefined) { strain = bound; dropKeys.strainParam = true; }
+  }
+
+  if (!Object.keys(dropKeys).length) return call; // nothing was bound
+  const { levelParam, strainParam, ...rest } = call;
+  return {
+    ...rest,
+    level,
+    strain,
+    ...(hasLevelParam  && !dropKeys.levelParam  ? { levelParam:  call.levelParam  } : {}),
+    ...(hasStrainParam && !dropKeys.strainParam ? { strainParam: call.strainParam } : {}),
+  };
+}
+
+function materializeNodeParams(node, params) {
+  const call = materializeCall(node.call, params);
+  const cont = node.continuations?.type === 'nodes'
+    ? { type: 'nodes', nodes: node.continuations.nodes.map(c => materializeNodeParams(c, params)) }
+    : node.continuations;
+  if (call === node.call && cont === node.continuations) return node;
+  return { ...node, call, continuations: cont };
 }
 
 // ─── Sequence resolver ────────────────────────────────────────────────────────
