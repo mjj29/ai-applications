@@ -267,12 +267,6 @@ function addBubble(role, html, id) {
   return div;
 }
 
-function showThinking() {
-  if (!document.getElementById('chat-thinking'))
-    addBubble('assistant', '<em style="color:var(--text-muted)">Thinking…</em>', 'chat-thinking');
-}
-function hideThinking() { document.getElementById('chat-thinking')?.remove(); }
-
 // ─── Send / API ───────────────────────────────────────────────────────────────
 
 async function sendMessage(container) {
@@ -293,37 +287,109 @@ async function sendMessage(container) {
 
   addBubble('user', escHtml(text));
   chatMessages.push({ role: 'user', content: text });
-  showThinking();
+
+  // Create a live-streaming assistant bubble
+  const bubble       = createStreamingBubble();
+  const thinkDetails = bubble.querySelector('.chat-think-details');
+  const thinkContent = bubble.querySelector('.chat-think-content');
+  const thinkSummary = bubble.querySelector('.chat-think-summary');
+  const textEl       = bubble.querySelector('.chat-response-text');
+  const box          = document.getElementById('chat-messages');
+  box.appendChild(bubble);
+  box.scrollTop = box.scrollHeight;
+
+  let hasThinking = false;
+  let hasText     = false;
 
   try {
-    const result = await callClaude(sys, s, chatMessages, text);
-    hideThinking();
+    const result = await callClaudeStream(sys, s, chatMessages, text, {
+      onThinkingChunk(chunk) {
+        if (!hasThinking) {
+          hasThinking = true;
+          textEl.innerHTML = '';           // remove "Thinking…" placeholder
+          thinkDetails.style.display = '';
+          thinkDetails.open = true;
+        }
+        thinkContent.textContent += chunk;
+        box.scrollTop = box.scrollHeight;
+      },
+      onTextChunk(chunk) {
+        if (!hasText) {
+          hasText = true;
+          textEl.innerHTML = '';           // remove "Thinking…" placeholder
+        }
+        textEl.textContent += chunk;
+        box.scrollTop = box.scrollHeight;
+      },
+    });
+
+    // Collapse thinking section and update its label when streaming is done
+    if (hasThinking) {
+      thinkDetails.open = false;
+      thinkSummary.innerHTML =
+        '🧠 Thoughts <small style="font-weight:400;opacity:0.7">(click to expand)</small>';
+    }
 
     if (result.reply) {
-      addBubble('assistant', escHtml(result.reply));
+      if (!hasText) textEl.textContent = result.reply;  // fallback if no chunks fired
       chatMessages.push({ role: 'assistant', content: result.reply });
     }
 
     if (result.system) {
+      if (!hasText) textEl.innerHTML = '';  // clear placeholder when only a tool call was made
       result.system.id       = sys.id;
       result.system.metadata = { ...sys.metadata, ...result.system.metadata };
       saveSystem(result.system);
-      addBubble('assistant', '✅ System updated.');
+      const note = document.createElement('div');
+      note.style.cssText = 'margin-top:0.35rem;color:var(--green,#4caf50);font-size:0.8rem;font-weight:500';
+      note.textContent = '✅ System updated.';
+      bubble.appendChild(note);
       chatMessages.push({ role: 'assistant', content: 'System updated.' });
-      refreshTree(result.system);   // live update the right pane
+      refreshTree(result.system);
     }
 
     if (!result.reply && !result.system) {
-      addBubble('assistant', '(No response — check your API key and model name)');
+      textEl.innerHTML = '<em style="color:var(--text-muted)">(No response — check API key and model)</em>';
     }
   } catch (err) {
-    hideThinking();
-    addBubble('assistant', `⚠ ${escHtml(err.message)}`);
+    textEl.innerHTML = `<span style="color:#e74c3c">⚠ ${escHtml(err.message)}</span>`;
   } finally {
     input.disabled   = false;
     sendBtn.disabled = false;
     input.focus();
   }
+}
+
+function createStreamingBubble() {
+  const div = document.createElement('div');
+  div.style.cssText = `
+    align-self:flex-start;
+    max-width:92%;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:0.4rem 0.65rem;
+    font-size:0.83rem;
+    line-height:1.5;
+    word-break:break-word;
+  `;
+  div.innerHTML = `
+    <details class="chat-think-details"
+             style="display:none;margin-bottom:0.4rem;font-size:0.78rem;
+                    border-left:2px solid var(--accent);padding-left:0.5rem">
+      <summary class="chat-think-summary"
+               style="cursor:pointer;list-style:none;font-weight:600;color:var(--accent)">
+        🧠 Thinking…
+      </summary>
+      <div class="chat-think-content"
+           style="white-space:pre-wrap;margin-top:0.3rem;max-height:200px;
+                  overflow-y:auto;font-size:0.75rem;color:var(--text-muted)"></div>
+    </details>
+    <div class="chat-response-text" style="white-space:pre-wrap">
+      <em style="color:var(--text-muted)">Thinking…</em>
+    </div>
+  `;
+  return div;
 }
 
 // ─── Anthropic API call ───────────────────────────────────────────────────────
@@ -424,8 +490,13 @@ const TOOLS = [{
 
 // history = stored chatMessages (real exchanges only, no grounding)
 // userText = the new user message (already added to history by caller)
-async function callClaude(sys, settings, history, userText) {
+// Callbacks: onThinkingChunk(text), onTextChunk(text) — called as SSE deltas arrive.
+async function callClaudeStream(sys, settings, history, userText,
+                                { onThinkingChunk = ()=>{}, onTextChunk = ()=>{} } = {}) {
   const model = settings.model || DEFAULT_MODEL;
+
+  // Extended thinking is supported on claude-3-7+ / claude-opus-4 / claude-sonnet-4
+  const supportsThinking = /claude-3-7|claude-opus-4|claude-sonnet-4/i.test(model);
 
   // Build: [past exchanges...] [fresh grounding] [ack] [latest user message]
   // The last item in history is the userText we just pushed — exclude it here
@@ -438,21 +509,28 @@ async function callClaude(sys, settings, history, userText) {
     { role: 'user', content: userText },
   ];
 
+  const reqHeaders = {
+    'content-type':                              'application/json',
+    'x-api-key':                                 settings.apiKey,
+    'anthropic-version':                         '2023-06-01',
+    'anthropic-dangerous-direct-browser-access': 'true',
+  };
+  if (supportsThinking) reqHeaders['anthropic-beta'] = 'interleaved-thinking-2025-05-14';
+
+  const reqBody = {
+    model,
+    max_tokens: supportsThinking ? 16000 : 8192,
+    system:     SYSTEM_PROMPT,
+    messages,
+    tools:      TOOLS,
+    stream:     true,
+  };
+  if (supportsThinking) reqBody.thinking = { type: 'enabled', budget_tokens: 8000 };
+
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'content-type':                              'application/json',
-      'x-api-key':                                 settings.apiKey,
-      'anthropic-version':                         '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
-    },
-    body: JSON.stringify({
-      model,
-      max_tokens: 8192,
-      system:     SYSTEM_PROMPT,
-      messages,
-      tools: TOOLS,
-    }),
+    method:  'POST',
+    headers: reqHeaders,
+    body:    JSON.stringify(reqBody),
   });
 
   if (!resp.ok) {
@@ -460,13 +538,68 @@ async function callClaude(sys, settings, history, userText) {
     throw new Error(body?.error?.message ?? `HTTP ${resp.status}`);
   }
 
-  const data = await resp.json();
+  // ── Parse SSE stream ────────────────────────────────────────────────────────
+  // blocks[index] = { type, name, text, inputJson }
+  const blocks  = {};
+  const reader  = resp.body.getReader();
+  const decoder = new TextDecoder();
+  let   buf     = '';
+
+  const handleEvent = (data) => {
+    if (data.type === 'content_block_start') {
+      blocks[data.index] = {
+        type:      data.content_block.type,
+        name:      data.content_block.name ?? null,
+        text:      '',
+        inputJson: '',
+      };
+    } else if (data.type === 'content_block_delta') {
+      const bl = blocks[data.index];
+      if (!bl) return;
+      const d = data.delta;
+      if (d.type === 'text_delta') {
+        bl.text += d.text;
+        onTextChunk(d.text);
+      } else if (d.type === 'thinking_delta') {
+        bl.text += d.thinking;
+        onThinkingChunk(d.thinking);
+      } else if (d.type === 'input_json_delta') {
+        bl.inputJson += d.partial_json;
+      }
+    }
+  };
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+
+    // SSE events are separated by blank lines (\n\n)
+    const rawEvents = buf.split('\n\n');
+    buf = rawEvents.pop();  // keep any trailing incomplete event
+
+    for (const raw of rawEvents) {
+      if (!raw.trim()) continue;
+      let dataStr = null;
+      for (const line of raw.split('\n')) {
+        if (line.startsWith('data: ')) dataStr = line.slice(6);
+      }
+      if (!dataStr || dataStr === '[DONE]') continue;
+      try { handleEvent(JSON.parse(dataStr)); } catch { /* ignore parse errors */ }
+    }
+  }
+
+  // ── Extract results ─────────────────────────────────────────────────────────
   let reply  = null;
   let system = null;
 
-  for (const block of data.content ?? []) {
-    if (block.type === 'text')                                        reply  = block.text;
-    if (block.type === 'tool_use' && block.name === 'update_system') system = block.input?.system ?? null;
+  // Sort by numeric index so multi-block interleaved text is concatenated in order
+  for (const bl of Object.values(blocks)) {
+    if (bl.type === 'text' && bl.text)
+      reply = reply ? reply + bl.text : bl.text;
+    if (bl.type === 'tool_use' && bl.name === 'update_system') {
+      try { system = JSON.parse(bl.inputJson)?.system ?? null; } catch { /* malformed */ }
+    }
   }
 
   return { reply, system };
