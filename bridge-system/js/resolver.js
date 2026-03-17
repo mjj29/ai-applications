@@ -72,7 +72,15 @@ function bestBranch(competitive, intervention) {
 
 function callKey(call) {
   if (!call) return '_null';
-  if (call.type === 'bid') return `bid-${call.level}${call.strain}`;
+  if (call.type === 'bid') {
+    // If level/strain are both resolved (param was bound or no param), use the concrete key
+    if (call.level != null && call.strain != null && !call.levelParam && !call.strainParam)
+      return `bid-${call.level}${call.strain}`;
+    // Partially or fully unbound param bid — unique key so it doesn't accidentally clash
+    const lk = call.levelParam  ? `{${call.levelParam}}`  : call.level;
+    const sk = call.strainParam ? `{${call.strainParam}}` : (call.strain ?? '?');
+    return `bid-${lk}${sk}`;
+  }
   return call.type;
 }
 
@@ -195,11 +203,20 @@ function resolveBaseNodes(continuation, conventions) {
   if (continuation.type === 'ref')
     return resolveRef(continuation.conventionId, conventions, continuation.params);
   if (continuation.type === 'nodes') {
-    let nodes = continuation.nodes ?? [];
-    for (const ref of continuation.refs ?? []) {
-      nodes = [...nodes, ...resolveRef(ref.conventionId, conventions, ref.params)];
-    }
-    return nodes;
+    const inlineNodes = continuation.nodes ?? [];
+    const refNodes = (continuation.refs ?? []).flatMap(ref =>
+      resolveRef(ref.conventionId, conventions, ref.params));
+    // Priority: explicit inline (parent) > parameterized convention bid > explicit convention bid.
+    // Inline keys are pre-seeded so any matching ref node is silently dropped.
+    // Within refs, first-ref-wins for the same concrete key.
+    const seen = new Set(inlineNodes.map(n => callKey(n.call)));
+    const filteredRefs = refNodes.filter(n => {
+      const k = callKey(n.call);
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+    return [...inlineNodes, ...filteredRefs];
   }
   return [];
 }
@@ -209,7 +226,12 @@ function resolveRef(conventionId, conventions, params) {
   if (!conv) return [];
   const nodes = conv.nodes ?? [];
   if (!params || Object.keys(params).length === 0) return nodes;
-  return nodes.map(n => materializeNodeParams(n, params));
+  return dedupeMatNodes(
+    nodes.map(n => ({
+      node: materializeNodeParams(n, params),
+      isParam: !!(n.call?.levelParam || n.call?.strainParam),
+    }))
+  );
 }
 
 // Substitute bound param values into a call (leaves placeholder if param unbound)
@@ -243,11 +265,37 @@ function materializeCall(call, params) {
   };
 }
 
+// Dedup materialized entries [{node, isParam}]: parameterized origin wins over
+// explicit for the same concrete call key. First occurrence wins within each tier.
+function dedupeMatNodes(entries) {
+  const result = [];
+  const seen = new Map(); // key -> { idx, isParam }
+  for (const { node, isParam } of entries) {
+    const k = callKey(node.call);
+    if (seen.has(k)) {
+      const slot = seen.get(k);
+      if (isParam && !slot.isParam) { result[slot.idx] = node; slot.isParam = true; }
+    } else {
+      seen.set(k, { idx: result.length, isParam });
+      result.push(node);
+    }
+  }
+  return result;
+}
+
 function materializeNodeParams(node, params) {
   const call = materializeCall(node.call, params);
-  const cont = node.continuations?.type === 'nodes'
-    ? { type: 'nodes', nodes: node.continuations.nodes.map(c => materializeNodeParams(c, params)) }
-    : node.continuations;
+  let cont = node.continuations;
+  if (node.continuations?.type === 'nodes') {
+    // Recurse into each child and dedup: parameterized beats explicit at every level.
+    const deduped = dedupeMatNodes(
+      node.continuations.nodes.map(c => ({
+        node: materializeNodeParams(c, params),
+        isParam: !!(c.call?.levelParam || c.call?.strainParam),
+      }))
+    );
+    cont = { type: 'nodes', nodes: deduped };
+  }
   if (call === node.call && cont === node.continuations) return node;
   return { ...node, call, continuations: cont };
 }
