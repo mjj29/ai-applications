@@ -16,6 +16,7 @@ let selectedPath  = [];   // array of node ids from root to current selection
 let editingNode   = null; // id of node currently in the editor form
 let _justDragged  = false; // suppresses the click that browsers fire after dragend
 let expandedNodes = new Set(); // node IDs whose children are currently visible
+let expandedConventions = new Set(); // convention IDs whose body is expanded
 
 // ─── Call/clone helpers ───────────────────────────────────────────────────────
 
@@ -631,54 +632,7 @@ function showEditForm(node, sys) {
       <button class="btn btn-danger"  id="btn-delete-node">Delete</button>
     </div>`;
 
-  // Continuation type toggle
-  document.getElementById('f-cont-type').addEventListener('change', (e) => {
-    document.getElementById('f-cont-ref-row').classList.toggle('hidden', e.target.value !== 'ref');
-    document.getElementById('f-cont-refs-row').classList.toggle('hidden', e.target.value !== 'nodes');
-    _updateRefParams();
-  });
-
-  // Convention reference param bindings
-  const _refInitialParams = node.continuations?.type === 'ref' ? (node.continuations.params ?? {}) : {};
-  const _updateRefParams = () => {
-    const convId = document.getElementById('f-cont-ref')?.value;
-    const s = getActiveSystem();
-    const conv = convId ? s?.conventions?.[convId] : null;
-    const ps   = conv?.params ?? [];
-    const container = document.getElementById('f-cont-ref-params');
-    if (!container) return;
-    if (!ps.length) { container.innerHTML = ''; return; }
-    container.innerHTML = ps.map(p => {
-      const val = _refInitialParams[p.name] ?? '';
-      const input = p.type === 'strain'
-        ? `<select data-param-binding="${p.name}"
-                   style="font-size:0.8rem;padding:0.15rem 0.3rem;background:var(--surface);
-                          border:1px solid var(--border);color:var(--text);border-radius:3px">
-             <option value="">— unset —</option>
-             <option value="C" ${val==='C'?'selected':''}>\u2663 Clubs</option>
-             <option value="D" ${val==='D'?'selected':''}>\u2666 Diamonds</option>
-             <option value="H" ${val==='H'?'selected':''}>\u2665 Hearts</option>
-             <option value="S" ${val==='S'?'selected':''}>\u2660 Spades</option>
-             <option value="N" ${val==='N'?'selected':''}>NT</option>
-           </select>`
-        : p.type === 'level'
-        ? `<input type="number" min="1" max="7" data-param-binding="${p.name}" value="${val}"
-                  style="width:50px;font-size:0.8rem;background:var(--surface);border:1px solid var(--border);
-                         color:var(--text);border-radius:3px;padding:0.15rem 0.3rem">`
-        : `<input type="text" data-param-binding="${p.name}" value="${val}"
-                  style="width:90px;font-size:0.8rem;background:var(--surface);border:1px solid var(--border);
-                         color:var(--text);border-radius:3px;padding:0.15rem 0.3rem" placeholder="—">`;
-      return `<div style="display:flex;align-items:center;gap:0.5rem;margin-top:0.3rem">
-        <code style="font-size:0.78rem;color:var(--accent);min-width:5rem">{${p.name}}</code>
-        <span style="font-size:0.78rem;color:var(--text-muted);flex:1">${p.label || p.name}</span>
-        ${input}
-      </div>`;
-    }).join('');
-  };
-  document.getElementById('f-cont-ref').addEventListener('change', _updateRefParams);
-  _updateRefParams();
-
-  // ── Multi-convention refs (type = nodes) ────────────────────────────────
+  // ── Convention refs ─────────────────────────────────────────────────────
   const _convOptions = Object.values(getActiveSystem()?.conventions ?? {});
 
   function _makeParamBindingHtml(param, boundVal) {
@@ -841,7 +795,7 @@ function saveNode(node) {
   const announce= document.getElementById('f-announce').value.trim();
   const notes   = document.getElementById('f-notes').value.trim();
 
-  // Always nodes
+  const meaning = {};
   if (desc)    meaning.description = desc;
   if (hcpMin || hcpMax) meaning.hcp = [hcpMin ? +hcpMin : undefined, hcpMax ? +hcpMax : undefined];
   if (shape)   meaning.shape    = shape;
@@ -1148,6 +1102,7 @@ function renderConventionsSection() {
 
     const convBody = document.createElement('div');
     convBody.style.cssText = 'padding:0.4rem 0.6rem;display:none';
+    if (expandedConventions.has(conv.id)) convBody.style.display = 'block';
 
     const convTree = document.createElement('div');
     convTree.className = 'bid-tree';
@@ -1170,7 +1125,10 @@ function renderConventionsSection() {
     // Toggle expand
     convHeader.addEventListener('click', (e) => {
       if (e.target.tagName === 'BUTTON') return;
-      convBody.style.display = convBody.style.display === 'none' ? 'block' : 'none';
+      const open = convBody.style.display !== 'none';
+      convBody.style.display = open ? 'none' : 'block';
+      if (open) expandedConventions.delete(conv.id);
+      else      expandedConventions.add(conv.id);
     });
 
     convHeader.querySelector('[data-conv-edit]').addEventListener('click', (e) => {
@@ -1179,6 +1137,7 @@ function renderConventionsSection() {
     });
     convHeader.querySelector('[data-conv-add]').addEventListener('click', (e) => {
       e.stopPropagation();
+      expandedConventions.add(conv.id);
       showAddBidModal(null, `convention:${conv.id}`);
     });
     convHeader.querySelector('[data-conv-del]').addEventListener('click', (e) => {
