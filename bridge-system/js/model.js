@@ -66,6 +66,21 @@ export function makeSystem(id, name) {
 const SUIT_SYMBOLS = { C: '♣', D: '♦', H: '♥', S: '♠', N: 'NT' };
 const SUIT_CLASSES = { C: 'suit-club', D: 'suit-diamond', H: 'suit-heart', S: 'suit-spade', N: 'suit-nt' };
 
+/**
+ * Render free text with suit symbols: !S !H !D !C !N (case-insensitive) →
+ * coloured suit-symbol spans, matching the style used in bid calls.
+ * HTML-escapes all other content first.
+ */
+export function renderText(text) {
+  if (!text) return '';
+  return text
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/!(s|h|d|c|n)/gi, (_, s) => {
+      const k = s.toUpperCase();
+      return `<span class="${SUIT_CLASSES[k]}">${SUIT_SYMBOLS[k]}</span>`;
+    });
+}
+
 export function callToString(call) {
   if (!call) return '';
   switch (call.type) {

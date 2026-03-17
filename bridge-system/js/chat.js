@@ -6,7 +6,7 @@
 'use strict';
 
 import { getActiveSystem, saveSystem } from './store.js';
-import { callToHTML, sortNodes } from './model.js';
+import { callToHTML, sortNodes, renderText } from './model.js';
 import { flash } from './ui.js';
 
 const SETTINGS_KEY  = 'bridge_ai_settings';
@@ -212,9 +212,9 @@ function renderNode(nd, sys, depth) {
   const m    = nd.meaning ?? {};
   const pl   = depth * 16;
   const call = callToHTML(nd.call);
-  const desc = m.description ? `<span style="color:var(--text-muted);margin-left:0.4em">${escHtml(m.description)}</span>` : '';
+  const desc = m.description ? `<span style="color:var(--text-muted);margin-left:0.4em">${renderText(m.description)}</span>` : '';
   const hcp  = m.hcp ? `<span style="color:var(--accent);font-size:0.78rem;margin-left:0.3em;font-family:var(--font-mono)">[${m.hcp[0]??''}–${m.hcp[1]??''}]</span>` : '';
-  const shape= m.shape ? `<span style="color:var(--text-muted);font-size:0.78rem;margin-left:0.3em">${escHtml(m.shape)}</span>` : '';
+  const shape= m.shape ? `<span style="color:var(--text-muted);font-size:0.78rem;margin-left:0.3em">${renderText(m.shape)}</span>` : '';
   const vars = (nd.variants?.length)
     ? `<span style="font-size:0.72rem;margin-left:0.3em;color:var(--yellow);
                     border:1px solid rgba(243,156,18,.3);border-radius:99px;

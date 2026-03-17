@@ -4,7 +4,7 @@
  */
 'use strict';
 
-import { callToHTML, interventionToString, sortNodes } from './model.js';
+import { callToHTML, interventionToString, sortNodes, renderText } from './model.js';
 import { getActiveSystem } from './store.js';
 import { resolve } from './resolver.js';
 
@@ -102,7 +102,7 @@ function buildPositionNode(node, sys) {
   header.className = 'bid-node-header';
   header.innerHTML = `
     <span class="call-badge">${callToHTML(node.call)}</span>
-    <span class="bid-meaning">${m?.description ?? ''}</span>
+    <span class="bid-meaning">${renderText(m?.description ?? '')}</span>
     ${m?.hcp     ? `<span class="node-hcp">[${m.hcp[0] ?? ''}–${m.hcp[1] ?? ''}]</span>` : ''}
     ${m?.announce ? `<span style="color:var(--accent);font-size:0.78rem;margin-left:0.3rem">"${m.announce}"</span>` : ''}
     ${m?.alert    ? '<span class="tag tag-alert">Alert</span>' : ''}

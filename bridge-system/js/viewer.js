@@ -3,7 +3,7 @@
  */
 'use strict';
 
-import { callToHTML, callToString, interventionToString, sortNodes } from './model.js';
+import { callToHTML, callToString, interventionToString, sortNodes, renderText } from './model.js';
 import { getActiveSystem } from './store.js';
 import { resolve } from './resolver.js';
 
@@ -99,7 +99,7 @@ function buildViewNode(node, sys) {
     }).join('');
   header.innerHTML = `
     <span class="call-badge">${callToHTML(node.call)}</span>
-    <span class="bid-meaning">${m?.description ?? ''}</span>
+    <span class="bid-meaning">${renderText(m?.description ?? '')}</span>
     ${hcpDisplay}
     ${variantBadges}
     ${m?.alert    ? '<span class="tag tag-alert">Alert</span>'      : ''}
@@ -170,10 +170,10 @@ function showViewDetail(node, resolved, sys, intervention) {
 
     ${hcp ? `<div class="detail-section"><h3>HCP Range</h3><div class="hcp-range">${hcp}</div></div>` : ''}
 
-    ${m?.shape    ? `<div class="detail-section"><h3>Shape</h3><div>${m.shape}</div></div>` : ''}
+    ${m?.shape    ? `<div class="detail-section"><h3>Shape</h3><div>${renderText(m.shape)}</div></div>` : ''}
     ${m?.forcing  ? `<div class="detail-section"><h3>Forcing</h3><div>${m.forcing}</div></div>` : ''}
-    ${m?.description ? `<div class="detail-section"><h3>Description</h3><div style="font-size:0.88rem">${m.description}</div></div>` : ''}
-    ${m?.notes    ? `<div class="detail-section"><h3>Notes</h3><div style="font-size:0.82rem;color:var(--text-muted)">${m.notes}</div></div>` : ''}
+    ${m?.description ? `<div class="detail-section"><h3>Description</h3><div style="font-size:0.88rem">${renderText(m.description)}</div></div>` : ''}
+    ${m?.notes    ? `<div class="detail-section"><h3>Notes</h3><div style="font-size:0.82rem;color:var(--text-muted)">${renderText(m.notes)}</div></div>` : ''}
 
     ${resolved.notes.length ? `
       <div class="detail-section">

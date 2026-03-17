@@ -3,7 +3,7 @@
  */
 'use strict';
 
-import { callToHTML, callToString, interventionToString, parseSequence, sortNodes } from './model.js';
+import { callToHTML, callToString, interventionToString, parseSequence, sortNodes, renderText } from './model.js';
 import { getActiveSystem } from './store.js';
 import { resolveSequence } from './resolver.js';
 
@@ -145,7 +145,7 @@ function renderResult(res) {
         ? `<span style="color:var(--yellow);font-size:0.8rem;margin-right:0.3rem">(${interventionToString(step.intervention)})</span>` : '';
       tr.innerHTML = `
         <td style="white-space:nowrap">${intervention}${callToHTML(step.call)}</td>
-        <td>${m?.description ? `<span>${m.description}</span>` : '<span style="color:var(--text-muted)">—</span>'}
+        <td>${m?.description ? `<span>${renderText(m.description)}</span>` : '<span style="color:var(--text-muted)">—</span>'}
             ${m?.announce ? `<span style="color:var(--accent);font-size:0.78rem;margin-left:0.3rem">"${m.announce}"</span>` : ''}
             ${m?.alert    ? '<span class="tag tag-alert" style="margin-left:0.25rem">Alert</span>' : ''}
             ${m?.notes    ? `<div style="color:var(--text-muted);font-size:0.78rem;margin-top:0.15rem">${m.notes}</div>` : ''}</td>
@@ -175,7 +175,7 @@ function renderResult(res) {
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>${callToHTML(node.call)}</td>
-        <td>${nm?.description ?? '<span style="color:var(--text-muted)">—</span>'}
+        <td>${nm?.description ? renderText(nm.description) : '<span style="color:var(--text-muted)">—</span>'}
             ${nm?.announce ? `<span style="color:var(--accent);font-size:0.78rem;margin-left:0.3rem">"${nm.announce}"</span>` : ''}
             ${nm?.alert    ? '<span class="tag tag-alert" style="margin-left:0.25rem">Alert</span>' : ''}</td>
         <td style="font-family:monospace;font-size:0.82rem;white-space:nowrap">${nm?.hcp ? `${nm.hcp[0] ?? ''}–${nm.hcp[1] ?? ''}` : ''}</td>

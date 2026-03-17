@@ -4,8 +4,8 @@
 'use strict';
 
 import { callToHTML, callToString, parseCall, parseSequence, makeBidNode,
-         makeMeaning, makeVariant, makeCondition, PASS,
-         sortNodes, variantBadgeText } from './model.js';
+         makeMeaning, makeVariant, makeCondition, makeConvention, PASS,
+         sortNodes, variantBadgeText, renderText } from './model.js';
 import { getActiveSystem, saveSystem } from './store.js';
 import { flash }  from './ui.js';
 import { fetchLibraryIndex, fetchLibraryConvention } from './library.js';
@@ -67,14 +67,25 @@ function findParentArray(sys, nodeId) {
  */
 function shiftSuitsInText(text, delta) {
   if (!text || !delta) return text;
-  const SYM = ['♣', '♦', '♥', '♠', 'NT'];
-  const LET = ['C', 'D', 'H', 'S', 'N'];
-  // NT must be matched before N; symbols before letters
-  return text.replace(/NT|♣|♦|♥|♠|\b(C|D|H|S|N)\b/g, m => {
+  const SYM  = ['♣', '♦', '♥', '♠', 'NT'];
+  const LET  = ['C', 'D', 'H', 'S', 'N'];
+  const BANG = ['c', 'd', 'h', 's', 'n']; // !x notation (lowercase preserved)
+  // !N / !NT must be matched before bare N; Unicode symbols before letters
+  return text.replace(/!NT|!(c|d|h|s|n)|NT|♣|♦|♥|♠|\b(C|D|H|S|N)\b/gi, m => {
+    // !x notation — preserve the ! prefix and letter case
+    if (m.startsWith('!')) {
+      const key = m.slice(1).toUpperCase() === 'NT' ? 'N' : m.slice(1).toUpperCase();
+      const bi = LET.indexOf(key);
+      if (bi >= 0) {
+        const shifted = LET[(bi + delta) % 5];
+        return '!' + (m.slice(1) === m.slice(1).toLowerCase() ? shifted.toLowerCase() : shifted);
+      }
+      return m;
+    }
     const si = SYM.indexOf(m);
     if (si >= 0) return SYM[(si + delta) % 5];
-    const li = LET.indexOf(m);
-    if (li >= 0) return LET[(li + delta) % 5];
+    const li = LET.indexOf(m.toUpperCase());
+    if (li >= 0) return m === m.toLowerCase() ? LET[(li + delta) % 5].toLowerCase() : LET[(li + delta) % 5];
     return m;
   });
 }
@@ -409,18 +420,20 @@ function buildNodeElement(node, sys, path) {
 
   header.innerHTML = `
     <span class="call-badge">${callToHTML(node.call)}</span>
-    <span class="bid-meaning">${node.meaning?.description ?? ''}</span>
+    <span class="bid-meaning">${renderText(node.meaning?.description ?? '')}</span>
     ${hcpDisplay}
     ${variantBadges}
     ${node.meaning?.alert ? '<span class="tag tag-alert">Alert</span>' : ''}
     ${node.meaning?.forcing ? `<span class="tag tag-forcing">${node.meaning.forcing}</span>` : ''}
     ${node.continuations?.type === 'tbd' || (node.continuations?.type === 'nodes' && !node.continuations.nodes?.length && !node.continuations.refs?.length) ? '<span class="tag tag-tbd">TBD</span>' : ''}
     ${cloneBtn}
-    <button class="btn-icon add-child-btn" data-id="${node.id}" title="Add response">＋</button>`;
+    <button class="btn-icon add-child-btn" data-id="${node.id}" title="Add response">＋</button>
+    <button class="btn-icon delete-node-btn" data-id="${node.id}" title="Delete">🗑</button>`;
 
   header.addEventListener('click', (e) => {
     if (_justDragged) return;
     if (e.target.classList.contains('add-child-btn')) return;
+    if (e.target.classList.contains('delete-node-btn')) return;
     // Toggle children collapse
     const kids = el.querySelector(':scope > .bid-node-children');
     if (kids) {
@@ -438,6 +451,12 @@ function buildNodeElement(node, sys, path) {
   header.querySelector('.add-child-btn').addEventListener('click', (e) => {
     e.stopPropagation();
     showAddBidModal(node.id);
+  });
+
+  header.querySelector('.delete-node-btn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    const s = getActiveSystem();
+    if (s) deleteNode(node);
   });
 
   const cloneDownBtn = header.querySelector('.clone-down-btn');
