@@ -192,9 +192,15 @@ export function resolve(node, ctx, conventions = {}) {
 
 function resolveBaseNodes(continuation, conventions) {
   if (!continuation) return [];
-  if (continuation.type === 'nodes') return continuation.nodes;
   if (continuation.type === 'ref')
     return resolveRef(continuation.conventionId, conventions, continuation.params);
+  if (continuation.type === 'nodes') {
+    let nodes = continuation.nodes ?? [];
+    for (const ref of continuation.refs ?? []) {
+      nodes = [...nodes, ...resolveRef(ref.conventionId, conventions, ref.params)];
+    }
+    return nodes;
+  }
   return [];
 }
 

@@ -413,7 +413,7 @@ function buildNodeElement(node, sys, path) {
     ${variantBadges}
     ${node.meaning?.alert ? '<span class="tag tag-alert">Alert</span>' : ''}
     ${node.meaning?.forcing ? `<span class="tag tag-forcing">${node.meaning.forcing}</span>` : ''}
-    ${node.continuations?.type === 'tbd' ? '<span class="tag tag-tbd">TBD</span>' : ''}
+    ${node.continuations?.type === 'tbd' || (node.continuations?.type === 'nodes' && !node.continuations.nodes?.length && !node.continuations.refs?.length) ? '<span class="tag tag-tbd">TBD</span>' : ''}
     ${cloneBtn}
     <button class="btn-icon add-child-btn" data-id="${node.id}" title="Add response">＋</button>`;
 
@@ -513,6 +513,13 @@ function buildNodeElement(node, sys, path) {
     for (const child of sortNodes(node.continuations.nodes)) {
       children.appendChild(buildNodeElement(child, sys, newPath));
     }
+    for (const ref of node.continuations.refs ?? []) {
+      const conv = sys.conventions?.[ref.conventionId];
+      const badge = document.createElement('div');
+      badge.style.cssText = 'padding:0.3rem 0.5rem;font-size:0.8rem;color:var(--accent)';
+      badge.textContent = `→ ${conv?.name ?? ref.conventionId}`;
+      children.appendChild(badge);
+    }
   } else if (node.continuations?.type === 'ref') {
     const ref = sys.conventions[node.continuations.conventionId];
     if (ref) {
@@ -594,24 +601,17 @@ function showEditForm(node, sys) {
     </div>
 
     <div style="margin-top:0.5rem;border-top:1px solid var(--border);padding-top:0.75rem">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem">
-        <span style="font-size:0.8rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em">Continuations</span>
-        <select id="f-cont-type" style="width:auto;font-size:0.8rem;padding:0.2rem 0.4rem">
-          <option value="tbd"   ${node.continuations?.type==='tbd'   ? 'selected':''}>TBD</option>
-          <option value="end"   ${node.continuations?.type==='end'   ? 'selected':''}>End (sign-off)</option>
-          <option value="nodes" ${node.continuations?.type==='nodes' ? 'selected':''}>Inline responses</option>
-          <option value="ref"   ${node.continuations?.type==='ref'   ? 'selected':''}>Convention reference</option>
-        </select>
-      </div>
-      <div id="f-cont-ref-row" class="${node.continuations?.type==='ref'?'':'hidden'} form-group">
-        <label>Convention</label>
-        <select id="f-cont-ref">
-          <option value="">— pick a convention —</option>
+      <div style="font-size:0.8rem;color:var(--text-muted);text-transform:uppercase;
+                  letter-spacing:.05em;margin-bottom:0.5rem">Conventions</div>
+      <div id="f-cont-refs-list"></div>
+      <div style="display:flex;gap:0.4rem;margin-top:0.35rem;align-items:center">
+        <select id="f-cont-refs-picker" style="flex:1;font-size:0.8rem;padding:0.2rem 0.4rem;
+                  background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:3px">
+          <option value="">— include a convention —</option>
           ${Object.values(sys.conventions ?? {}).map(c =>
-            `<option value="${c.id}" ${node.continuations?.conventionId === c.id ? 'selected' : ''}>${c.name}</option>`
-          ).join('')}
+            `<option value="${c.id}">${c.name}</option>`).join('')}
         </select>
-        <div id="f-cont-ref-params" style="margin-top:0.35rem"></div>
+        <button class="btn btn-sm" id="f-cont-refs-add-btn">＋ Add</button>
       </div>
     </div>
 
@@ -634,6 +634,7 @@ function showEditForm(node, sys) {
   // Continuation type toggle
   document.getElementById('f-cont-type').addEventListener('change', (e) => {
     document.getElementById('f-cont-ref-row').classList.toggle('hidden', e.target.value !== 'ref');
+    document.getElementById('f-cont-refs-row').classList.toggle('hidden', e.target.value !== 'nodes');
     _updateRefParams();
   });
 
@@ -676,6 +677,61 @@ function showEditForm(node, sys) {
   };
   document.getElementById('f-cont-ref').addEventListener('change', _updateRefParams);
   _updateRefParams();
+
+  // ── Multi-convention refs (type = nodes) ────────────────────────────────
+  const _convOptions = Object.values(getActiveSystem()?.conventions ?? {});
+
+  function _makeParamBindingHtml(param, boundVal) {
+    if (param.type === 'strain')
+      return `<select data-param-binding="${param.name}"
+                style="font-size:0.78rem;padding:0.1rem 0.25rem;background:var(--surface);
+                       border:1px solid var(--border);color:var(--text);border-radius:3px">
+               <option value="">—</option>
+               <option value="C" ${boundVal==='C'?'selected':''}>&#9827;</option>
+               <option value="D" ${boundVal==='D'?'selected':''}>&#9830;</option>
+               <option value="H" ${boundVal==='H'?'selected':''}>&#9829;</option>
+               <option value="S" ${boundVal==='S'?'selected':''}>&#9824;</option>
+               <option value="N" ${boundVal==='N'?'selected':''}>NT</option>
+             </select>`;
+    if (param.type === 'level')
+      return `<input type="number" min="1" max="7" data-param-binding="${param.name}" value="${boundVal??''}"
+               style="width:40px;font-size:0.78rem;padding:0.1rem 0.25rem;background:var(--surface);
+                      border:1px solid var(--border);color:var(--text);border-radius:3px">`;
+    return `<input type="text" data-param-binding="${param.name}" value="${boundVal??''}"
+             placeholder="—" style="width:70px;font-size:0.78rem;padding:0.1rem 0.25rem;background:var(--surface);
+                      border:1px solid var(--border);color:var(--text);border-radius:3px">`;
+  }
+
+  function _appendConvRefItem(convId, boundParams) {
+    const conv = _convOptions.find(c => c.id === convId);
+    if (!conv) return;
+    const item = document.createElement('div');
+    item.className = 'conv-ref-item';
+    item.dataset.refConvId = convId;
+    item.style.cssText = 'display:flex;align-items:center;gap:0.4rem;padding:0.3rem 0.45rem;'
+      + 'background:rgba(74,158,255,0.06);border:1px solid var(--border);border-radius:4px;margin-bottom:0.3rem';
+    const paramHtml = (conv.params ?? []).map(p =>
+      `<span style="font-size:0.75rem;color:var(--text-muted);">{${p.name}}</span>
+       ${_makeParamBindingHtml(p, boundParams?.[p.name])}`
+    ).join(' ');
+    item.innerHTML = `
+      <span style="flex:1;font-size:0.83rem;color:var(--accent);font-weight:500">${conv.name}</span>
+      <span style="display:flex;align-items:center;gap:0.35rem;flex-wrap:wrap">${paramHtml}</span>
+      <button class="btn btn-sm btn-danger" data-remove-conv-ref title="Remove">✕</button>`;
+    item.querySelector('[data-remove-conv-ref]').addEventListener('click', () => item.remove());
+    document.getElementById('f-cont-refs-list').appendChild(item);
+  }
+
+  // Pre-populate existing refs
+  for (const ref of (node.continuations?.type === 'nodes' ? node.continuations.refs ?? [] : []))
+    _appendConvRefItem(ref.conventionId, ref.params ?? {});
+
+  document.getElementById('f-cont-refs-add-btn').addEventListener('click', () => {
+    const picker = document.getElementById('f-cont-refs-picker');
+    if (!picker.value) return;
+    _appendConvRefItem(picker.value, {});
+    picker.value = '';
+  });
 
   document.getElementById('btn-save-node').addEventListener('click',   () => saveNode(node));
   document.getElementById('btn-delete-node').addEventListener('click', () => deleteNode(node));
@@ -784,10 +840,8 @@ function saveNode(node) {
   const alert   = document.getElementById('f-alert').checked;
   const announce= document.getElementById('f-announce').value.trim();
   const notes   = document.getElementById('f-notes').value.trim();
-  const contType= document.getElementById('f-cont-type').value;
-  const contRef = document.getElementById('f-cont-ref')?.value.trim();
 
-  const meaning = {};
+  // Always nodes
   if (desc)    meaning.description = desc;
   if (hcpMin || hcpMax) meaning.hcp = [hcpMin ? +hcpMin : undefined, hcpMax ? +hcpMax : undefined];
   if (shape)   meaning.shape    = shape;
@@ -796,21 +850,17 @@ function saveNode(node) {
   if (announce)meaning.announce = announce;
   if (notes)   meaning.notes    = notes;
 
-  let continuations;
-  if (contType === 'ref') {
+  // Always nodes — preserve existing inline nodes, collect convention refs from the list
+  const baseNodes = node.continuations?.type === 'nodes' ? node.continuations.nodes : [];
+  const refs = [...document.querySelectorAll('#f-cont-refs-list .conv-ref-item')].map(row => {
     const bindings = {};
-    document.querySelectorAll('#f-cont-ref-params [data-param-binding]').forEach(el => {
+    row.querySelectorAll('[data-param-binding]').forEach(el => {
       if (el.value) bindings[el.dataset.paramBinding] = el.value;
     });
-    continuations = { type: 'ref', conventionId: contRef,
+    return { conventionId: row.dataset.refConvId,
       ...(Object.keys(bindings).length ? { params: bindings } : {}) };
-  } else if (contType === 'end')  continuations = { type: 'end' };
-  else if (contType === 'nodes') {
-    // preserve existing nodes
-    continuations = node.continuations?.type === 'nodes' ? node.continuations : { type: 'nodes', nodes: [] };
-  } else {
-    continuations = { type: 'tbd' };
-  }
+  });
+  const continuations = { type: 'nodes', nodes: baseNodes, ...(refs.length ? { refs } : {}) };
 
   updateNodeInSystem(sys, node.id, { meaning, continuations });
   saveSystem(sys);

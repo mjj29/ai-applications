@@ -222,9 +222,15 @@ function renderNode(nd, sys, depth) {
     : '';
 
   let kids = '';
-  if (nd.continuations?.type === 'nodes' && nd.continuations.nodes.length) {
+  if (nd.continuations?.type === 'nodes' &&
+      (nd.continuations.nodes.length || nd.continuations.refs?.length)) {
+    const refBadges = (nd.continuations.refs ?? []).map(r => {
+      const cv = (sys.conventions ?? {})[r.conventionId];
+      return cv ? `<div style="padding-left:${pl + 20}px;color:var(--accent);font-size:0.78rem;font-style:italic">→ ${escHtml(cv.name)}</div>` : '';
+    }).join('');
     kids = `<div style="padding-left:${pl + 16}px;border-left:1px solid var(--border);margin-left:${pl + 6}px;padding-top:1px">
       ${renderNodes(sortNodes(nd.continuations.nodes), sys, 0)}
+      ${refBadges}
     </div>`;
   } else if (nd.continuations?.type === 'ref') {
     const cv = (sys.conventions ?? {})[nd.continuations.conventionId];
