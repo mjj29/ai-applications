@@ -1481,6 +1481,20 @@
           "meaning": {"description": "5!s + 4!h — to play in 3NT or explore game", "alert": true},
           "variants": [], "competitive": [],
           "continuations": {"type": "tbd"}
+        },
+        {
+          "id": "2nt-4c",
+          "call": {"type": "bid", "level": 4, "strain": "C"},
+          "meaning": {"description": "Roman Key-Quant Gerber (RKQG)", "alert": true, "forcing": "gf"},
+          "variants": [], "competitive": [],
+          "continuations": {"type": "ref", "conventionId": "rkqg"}
+        },
+        {
+          "id": "2nt-4nt",
+          "call": {"type": "bid", "level": 4, "strain": "N"},
+          "meaning": {"description": "Viscount — quantitative slam invite", "alert": true},
+          "variants": [], "competitive": [],
+          "continuations": {"type": "ref", "conventionId": "viscount"}
         }
       ]
     },
@@ -3103,16 +3117,140 @@
         }
       ]
     },
+    "3s-resp": {
+      "id": "3s-resp",
+      "name": "Responses to 3\u2660 Opening",
+      "description": "Responses to 3!s (GF !s 3-loser OR gambling 3NT with solid 7-8 card minor, \u2264Q outside). 3NT=stops in 3 suits; clubs at any level=pass-or-correct; 4!d=singleton ask.",
+      "params": [],
+      "nodes": [
+        {
+          "id": "3s-3nt",
+          "call": {"type": "bid", "level": 3, "strain": "N"},
+          "meaning": {"description": "Stops in 3 suits (GF !s investigation)"},
+          "variants": [], "competitive": [],
+          "continuations": {"type": "tbd"}
+        },
+        {
+          "id": "3s-4c",
+          "call": {"type": "bid", "level": 4, "strain": "C"},
+          "meaning": {"description": "Pass or correct — gambling: pass=!c; opener bids 4!d=!d"},
+          "variants": [], "competitive": [],
+          "continuations": {"type": "tbd"}
+        },
+        {
+          "id": "3s-4d-ask",
+          "call": {"type": "bid", "level": 4, "strain": "D"},
+          "meaning": {"description": "Singleton ask (GF !s). Opener: 4!h=singleton !h; 4!s=singleton !s; 4NT=no singletons; 5!c/5!d=singleton in other minor", "alert": true, "forcing": "1round"},
+          "variants": [], "competitive": [],
+          "continuations": {
+            "type": "nodes",
+            "nodes": [
+              {
+                "id": "3s-4d-4h",
+                "call": {"type": "bid", "level": 4, "strain": "H"},
+                "meaning": {"description": "Singleton !h"},
+                "variants": [], "competitive": [],
+                "continuations": {"type": "end"}
+              },
+              {
+                "id": "3s-4d-4s",
+                "call": {"type": "bid", "level": 4, "strain": "S"},
+                "meaning": {"description": "Singleton !s"},
+                "variants": [], "competitive": [],
+                "continuations": {"type": "end"}
+              },
+              {
+                "id": "3s-4d-4nt",
+                "call": {"type": "bid", "level": 4, "strain": "N"},
+                "meaning": {"description": "No singletons"},
+                "variants": [], "competitive": [],
+                "continuations": {"type": "end"}
+              },
+              {
+                "id": "3s-4d-5c",
+                "call": {"type": "bid", "level": 5, "strain": "C"},
+                "meaning": {"description": "Singleton in other minor (!c)"},
+                "variants": [], "competitive": [],
+                "continuations": {"type": "end"}
+              },
+              {
+                "id": "3s-4d-5d",
+                "call": {"type": "bid", "level": 5, "strain": "D"},
+                "meaning": {"description": "Singleton in other minor (!d)"},
+                "variants": [], "competitive": [],
+                "continuations": {"type": "end"}
+              }
+            ],
+            "refs": []
+          }
+        },
+        {
+          "id": "3s-5c-poc",
+          "call": {"type": "bid", "level": 5, "strain": "C"},
+          "meaning": {"description": "Pass or correct at 5-level — gambling: pass=!c; 5!d=!d"},
+          "variants": [], "competitive": [],
+          "continuations": {"type": "end"}
+        }
+      ]
+    },
+    "3nt-open-resp": {
+      "id": "3nt-open-resp",
+      "name": "Responses to 3NT Opening",
+      "description": "Responses to 3NT opening (4-level preempt in either minor, 8 cards). Clubs at any level=pass-or-correct (pass=!c, diamonds=!d); 4!d=enquiry (4!h=!c, 4!s=!d).",
+      "params": [],
+      "nodes": [
+        {
+          "id": "3nt-4c",
+          "call": {"type": "bid", "level": 4, "strain": "C"},
+          "meaning": {"description": "Pass or correct — pass=!c; opener bids 4!d=!d"},
+          "variants": [], "competitive": [],
+          "continuations": {"type": "tbd"}
+        },
+        {
+          "id": "3nt-4d-enq",
+          "call": {"type": "bid", "level": 4, "strain": "D"},
+          "meaning": {"description": "Enquiry — opener: 4!h=clubs; 4!s=diamonds", "alert": true, "forcing": "1round"},
+          "variants": [], "competitive": [],
+          "continuations": {
+            "type": "nodes",
+            "nodes": [
+              {
+                "id": "3nt-4d-4h",
+                "call": {"type": "bid", "level": 4, "strain": "H"},
+                "meaning": {"description": "Clubs"},
+                "variants": [], "competitive": [],
+                "continuations": {"type": "tbd"}
+              },
+              {
+                "id": "3nt-4d-4s",
+                "call": {"type": "bid", "level": 4, "strain": "S"},
+                "meaning": {"description": "Diamonds"},
+                "variants": [], "competitive": [],
+                "continuations": {"type": "tbd"}
+              }
+            ],
+            "refs": []
+          }
+        },
+        {
+          "id": "3nt-5c-poc",
+          "call": {"type": "bid", "level": 5, "strain": "C"},
+          "meaning": {"description": "Pass or correct at 5-level"},
+          "variants": [], "competitive": [],
+          "continuations": {"type": "end"}
+        }
+      ]
+    },
     "lebensohl": {
       "id": "lebensohl",
-      "name": "Lebensohl (over 1NT overcalled)",
-      "description": "After (1NT)-(2x) or our 1NT overcalled: 2-level bids NF; 3-level GF; direct cue=Staymanic no stop; 3NT no stop; 2NT puppet to 3!c for slower sequences.",
+      "name": "Lebensohl (over 1NT overcalled by any suit)",
+      "description": "After our 1NT overcalled by any natural suit (x): 2-level bids NF; 3-level GF natural; direct cue of overcalled suit=Staymanic no stop; 3NT=no stop; 2NT puppet to 3!c for slower sequences (suit below cue=invite; cue via 2NT=Staymanic with stop; 3NT via 2NT=with stop). X=penalties. Note: cue bid nodes below are schematic — replace strain with the actual overcalled suit.",
       "params": [],
       "nodes": [
         {
           "id": "leb-2nt",
           "call": {"type": "bid", "level": 2, "strain": "N"},
-          "meaning": {"description": "Puppet to 3!c — allows invite or stop-showing sequences", "alert": true, "forcing": "1round"},
+          "meaning": {"description": "Puppet to 3!c — allows slower (invite or stop-showing) sequences", "alert": true, "forcing": "1round"},
           "variants": [], "competitive": [],
           "continuations": {
             "type": "nodes",
@@ -3126,9 +3264,8 @@
                   "type": "nodes",
                   "nodes": [
                     {"id": "leb-3c-pass", "call": {"type": "pass"}, "meaning": {"description": "To play 3!c"}, "variants": [], "competitive": [], "continuations": {"type": "end"}},
-                    {"id": "leb-3c-3d", "call": {"type": "bid", "level": 3, "strain": "D"}, "meaning": {"description": "Natural, invitational (suit below overcall)"}, "variants": [], "competitive": [], "continuations": {"type": "tbd"}},
-                    {"id": "leb-3c-3h", "call": {"type": "bid", "level": 3, "strain": "H"}, "meaning": {"description": "Natural, invitational (suit below overcall)"}, "variants": [], "competitive": [], "continuations": {"type": "tbd"}},
-                    {"id": "leb-3c-cue", "call": {"type": "bid", "level": 3, "strain": "S"}, "meaning": {"description": "Cue bid — Staymanic with stop"}, "variants": [], "competitive": [], "continuations": {"type": "tbd"}},
+                    {"id": "leb-3c-natural-inv", "call": {"type": "bid", "level": 3, "strain": "D"}, "meaning": {"description": "Natural, invitational (any suit below the overcalled suit — schematic)"}, "variants": [], "competitive": [], "continuations": {"type": "tbd"}},
+                    {"id": "leb-3c-cue", "call": {"type": "bid", "level": 3, "strain": "H"}, "meaning": {"description": "Cue of overcalled suit (schematic) — Staymanic WITH stop"}, "variants": [], "competitive": [], "continuations": {"type": "tbd"}},
                     {"id": "leb-3c-3nt", "call": {"type": "bid", "level": 3, "strain": "N"}, "meaning": {"description": "To play 3NT — promises stop in overcalled suit"}, "variants": [], "competitive": [], "continuations": {"type": "end"}}
                   ]
                 }
@@ -3146,14 +3283,14 @@
         {
           "id": "leb-direct-cue",
           "call": {"type": "bid", "level": 3, "strain": "S"},
-          "meaning": {"description": "Direct cue bid — Staymanic, denies stop", "alert": true},
+          "meaning": {"description": "Direct cue of overcalled suit (schematic — replace strain with actual overcalled suit) — Staymanic, DENIES stop", "alert": true},
           "variants": [], "competitive": [],
           "continuations": {"type": "tbd"}
         },
         {
           "id": "leb-3nt",
           "call": {"type": "bid", "level": 3, "strain": "N"},
-          "meaning": {"description": "To play 3NT — denies stop in overcalled suit", "alert": true},
+          "meaning": {"description": "To play 3NT — DENIES stop in overcalled suit", "alert": true},
           "variants": [], "competitive": [],
           "continuations": {"type": "end"}
         }
@@ -3162,34 +3299,56 @@
     "michaels-resp": {
       "id": "michaels-resp",
       "name": "Michaels Cue Responses",
-      "description": "After our Michaels cue bid (5-5+ in two suits, weak or strong). Over minor = both majors; over major = other major + either minor.",
+      "description": "After our Michaels cue (over minor=both majors 5-5+; over major=other major + either minor 5-5+). Weak or strong. Bidding a shown suit at any level=pass-or-correct; overcaller corrects to next suit=weak, breaks to another suit=strong. Non-shown suits: re-cue=strong raise of preferred suit; other non-shown suit=strong with remaining option; 2NT (if available)=invitational+ enquiry; 4!c/4!d=Swiss for known major; 3NT=to play.",
       "params": [],
       "nodes": [
         {
-          "id": "mich-suit-pc",
-          "call": {"type": "bid", "level": 2, "strain": "H"},
-          "meaning": {"description": "Pass or correct — simple preference for known suit at lowest level"},
+          "id": "mich-suit-pc-lo",
+          "call": {"type": "bid", "level": 2, "strain": "S"},
+          "meaning": {"description": "Pass or correct — preference for lower shown suit at lowest level (schematic). Overcaller: pass=weak, correct to next suit=weak with the other suit, break to new suit=strong."},
+          "variants": [], "competitive": [],
+          "continuations": {"type": "end"}
+        },
+        {
+          "id": "mich-suit-pc-hi",
+          "call": {"type": "bid", "level": 3, "strain": "C"},
+          "meaning": {"description": "Pass or correct — preference for higher shown suit (schematic). Overcaller: pass=weak, correct to lower suit=weak with lower suit, break=strong."},
           "variants": [], "competitive": [],
           "continuations": {"type": "end"}
         },
         {
           "id": "mich-2nt",
           "call": {"type": "bid", "level": 2, "strain": "N"},
-          "meaning": {"description": "Invitational+ enquiry for other suit / strength", "alert": true, "forcing": "1round"},
+          "meaning": {"description": "Invitational+ enquiry for overcaller's other suit and strength", "alert": true, "forcing": "1round"},
           "variants": [], "competitive": [],
           "continuations": {
             "type": "nodes",
             "nodes": [
-              {"id": "mich-2nt-weak-lo", "call": {"type": "bid", "level": 3, "strain": "C"}, "meaning": {"description": "Weak with lower suit"}, "variants": [], "competitive": [], "continuations": {"type": "end"}},
-              {"id": "mich-2nt-weak-hi", "call": {"type": "bid", "level": 3, "strain": "D"}, "meaning": {"description": "Weak with higher suit"}, "variants": [], "competitive": [], "continuations": {"type": "end"}},
-              {"id": "mich-2nt-strong", "call": {"type": "bid", "level": 3, "strain": "H"}, "meaning": {"description": "Strong hand (GF type)"}, "variants": [], "competitive": [], "continuations": {"type": "tbd"}}
+              {"id": "mich-2nt-weak-lo", "call": {"type": "bid", "level": 3, "strain": "C"}, "meaning": {"description": "Weak with lower non-major suit"}, "variants": [], "competitive": [], "continuations": {"type": "end"}},
+              {"id": "mich-2nt-weak-hi", "call": {"type": "bid", "level": 3, "strain": "D"}, "meaning": {"description": "Weak with higher non-major suit"}, "variants": [], "competitive": [], "continuations": {"type": "end"}},
+              {"id": "mich-2nt-strong-lo", "call": {"type": "bid", "level": 3, "strain": "H"}, "meaning": {"description": "Strong with lower non-major suit"}, "variants": [], "competitive": [], "continuations": {"type": "tbd"}},
+              {"id": "mich-2nt-strong-hi", "call": {"type": "bid", "level": 3, "strain": "S"}, "meaning": {"description": "Strong with higher non-major suit"}, "variants": [], "competitive": [], "continuations": {"type": "tbd"}}
             ]
           }
         },
         {
           "id": "mich-recue",
-          "call": {"type": "bid", "level": 3, "strain": "S"},
-          "meaning": {"description": "Re-cue = strong hand with second suit (over major: other minor)", "alert": true},
+          "call": {"type": "bid", "level": 3, "strain": "H"},
+          "meaning": {"description": "Re-cue = strong raise agreeing advancer's preferred suit (schematic)", "alert": true},
+          "variants": [], "competitive": [],
+          "continuations": {"type": "tbd"}
+        },
+        {
+          "id": "mich-inv-lo",
+          "call": {"type": "bid", "level": 3, "strain": "C"},
+          "meaning": {"description": "Invitational+ with lower shown suit (non-pass-or-correct context). Overcaller: min-weak=3-level game; good-weak=game; strong=Swiss."},
+          "variants": [], "competitive": [],
+          "continuations": {"type": "tbd"}
+        },
+        {
+          "id": "mich-inv-hi",
+          "call": {"type": "bid", "level": 3, "strain": "D"},
+          "meaning": {"description": "Invitational+ with higher shown suit (non-pass-or-correct context). Overcaller: min-weak=raise; good-weak=game; strong=Swiss."},
           "variants": [], "competitive": [],
           "continuations": {"type": "tbd"}
         },
@@ -3219,27 +3378,41 @@
     "unusual2nt-resp": {
       "id": "unusual2nt-resp",
       "name": "Unusual 2NT Responses",
-      "description": "After our 2NT unusual (5-5 minors over major; other minor+either major over minor). Weak or strong.",
+      "description": "After our 2NT unusual (over major=both minors 5-5+; over minor=other minor + either major 5-5+). Weak or strong. Bidding a shown suit at any level=pass-or-correct; overcaller corrects=weak, breaks=strong. Non-shown suits: re-cue=any stronger hand (responses = which other suit); 3NT=to play.",
       "params": [],
       "nodes": [
         {
           "id": "u2nt-pc-lo",
           "call": {"type": "bid", "level": 3, "strain": "C"},
-          "meaning": {"description": "Pass or correct to lower suit — to play"},
+          "meaning": {"description": "Pass or correct to lower shown suit. Overcaller: pass=weak, correct to next=weak with other suit, break=strong."},
           "variants": [], "competitive": [],
           "continuations": {"type": "end"}
         },
         {
           "id": "u2nt-pc-hi",
           "call": {"type": "bid", "level": 3, "strain": "D"},
-          "meaning": {"description": "Pass or correct to higher suit — to play"},
+          "meaning": {"description": "Pass or correct to higher shown suit. Overcaller: pass=weak, correct=weak with lower suit, break=strong."},
           "variants": [], "competitive": [],
           "continuations": {"type": "end"}
         },
         {
-          "id": "u2nt-recue",
+          "id": "u2nt-inv-lo",
           "call": {"type": "bid", "level": 3, "strain": "H"},
-          "meaning": {"description": "Invitational+ with higher known suit — strong hand interest", "alert": true, "forcing": "1round"},
+          "meaning": {"description": "Invitational with lower shown suit (when suits known). Overcaller: min-weak=raise; good-weak=game; strong=Swiss or other.", "alert": true, "forcing": "1round"},
+          "variants": [], "competitive": [],
+          "continuations": {"type": "tbd"}
+        },
+        {
+          "id": "u2nt-inv-hi",
+          "call": {"type": "bid", "level": 3, "strain": "S"},
+          "meaning": {"description": "Invitational with higher shown suit (when suits known). Overcaller: min-weak=raise; good-weak=game; strong=other.", "alert": true, "forcing": "1round"},
+          "variants": [], "competitive": [],
+          "continuations": {"type": "tbd"}
+        },
+        {
+          "id": "u2nt-recue",
+          "call": {"type": "bid", "level": 3, "strain": "C"},
+          "meaning": {"description": "Re-cue = any stronger hand; overcaller's responses show which other suit (when suits not yet specified)", "alert": true, "forcing": "1round"},
           "variants": [], "competitive": [],
           "continuations": {"type": "tbd"}
         },
@@ -3255,13 +3428,13 @@
     "1nt-doubled": {
       "id": "1nt-doubled",
       "name": "1NT Doubled Escape",
-      "description": "After our 1NT is doubled. Pass = waiting/wriggle with partner; XX = start wriggle with partner re-doubling. 2x escapes show a 5+ card suit.",
+      "description": "Modified suction after 1NT-(X). Pass forces partner's XX; XX forces partner's 2!c (pass=!c, 2!d=!d+!h); direct 2!c puppets partner's 2!d (pass=!d+!s, 2!h=majors); 2!d=!d+!s; 2!h=!h; 2!s=!s.",
       "params": [],
       "nodes": [
         {
           "id": "1ntx-pass",
           "call": {"type": "pass"},
-          "meaning": {"description": "Waiting — shows a runout hand; partner redoubles to start wriggle", "alert": true},
+          "meaning": {"description": "Forces partner to XX. Either: strong hand (to play 1NTXx) OR weak with !c and another suit.", "alert": true},
           "variants": [], "competitive": [],
           "continuations": {
             "type": "nodes",
@@ -3269,16 +3442,16 @@
               {
                 "id": "1ntx-pass-rdbl",
                 "call": {"type": "redouble"},
-                "meaning": {"description": "Partner: shows good hand (can stand 1NTX) or starts wriggle", "alert": true},
+                "meaning": {"description": "Forced. Either to play 1NTXx (strong) OR relaying for partner's suit.", "alert": true},
                 "variants": [], "competitive": [],
                 "continuations": {
                   "type": "nodes",
                   "nodes": [
-                    {"id": "1ntx-wriggle-pass", "call": {"type": "pass"}, "meaning": {"description": "To play 1NTXx"}, "variants": [], "competitive": [], "continuations": {"type": "end"}},
-                    {"id": "1ntx-wriggle-2c", "call": {"type": "bid", "level": 2, "strain": "C"}, "meaning": {"description": "!c+lower suit (pass or correct)"}, "variants": [], "competitive": [], "continuations": {"type": "end"}},
-                    {"id": "1ntx-wriggle-2d", "call": {"type": "bid", "level": 2, "strain": "D"}, "meaning": {"description": "!d+lower suit (pass or correct)"}, "variants": [], "competitive": [], "continuations": {"type": "end"}},
-                    {"id": "1ntx-wriggle-2h", "call": {"type": "bid", "level": 2, "strain": "H"}, "meaning": {"description": "!h+lower suit (pass or correct)"}, "variants": [], "competitive": [], "continuations": {"type": "end"}},
-                    {"id": "1ntx-wriggle-2s", "call": {"type": "bid", "level": 2, "strain": "S"}, "meaning": {"description": "!s single-suited (to play)"}, "variants": [], "competitive": [], "continuations": {"type": "end"}}
+                    {"id": "1ntx-pass-rdbl-pass", "call": {"type": "pass"}, "meaning": {"description": "Strong hand — to play 1NTXx"}, "variants": [], "competitive": [], "continuations": {"type": "end"}},
+                    {"id": "1ntx-pass-rdbl-2c", "call": {"type": "bid", "level": 2, "strain": "C"}, "meaning": {"description": "Bid 4-card suits up the line (distributional escape)"}, "variants": [], "competitive": [], "continuations": {"type": "end"}},
+                    {"id": "1ntx-pass-rdbl-2d", "call": {"type": "bid", "level": 2, "strain": "D"}, "meaning": {"description": "Bid 4-card suits up the line"}, "variants": [], "competitive": [], "continuations": {"type": "end"}},
+                    {"id": "1ntx-pass-rdbl-2h", "call": {"type": "bid", "level": 2, "strain": "H"}, "meaning": {"description": "Bid 4-card suits up the line"}, "variants": [], "competitive": [], "continuations": {"type": "end"}},
+                    {"id": "1ntx-pass-rdbl-2s", "call": {"type": "bid", "level": 2, "strain": "S"}, "meaning": {"description": "Bid 4-card suits up the line"}, "variants": [], "competitive": [], "continuations": {"type": "end"}}
                   ]
                 }
               }
@@ -3288,7 +3461,7 @@
         {
           "id": "1ntx-rdbl",
           "call": {"type": "redouble"},
-          "meaning": {"description": "Wriggle: one-suiter or two-suiter with !c; partner bids 2!c which you pass or correct", "alert": true},
+          "meaning": {"description": "Forces partner to bid 2!c. Weak with !c OR !d+!h.", "alert": true},
           "variants": [], "competitive": [],
           "continuations": {
             "type": "nodes",
@@ -3296,15 +3469,13 @@
               {
                 "id": "1ntx-rdbl-2c",
                 "call": {"type": "bid", "level": 2, "strain": "C"},
-                "meaning": {"description": "Forced"},
+                "meaning": {"description": "Forced relay"},
                 "variants": [], "competitive": [],
                 "continuations": {
                   "type": "nodes",
                   "nodes": [
-                    {"id": "1ntx-rdbl-2c-pass", "call": {"type": "pass"}, "meaning": {"description": "!c single-suiter — to play"}, "variants": [], "competitive": [], "continuations": {"type": "end"}},
-                    {"id": "1ntx-rdbl-2c-2d", "call": {"type": "bid", "level": 2, "strain": "D"}, "meaning": {"description": "!c+!d two-suiter"}, "variants": [], "competitive": [], "continuations": {"type": "end"}},
-                    {"id": "1ntx-rdbl-2c-2h", "call": {"type": "bid", "level": 2, "strain": "H"}, "meaning": {"description": "!c+!h two-suiter"}, "variants": [], "competitive": [], "continuations": {"type": "end"}},
-                    {"id": "1ntx-rdbl-2c-2s", "call": {"type": "bid", "level": 2, "strain": "S"}, "meaning": {"description": "!c+!s two-suiter"}, "variants": [], "competitive": [], "continuations": {"type": "end"}}
+                    {"id": "1ntx-rdbl-2c-pass", "call": {"type": "pass"}, "meaning": {"description": "Weak with !c — to play 2!c"}, "variants": [], "competitive": [], "continuations": {"type": "end"}},
+                    {"id": "1ntx-rdbl-2c-2d", "call": {"type": "bid", "level": 2, "strain": "D"}, "meaning": {"description": "Weak with !d+!h — pass or correct"}, "variants": [], "competitive": [], "continuations": {"type": "end"}}
                   ]
                 }
               }
@@ -3314,35 +3485,514 @@
         {
           "id": "1ntx-2c",
           "call": {"type": "bid", "level": 2, "strain": "C"},
-          "meaning": {"description": "Natural — 5+ !c, to play"},
+          "meaning": {"description": "Puppet to 2!d. Weak with !d+!s OR !h+!s (majors).", "alert": true},
           "variants": [], "competitive": [],
-          "continuations": {"type": "end"}
+          "continuations": {
+            "type": "nodes",
+            "nodes": [
+              {
+                "id": "1ntx-2c-2d",
+                "call": {"type": "bid", "level": 2, "strain": "D"},
+                "meaning": {"description": "Forced relay"},
+                "variants": [], "competitive": [],
+                "continuations": {
+                  "type": "nodes",
+                  "nodes": [
+                    {"id": "1ntx-2c-2d-pass", "call": {"type": "pass"}, "meaning": {"description": "Weak with !d+!s — to play 2!d"}, "variants": [], "competitive": [], "continuations": {"type": "end"}},
+                    {"id": "1ntx-2c-2d-2h", "call": {"type": "bid", "level": 2, "strain": "H"}, "meaning": {"description": "Weak with majors (!h+!s) — pass or correct"}, "variants": [], "competitive": [], "continuations": {"type": "end"}}
+                  ]
+                }
+              }
+            ]
+          }
         },
         {
           "id": "1ntx-2d",
           "call": {"type": "bid", "level": 2, "strain": "D"},
-          "meaning": {"description": "Natural — 5+ !d, to play"},
+          "meaning": {"description": "Natural — weak with !d+!s"},
           "variants": [], "competitive": [],
           "continuations": {"type": "end"}
         },
         {
           "id": "1ntx-2h",
           "call": {"type": "bid", "level": 2, "strain": "H"},
-          "meaning": {"description": "Natural — 5+ !h, to play"},
+          "meaning": {"description": "Natural — weak with !h"},
           "variants": [], "competitive": [],
           "continuations": {"type": "end"}
         },
         {
           "id": "1ntx-2s",
           "call": {"type": "bid", "level": 2, "strain": "S"},
-          "meaning": {"description": "Natural — 5+ !s, to play"},
+          "meaning": {"description": "Natural — weak with !s"},
           "variants": [], "competitive": [],
           "continuations": {"type": "end"}
         }
       ]
     }
   },
-  "openings": [],
-  "overcalls": [],
+  "openings": [
+    {
+      "id": "open-1c",
+      "call": {"type": "bid", "level": 1, "strain": "C"},
+      "meaning": {
+        "description": "One of: (a) balanced 4333/4432/5332 (possibly 2254); (b) 10-15 unbalanced, no 5-card major, at most one 4-card major. Announced 'May be short'.",
+        "announce": "May be short",
+        "hcp": [10, 15]
+      },
+      "variants": [
+        {
+          "id": "open-1c-12-15-nv",
+          "condition": {"seat": [1, 2], "vulnerability": "non-vulnerable"},
+          "meaning": {"description": "12-15 balanced OR 10-15 unbalanced no 5M ≤1 4M", "hcp": [10, 15]}
+        },
+        {
+          "id": "open-1c-11-13-vul",
+          "condition": {"seat": [1, 2], "vulnerability": "vulnerable"},
+          "meaning": {"description": "11-13 balanced OR 10-15 unbalanced no 5M ≤1 4M", "hcp": [10, 15]}
+        }
+      ],
+      "competitive": [],
+      "continuations": {
+        "type": "nodes",
+        "nodes": [],
+        "refs": [{"conventionId": "1c-resp"}]
+      }
+    },
+    {
+      "id": "open-1d",
+      "call": {"type": "bid", "level": 1, "strain": "D"},
+      "meaning": {
+        "description": "16+, not game forcing. Alert. Balanced/semi-balanced 16-19 HCP; two-suiter or three-suiter 16-GF; single-suiter 16-GF (less than 3-loser hand).",
+        "alert": true,
+        "hcp": [16, null]
+      },
+      "variants": [
+        {
+          "id": "open-1d-bal-vul",
+          "condition": {"vulnerability": "vulnerable"},
+          "meaning": {"description": "Balanced: 17-19. Distributional: 16-GF.", "hcp": [16, null]}
+        },
+        {
+          "id": "open-1d-bal-nv",
+          "condition": {"vulnerability": "non-vulnerable"},
+          "meaning": {"description": "Balanced: 16-19. Distributional: 16-GF.", "hcp": [16, null]}
+        }
+      ],
+      "competitive": [],
+      "continuations": {
+        "type": "nodes",
+        "nodes": [],
+        "refs": [{"conventionId": "1d-resp"}]
+      }
+    },
+    {
+      "id": "open-1h-l4",
+      "call": {"type": "bid", "level": 1, "strain": "H"},
+      "meaning": {
+        "description": "10-15 points, unbalanced, 4+ !h. May have a longer minor (canape). Alert.",
+        "alert": true,
+        "hcp": [10, 15]
+      },
+      "variants": [],
+      "competitive": [],
+      "continuations": {
+        "type": "nodes",
+        "nodes": [],
+        "refs": [{"conventionId": "1h-l4-resp"}]
+      }
+    },
+    {
+      "id": "open-1s-l4",
+      "call": {"type": "bid", "level": 1, "strain": "S"},
+      "meaning": {
+        "description": "10-15 points, unbalanced, 5+ !s. May have a longer minor (canape). Alert.",
+        "alert": true,
+        "hcp": [10, 15]
+      },
+      "variants": [],
+      "competitive": [],
+      "continuations": {
+        "type": "nodes",
+        "nodes": [],
+        "refs": [{"conventionId": "1s-l4-resp"}]
+      }
+    },
+    {
+      "id": "open-1nt",
+      "call": {"type": "bid", "level": 1, "strain": "N"},
+      "meaning": {
+        "description": "Balanced (4333/4432/5332). Range varies by seat and vulnerability — announced with the range.",
+        "announce": "12 to 15",
+        "hcp": [12, 15]
+      },
+      "variants": [
+        {
+          "id": "open-1nt-9-11",
+          "condition": {"seat": [1, 2], "vulnerability": "non-vulnerable"},
+          "meaning": {"description": "9-11 balanced", "announce": "9 to 11", "hcp": [9, 11]}
+        },
+        {
+          "id": "open-1nt-14-16",
+          "condition": {"seat": [1, 2], "vulnerability": "vulnerable"},
+          "meaning": {"description": "14-16 balanced", "announce": "14 to 16", "hcp": [14, 16]}
+        },
+        {
+          "id": "open-1nt-9-15-3rd",
+          "condition": {"seat": [3], "vulnerability": "non-vulnerable"},
+          "meaning": {"description": "9-15 balanced (3rd seat NV)", "announce": "9 to 15", "hcp": [9, 15]}
+        },
+        {
+          "id": "open-1nt-4th-nv",
+          "condition": {"seat": [4], "vulnerability": "non-vulnerable"},
+          "meaning": {"description": "12-15 balanced (4th seat NV) — natural NF responses", "announce": "12 to 15", "hcp": [12, 15]}
+        }
+      ],
+      "competitive": [],
+      "continuations": {
+        "type": "nodes",
+        "nodes": [],
+        "refs": [
+          {"conventionId": "keri"},
+          {"conventionId": "1nt-resp"},
+          {"conventionId": "rkqg"},
+          {"conventionId": "viscount"},
+          {"conventionId": "1nt-doubled"}
+        ]
+      }
+    },
+    {
+      "id": "open-2c",
+      "call": {"type": "bid", "level": 2, "strain": "C"},
+      "meaning": {
+        "description": "One of: weak !d (6+, 5-9); weak !h+!s 5-4+ (5-9); 20-23 balanced; GF !h+!s 5-4+ (3 losers). Alert.",
+        "alert": true
+      },
+      "variants": [],
+      "competitive": [],
+      "continuations": {
+        "type": "nodes",
+        "nodes": [],
+        "refs": [{"conventionId": "2c-resp"}]
+      }
+    },
+    {
+      "id": "open-2d",
+      "call": {"type": "bid", "level": 2, "strain": "D"},
+      "meaning": {
+        "description": "One of: weak !h (6+, 5-9); weak !s+!c 5-4+ (5-9); GF !s+!c 5-4+ (3 losers). Alert.",
+        "alert": true
+      },
+      "variants": [],
+      "competitive": [],
+      "continuations": {
+        "type": "nodes",
+        "nodes": [],
+        "refs": [{"conventionId": "2d-resp"}]
+      }
+    },
+    {
+      "id": "open-2h",
+      "call": {"type": "bid", "level": 2, "strain": "H"},
+      "meaning": {
+        "description": "One of: weak !s (6+, 5-9); weak !c+!d 5-4+ (5-9); GF !c+!d 5-4+ (3 losers). Alert.",
+        "alert": true
+      },
+      "variants": [],
+      "competitive": [],
+      "continuations": {
+        "type": "nodes",
+        "nodes": [],
+        "refs": [{"conventionId": "2h-resp"}]
+      }
+    },
+    {
+      "id": "open-2s",
+      "call": {"type": "bid", "level": 2, "strain": "S"},
+      "meaning": {
+        "description": "One of: weak !c (7+, 5-9); weak !h+minor 5-4+ (5-9); GF !h+minor 5-4+ (3 losers). Alert.",
+        "alert": true
+      },
+      "variants": [],
+      "competitive": [],
+      "continuations": {
+        "type": "nodes",
+        "nodes": [],
+        "refs": [{"conventionId": "2s-resp"}]
+      }
+    },
+    {
+      "id": "open-2nt",
+      "call": {"type": "bid", "level": 2, "strain": "N"},
+      "meaning": {
+        "description": "One of: weak !s+!d 5-4+ (5-9); GF !s+!d 5-4+ (3 losers); 24+ balanced. Alert.",
+        "alert": true
+      },
+      "variants": [],
+      "competitive": [],
+      "continuations": {
+        "type": "nodes",
+        "nodes": [],
+        "refs": [{"conventionId": "2nt-multi-resp"}]
+      }
+    },
+    {
+      "id": "open-3c",
+      "call": {"type": "bid", "level": 3, "strain": "C"},
+      "meaning": {
+        "description": "GF !c (3-loser) OR 7-card preempt in !d. Typically 7 cards, occasionally good 6 or bad 8. Alert.",
+        "alert": true
+      },
+      "variants": [],
+      "competitive": [],
+      "continuations": {
+        "type": "nodes",
+        "nodes": [],
+        "refs": [{"conventionId": "3xfer-resp"}]
+      }
+    },
+    {
+      "id": "open-3d",
+      "call": {"type": "bid", "level": 3, "strain": "D"},
+      "meaning": {
+        "description": "GF !d (3-loser) OR 7-card preempt in !h. Typically 7 cards, occasionally good 6 or bad 8. Alert.",
+        "alert": true
+      },
+      "variants": [],
+      "competitive": [],
+      "continuations": {
+        "type": "nodes",
+        "nodes": [],
+        "refs": [{"conventionId": "3xfer-resp"}]
+      }
+    },
+    {
+      "id": "open-3h",
+      "call": {"type": "bid", "level": 3, "strain": "H"},
+      "meaning": {
+        "description": "GF !h (3-loser) OR 7-card preempt in !s. Typically 7 cards, occasionally good 6 or bad 8. Alert.",
+        "alert": true
+      },
+      "variants": [],
+      "competitive": [],
+      "continuations": {
+        "type": "nodes",
+        "nodes": [],
+        "refs": [{"conventionId": "3xfer-resp"}]
+      }
+    },
+    {
+      "id": "open-3s",
+      "call": {"type": "bid", "level": 3, "strain": "S"},
+      "meaning": {
+        "description": "GF !s (3-loser) OR Gambling 3NT (solid 7-8 card minor, \u2264Q outside: AKQJxxx / AKQxxxx / AKxxxxxx). Alert.",
+        "alert": true
+      },
+      "variants": [],
+      "competitive": [],
+      "continuations": {
+        "type": "nodes",
+        "nodes": [],
+        "refs": [{"conventionId": "3s-resp"}]
+      }
+    },
+    {
+      "id": "open-3nt",
+      "call": {"type": "bid", "level": 3, "strain": "N"},
+      "meaning": {
+        "description": "4-level preempt in either minor (usually 8 cards). Alert.",
+        "alert": true
+      },
+      "variants": [],
+      "competitive": [],
+      "continuations": {
+        "type": "nodes",
+        "nodes": [],
+        "refs": [{"conventionId": "3nt-open-resp"}]
+      }
+    },
+    {
+      "id": "open-4c",
+      "call": {"type": "bid", "level": 4, "strain": "C"},
+      "meaning": {
+        "description": "Namyats — strong 4!h (8-9 playing tricks). Alert.",
+        "alert": true
+      },
+      "variants": [],
+      "competitive": [],
+      "continuations": {
+        "type": "nodes",
+        "nodes": [],
+        "refs": [{"conventionId": "namyats-resp"}]
+      }
+    },
+    {
+      "id": "open-4d",
+      "call": {"type": "bid", "level": 4, "strain": "D"},
+      "meaning": {
+        "description": "Namyats — strong 4!s (8-9 playing tricks). Alert.",
+        "alert": true
+      },
+      "variants": [],
+      "competitive": [],
+      "continuations": {
+        "type": "nodes",
+        "nodes": [],
+        "refs": [{"conventionId": "namyats-resp"}]
+      }
+    },
+    {
+      "id": "open-4h",
+      "call": {"type": "bid", "level": 4, "strain": "H"},
+      "meaning": {
+        "description": "Purely preemptive 4!h."
+      },
+      "variants": [],
+      "competitive": [],
+      "continuations": {"type": "end"}
+    },
+    {
+      "id": "open-4s",
+      "call": {"type": "bid", "level": 4, "strain": "S"},
+      "meaning": {
+        "description": "Purely preemptive 4!s."
+      },
+      "variants": [],
+      "competitive": [],
+      "continuations": {"type": "end"}
+    },
+    {
+      "id": "open-4nt",
+      "call": {"type": "bid", "level": 4, "strain": "N"},
+      "meaning": {
+        "description": "Specific aces ask — missing at most 2 aces or void. Happy playing 6-level opposite some responses, 7-level opposite others. Not alerted."
+      },
+      "variants": [],
+      "competitive": [],
+      "continuations": {
+        "type": "nodes",
+        "nodes": [],
+        "refs": [{"conventionId": "4nt-aces-resp"}]
+      }
+    },
+    {
+      "id": "open-5h",
+      "call": {"type": "bid", "level": 5, "strain": "H"},
+      "meaning": {
+        "description": "11 tricks missing 2 of top 3 trump honours (!a, !k, !q). Raise one level per trump honour held by partner."
+      },
+      "variants": [],
+      "competitive": [],
+      "continuations": {"type": "end"}
+    },
+    {
+      "id": "open-5s",
+      "call": {"type": "bid", "level": 5, "strain": "S"},
+      "meaning": {
+        "description": "11 tricks missing 2 of top 3 trump honours (!a, !k, !q). Raise one level per trump honour held by partner."
+      },
+      "variants": [],
+      "competitive": [],
+      "continuations": {"type": "end"}
+    }
+  ],
+  "overcalls": [
+    {
+      "id": "oc-dbl",
+      "call": {"type": "double"},
+      "meaning": {
+        "description": "Takeout double — standard takeout (or strong hand). After double and partner's response, cue by doubler = general force, not suit-agreeing."
+      },
+      "variants": [],
+      "competitive": [],
+      "continuations": {"type": "tbd"}
+    },
+    {
+      "id": "oc-1nt",
+      "call": {"type": "bid", "level": 1, "strain": "N"},
+      "meaning": {
+        "description": "Direct: 15-17 balanced with stop (may contain singleton Ace). Refs: 1NT continuations; after (1x)-(1N)-(2y), 2x=Stayman without stop if available; other bids = Lebensohl.",
+        "hcp": [15, 17]
+      },
+      "variants": [
+        {
+          "id": "oc-1nt-prot",
+          "condition": {"seats": [4]},
+          "meaningOverride": {
+            "description": "Protective 1NT: 11-14 balanced with stop. Same continuations apply.",
+            "hcp": [11, 14]
+          }
+        }
+      ],
+      "competitive": [],
+      "continuations": {
+        "type": "nodes",
+        "nodes": [],
+        "refs": [{"conventionId": "1nt-resp"}, {"conventionId": "lebensohl"}]
+      }
+    },
+    {
+      "id": "oc-simple",
+      "call": {"type": "bid", "level": 1, "strain": "H"},
+      "meaning": {
+        "description": "Simple suit overcall — constructive, natural 5+ cards, 10+ HCP. Responsive cue = good raise. Direct raises = preemptive.",
+        "hcp": [10, null]
+      },
+      "variants": [],
+      "competitive": [],
+      "continuations": {"type": "tbd"}
+    },
+    {
+      "id": "oc-jump",
+      "call": {"type": "bid", "level": 2, "strain": "S"},
+      "meaning": {
+        "description": "Jump overcall — weak, 6-card suit, 4+ HCP favourable up to simple-overcall strength. Protective = intermediate (11-15, reasonable 6+ card suit). Also applies after (Pass)-(Pass)-(1NT).",
+        "hcp": [4, null]
+      },
+      "variants": [],
+      "competitive": [],
+      "continuations": {"type": "tbd"}
+    },
+    {
+      "id": "oc-jcue",
+      "call": {"type": "bid", "level": 3, "strain": "H"},
+      "meaning": {
+        "description": "Jump cue bid — stopper-asking for 3NT; promises long running suit. Overcall of 3NT = long running suit + stopper; responses as gambling 3NT opening.",
+        "alert": true
+      },
+      "variants": [],
+      "competitive": [],
+      "continuations": {"type": "tbd"}
+    },
+    {
+      "id": "oc-michaels",
+      "call": {"type": "bid", "level": 2, "strain": "H"},
+      "meaning": {
+        "description": "Michaels cue — simple cue over minor = both majors 5-5+; over major = other major + either minor 5-5+. Weak or strong. Bidding a shown suit after = pass-or-correct.",
+        "alert": true
+      },
+      "variants": [],
+      "competitive": [],
+      "continuations": {
+        "type": "nodes",
+        "nodes": [],
+        "refs": [{"conventionId": "michaels-resp"}]
+      }
+    },
+    {
+      "id": "oc-2nt",
+      "call": {"type": "bid", "level": 2, "strain": "N"},
+      "meaning": {
+        "description": "Unusual 2NT — 5-5+ minors over major / other minor + either major over minor. Weak or strong. Bidding a shown suit after = pass-or-correct.",
+        "alert": true
+      },
+      "variants": [],
+      "competitive": [],
+      "continuations": {
+        "type": "nodes",
+        "nodes": [],
+        "refs": [{"conventionId": "unusual2nt-resp"}]
+      }
+    }
+  ],
   "carding": null
 }
