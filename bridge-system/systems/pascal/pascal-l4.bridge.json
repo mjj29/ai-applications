@@ -1517,7 +1517,7 @@
                 "call": {"type": "bid", "level": 1, "strain": "N"},
                 "meaning": {"description": "11-13(vul)/12-15(nv) balanced — to play", "announce": "natural non-forcing"},
                 "variants": [
-                  {"id": "1c-1d-1nt-v1", "condition": {"notes": "Vulnerable 1st/2nd"}, "meaning": {"hcp": [11,13], "description": "11-13 balanced — to play"}}
+                  {"id": "1c-1d-1nt-v1", "condition": {"seats": [1, 2], "vul": ["vul"]}, "meaningOverride": {"hcp": [11,13], "description": "11-13 balanced — to play"}}
                 ],
                 "competitive": [],
                 "continuations": {"type": "end"}
@@ -3542,13 +3542,13 @@
       "variants": [
         {
           "id": "open-1c-12-15-nv",
-          "condition": {"seat": [1, 2], "vulnerability": "non-vulnerable"},
-          "meaning": {"description": "12-15 balanced OR 10-15 unbalanced no 5M ≤1 4M", "hcp": [10, 15]}
+          "condition": {"seats": [1, 2], "vul": ["nv"]},
+          "meaningOverride": {"description": "12-15 balanced OR 10-15 unbalanced no 5M ≤1 4M", "hcp": [10, 15]}
         },
         {
           "id": "open-1c-11-13-vul",
-          "condition": {"seat": [1, 2], "vulnerability": "vulnerable"},
-          "meaning": {"description": "11-13 balanced OR 10-15 unbalanced no 5M ≤1 4M", "hcp": [10, 15]}
+          "condition": {"seats": [1, 2], "vul": ["vul"]},
+          "meaningOverride": {"description": "11-13 balanced OR 10-15 unbalanced no 5M ≤1 4M", "hcp": [10, 15]}
         }
       ],
       "competitive": [],
@@ -3569,13 +3569,13 @@
       "variants": [
         {
           "id": "open-1d-bal-vul",
-          "condition": {"vulnerability": "vulnerable"},
-          "meaning": {"description": "Balanced: 17-19. Distributional: 16-GF.", "hcp": [16, null]}
+          "condition": {"vul": ["vul"]},
+          "meaningOverride": {"description": "Balanced: 17-19. Distributional: 16-GF.", "hcp": [16, null]}
         },
         {
           "id": "open-1d-bal-nv",
-          "condition": {"vulnerability": "non-vulnerable"},
-          "meaning": {"description": "Balanced: 16-19. Distributional: 16-GF.", "hcp": [16, null]}
+          "condition": {"vul": ["nv"]},
+          "meaningOverride": {"description": "Balanced: 16-19. Distributional: 16-GF.", "hcp": [16, null]}
         }
       ],
       "competitive": [],
@@ -3628,26 +3628,39 @@
       "variants": [
         {
           "id": "open-1nt-9-11",
-          "condition": {"seat": [1, 2], "vulnerability": "non-vulnerable"},
-          "meaning": {"description": "9-11 balanced", "announce": "9 to 11", "hcp": [9, 11]}
+          "condition": {"seats": [1, 2], "vul": ["nv"]},
+          "meaningOverride": {"description": "9-11 balanced", "announce": "9 to 11", "hcp": [9, 11]}
         },
         {
           "id": "open-1nt-14-16",
-          "condition": {"seat": [1, 2], "vulnerability": "vulnerable"},
-          "meaning": {"description": "14-16 balanced", "announce": "14 to 16", "hcp": [14, 16]}
+          "condition": {"seats": [1, 2], "vul": ["vul"]},
+          "meaningOverride": {"description": "14-16 balanced", "announce": "14 to 16", "hcp": [14, 16]}
         },
         {
           "id": "open-1nt-9-15-3rd",
-          "condition": {"seat": [3], "vulnerability": "non-vulnerable"},
-          "meaning": {"description": "9-15 balanced (3rd seat NV)", "announce": "9 to 15", "hcp": [9, 15]}
+          "condition": {"seats": [3], "vul": ["nv"]},
+          "meaningOverride": {"description": "9-15 balanced (3rd seat NV)", "announce": "9 to 15", "hcp": [9, 15]}
         },
         {
           "id": "open-1nt-4th-nv",
-          "condition": {"seat": [4], "vulnerability": "non-vulnerable"},
-          "meaning": {"description": "12-15 balanced (4th seat NV) — natural NF responses", "announce": "12 to 15", "hcp": [12, 15]}
+          "condition": {"seats": [4], "vul": ["nv"]},
+          "meaningOverride": {"description": "12-15 balanced (4th seat NV)", "announce": "12 to 15", "hcp": [12, 15]}
         }
       ],
-      "competitive": [],
+      "competitive": [
+        {
+          "after": {"type": "double"},
+          "notes": "Direct seat double: modified suction escape. For 9-15 range, opener may pass with 13-15 (partner XX) or bid a suit with 9-12.",
+          "continuation": {"type": "ref", "conventionId": "1nt-doubled"},
+          "variants": [
+            {
+              "condition": {"seats": [4]},
+              "notes": "Protective double (1NT-P-P-X): Aardvark with Halmic redouble — suit bids show two-suiter (that suit + higher); XX forces 2!c (weak single-suiter).",
+              "continuationOverride": {"type": "tbd"}
+            }
+          ]
+        }
+      ],
       "continuations": {
         "type": "nodes",
         "nodes": [],
@@ -3655,8 +3668,7 @@
           {"conventionId": "keri"},
           {"conventionId": "1nt-resp"},
           {"conventionId": "rkqg"},
-          {"conventionId": "viscount"},
-          {"conventionId": "1nt-doubled"}
+          {"conventionId": "viscount"}
         ]
       }
     },
