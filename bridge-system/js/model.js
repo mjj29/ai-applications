@@ -140,12 +140,15 @@ export function interventionToString(iv) {
 /**
  * Format the opener's bid that prompted an overcall, e.g. "(1♥)".
  * openerBid is { level, strain } — strain 'N' means notrump.
+ * Also supports { level, strainParam } for schematic entries, e.g. "(1{minor})".
  */
 export function openerBidToString(openerBid) {
   if (!openerBid) return '(any)';
-  if (openerBid.strain === 'N') return `(${openerBid.level}NT)`;
+  const lvl = openerBid.level ?? openerBid.levelParam ?? '?';
+  if (openerBid.strainParam) return `(${lvl}{${openerBid.strainParam}})`;
+  if (openerBid.strain === 'N') return `(${lvl}NT)`;
   const sym = SUIT_SYMBOLS[openerBid.strain] ?? openerBid.strain;
-  return `(${openerBid.level}${sym})`;
+  return `(${lvl}${sym})`;
 }
 
 // ─── Call parsing (keyboard input) ────────────────────────────────────────────

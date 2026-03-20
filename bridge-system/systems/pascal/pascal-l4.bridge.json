@@ -9377,6 +9377,179 @@
           }
         }
       ]
+    },
+    "aardvark-halmic": {
+      "id": "aardvark-halmic",
+      "name": "Aardvark with Halmic Redouble",
+      "description": "After 1NT-(P)-P-(X). Suit bids show a two-suiter in that suit plus any higher suit. Redouble (Halmic) forces 2!c — weak single-suiter; partner passes with !c or corrects to their suit.",
+      "params": [],
+      "nodes": [
+        {
+          "id": "ahm-rdbl",
+          "call": {
+            "type": "redouble"
+          },
+          "meaning": {
+            "description": "Halmic — forces 2!c. Weak single-suiter.",
+            "alert": true
+          },
+          "variants": [],
+          "competitive": [],
+          "continuations": {
+            "type": "nodes",
+            "nodes": [
+              {
+                "id": "ahm-rdbl-2c",
+                "call": {
+                  "type": "bid",
+                  "level": 2,
+                  "strain": "C"
+                },
+                "meaning": {
+                  "description": "Forced relay"
+                },
+                "variants": [],
+                "competitive": [],
+                "continuations": {
+                  "type": "nodes",
+                  "nodes": [
+                    {
+                      "id": "ahm-rdbl-2c-pass",
+                      "call": {
+                        "type": "pass"
+                      },
+                      "meaning": {
+                        "description": "Single-suiter in !c — to play"
+                      },
+                      "variants": [],
+                      "competitive": [],
+                      "continuations": {
+                        "type": "end"
+                      }
+                    },
+                    {
+                      "id": "ahm-rdbl-2c-2d",
+                      "call": {
+                        "type": "bid",
+                        "level": 2,
+                        "strain": "D"
+                      },
+                      "meaning": {
+                        "description": "Single-suiter in !d — pass or correct"
+                      },
+                      "variants": [],
+                      "competitive": [],
+                      "continuations": {
+                        "type": "end"
+                      }
+                    },
+                    {
+                      "id": "ahm-rdbl-2c-2h",
+                      "call": {
+                        "type": "bid",
+                        "level": 2,
+                        "strain": "H"
+                      },
+                      "meaning": {
+                        "description": "Single-suiter in !h — pass or correct"
+                      },
+                      "variants": [],
+                      "competitive": [],
+                      "continuations": {
+                        "type": "end"
+                      }
+                    },
+                    {
+                      "id": "ahm-rdbl-2c-2s",
+                      "call": {
+                        "type": "bid",
+                        "level": 2,
+                        "strain": "S"
+                      },
+                      "meaning": {
+                        "description": "Single-suiter in !s — pass or correct"
+                      },
+                      "variants": [],
+                      "competitive": [],
+                      "continuations": {
+                        "type": "end"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "id": "ahm-2c",
+          "call": {
+            "type": "bid",
+            "level": 2,
+            "strain": "C"
+          },
+          "meaning": {
+            "description": "Two-suiter: !c + higher suit (!d, !h, or !s)",
+            "alert": true
+          },
+          "variants": [],
+          "competitive": [],
+          "continuations": {
+            "type": "end"
+          }
+        },
+        {
+          "id": "ahm-2d",
+          "call": {
+            "type": "bid",
+            "level": 2,
+            "strain": "D"
+          },
+          "meaning": {
+            "description": "Two-suiter: !d + higher suit (!h or !s)",
+            "alert": true
+          },
+          "variants": [],
+          "competitive": [],
+          "continuations": {
+            "type": "end"
+          }
+        },
+        {
+          "id": "ahm-2h",
+          "call": {
+            "type": "bid",
+            "level": 2,
+            "strain": "H"
+          },
+          "meaning": {
+            "description": "Two-suiter: !h + !s",
+            "alert": true
+          },
+          "variants": [],
+          "competitive": [],
+          "continuations": {
+            "type": "end"
+          }
+        },
+        {
+          "id": "ahm-2s",
+          "call": {
+            "type": "bid",
+            "level": 2,
+            "strain": "S"
+          },
+          "meaning": {
+            "description": "Single-suiter in !s",
+            "alert": true
+          },
+          "variants": [],
+          "competitive": [],
+          "continuations": {
+            "type": "end"
+          }
+        }
+      ]
     }
   },
   "openings": [
@@ -9667,31 +9840,33 @@
               "description": "Direct seat double: modified suction escape. For 9-15 range, opener may pass with 13-15 (partner XX) or bid a suit with 9-12.",
               "alert": true
             },
-            "variants": [
-              {
-                "condition": {
-                  "seats": [
-                    4
-                  ]
-                },
-                "notes": "Protective double (1NT-P-P-X): Aardvark with Halmic redouble — suit bids show two-suiter (that suit + higher); XX forces 2!c (weak single-suiter).",
-                "continuationOverride": {
-                  "type": "tbd"
-                }
-              }
-            ],
+            "variants": [],
+            "competitive": [],
+            "continuations": {
+              "type": "ref",
+              "conventionId": "1nt-doubled"
+            }
+          },
+          {
+            "id": "open-1nt-opp-pass",
+            "call": {
+              "type": "pass"
+            },
+            "meaning": {
+              "description": "Opponent passes"
+            },
+            "variants": [],
             "competitive": [],
             "continuations": {
               "type": "nodes",
               "nodes": [
                 {
-                  "id": "1ntx-pass",
+                  "id": "open-1nt-opp-pass-p",
                   "call": {
                     "type": "pass"
                   },
                   "meaning": {
-                    "description": "Forces partner to XX. Either: strong hand (to play 1NTXx) OR weak with !c and another suit.",
-                    "alert": true
+                    "description": "We pass — auction: 1NT-(P)-P"
                   },
                   "variants": [],
                   "competitive": [],
@@ -9699,285 +9874,28 @@
                     "type": "nodes",
                     "nodes": [
                       {
-                        "id": "1ntx-pass-rdbl",
+                        "id": "open-1nt-opp-pass-p-dbl",
                         "call": {
-                          "type": "redouble"
+                          "type": "double"
                         },
                         "meaning": {
-                          "description": "Forced. Either to play 1NTXx (strong) OR relaying for partner's suit.",
+                          "description": "Protective double — Aardvark with Halmic Redouble",
                           "alert": true
                         },
                         "variants": [],
                         "competitive": [],
                         "continuations": {
-                          "type": "nodes",
-                          "nodes": [
-                            {
-                              "id": "1ntx-pass-rdbl-pass",
-                              "call": {
-                                "type": "pass"
-                              },
-                              "meaning": {
-                                "description": "Strong hand — to play 1NTXx"
-                              },
-                              "variants": [],
-                              "competitive": [],
-                              "continuations": {
-                                "type": "end"
-                              }
-                            },
-                            {
-                              "id": "1ntx-pass-rdbl-2c",
-                              "call": {
-                                "type": "bid",
-                                "level": 2,
-                                "strain": "C"
-                              },
-                              "meaning": {
-                                "description": "Bid 4-card suits up the line (distributional escape)"
-                              },
-                              "variants": [],
-                              "competitive": [],
-                              "continuations": {
-                                "type": "end"
-                              }
-                            },
-                            {
-                              "id": "1ntx-pass-rdbl-2d",
-                              "call": {
-                                "type": "bid",
-                                "level": 2,
-                                "strain": "D"
-                              },
-                              "meaning": {
-                                "description": "Bid 4-card suits up the line"
-                              },
-                              "variants": [],
-                              "competitive": [],
-                              "continuations": {
-                                "type": "end"
-                              }
-                            },
-                            {
-                              "id": "1ntx-pass-rdbl-2h",
-                              "call": {
-                                "type": "bid",
-                                "level": 2,
-                                "strain": "H"
-                              },
-                              "meaning": {
-                                "description": "Bid 4-card suits up the line"
-                              },
-                              "variants": [],
-                              "competitive": [],
-                              "continuations": {
-                                "type": "end"
-                              }
-                            },
-                            {
-                              "id": "1ntx-pass-rdbl-2s",
-                              "call": {
-                                "type": "bid",
-                                "level": 2,
-                                "strain": "S"
-                              },
-                              "meaning": {
-                                "description": "Bid 4-card suits up the line"
-                              },
-                              "variants": [],
-                              "competitive": [],
-                              "continuations": {
-                                "type": "end"
-                              }
-                            }
-                          ]
-                        }
+                          "type": "ref",
+                          "conventionId": "aardvark-halmic"
+                        },
+                        "isOpponentCall": true
                       }
                     ]
-                  }
-                },
-                {
-                  "id": "1ntx-rdbl",
-                  "call": {
-                    "type": "redouble"
-                  },
-                  "meaning": {
-                    "description": "Forces partner to bid 2!c. Weak with !c OR !d+!h.",
-                    "alert": true
-                  },
-                  "variants": [],
-                  "competitive": [],
-                  "continuations": {
-                    "type": "nodes",
-                    "nodes": [
-                      {
-                        "id": "1ntx-rdbl-2c",
-                        "call": {
-                          "type": "bid",
-                          "level": 2,
-                          "strain": "C"
-                        },
-                        "meaning": {
-                          "description": "Forced relay"
-                        },
-                        "variants": [],
-                        "competitive": [],
-                        "continuations": {
-                          "type": "nodes",
-                          "nodes": [
-                            {
-                              "id": "1ntx-rdbl-2c-pass",
-                              "call": {
-                                "type": "pass"
-                              },
-                              "meaning": {
-                                "description": "Weak with !c — to play 2!c"
-                              },
-                              "variants": [],
-                              "competitive": [],
-                              "continuations": {
-                                "type": "end"
-                              }
-                            },
-                            {
-                              "id": "1ntx-rdbl-2c-2d",
-                              "call": {
-                                "type": "bid",
-                                "level": 2,
-                                "strain": "D"
-                              },
-                              "meaning": {
-                                "description": "Weak with !d+!h — pass or correct"
-                              },
-                              "variants": [],
-                              "competitive": [],
-                              "continuations": {
-                                "type": "end"
-                              }
-                            }
-                          ]
-                        }
-                      }
-                    ]
-                  }
-                },
-                {
-                  "id": "1ntx-2c",
-                  "call": {
-                    "type": "bid",
-                    "level": 2,
-                    "strain": "C"
-                  },
-                  "meaning": {
-                    "description": "Puppet to 2!d. Weak with !d+!s OR !h+!s (majors).",
-                    "alert": true
-                  },
-                  "variants": [],
-                  "competitive": [],
-                  "continuations": {
-                    "type": "nodes",
-                    "nodes": [
-                      {
-                        "id": "1ntx-2c-2d",
-                        "call": {
-                          "type": "bid",
-                          "level": 2,
-                          "strain": "D"
-                        },
-                        "meaning": {
-                          "description": "Forced relay"
-                        },
-                        "variants": [],
-                        "competitive": [],
-                        "continuations": {
-                          "type": "nodes",
-                          "nodes": [
-                            {
-                              "id": "1ntx-2c-2d-pass",
-                              "call": {
-                                "type": "pass"
-                              },
-                              "meaning": {
-                                "description": "Weak with !d+!s — to play 2!d"
-                              },
-                              "variants": [],
-                              "competitive": [],
-                              "continuations": {
-                                "type": "end"
-                              }
-                            },
-                            {
-                              "id": "1ntx-2c-2d-2h",
-                              "call": {
-                                "type": "bid",
-                                "level": 2,
-                                "strain": "H"
-                              },
-                              "meaning": {
-                                "description": "Weak with majors (!h+!s) — pass or correct"
-                              },
-                              "variants": [],
-                              "competitive": [],
-                              "continuations": {
-                                "type": "end"
-                              }
-                            }
-                          ]
-                        }
-                      }
-                    ]
-                  }
-                },
-                {
-                  "id": "1ntx-2d",
-                  "call": {
-                    "type": "bid",
-                    "level": 2,
-                    "strain": "D"
-                  },
-                  "meaning": {
-                    "description": "Natural — weak with !d+!s"
-                  },
-                  "variants": [],
-                  "competitive": [],
-                  "continuations": {
-                    "type": "end"
-                  }
-                },
-                {
-                  "id": "1ntx-2h",
-                  "call": {
-                    "type": "bid",
-                    "level": 2,
-                    "strain": "H"
-                  },
-                  "meaning": {
-                    "description": "Natural — weak with !h"
-                  },
-                  "variants": [],
-                  "competitive": [],
-                  "continuations": {
-                    "type": "end"
-                  }
-                },
-                {
-                  "id": "1ntx-2s",
-                  "call": {
-                    "type": "bid",
-                    "level": 2,
-                    "strain": "S"
-                  },
-                  "meaning": {
-                    "description": "Natural — weak with !s"
-                  },
-                  "variants": [],
-                  "competitive": [],
-                  "continuations": {
-                    "type": "end"
                   }
                 }
               ]
-            }
+            },
+            "isOpponentCall": true
           }
         ],
         "refs": [
@@ -10365,8 +10283,9 @@
       "call": {
         "type": "double"
       },
+      "openerBid": null,
       "meaning": {
-        "description": "Takeout double — standard takeout (or strong hand). After double and partner's response, cue by doubler = general force, not suit-agreeing."
+        "description": "Takeout double — standard takeout or strong hand. After double and partner's response, cue by doubler = general force (not suit-agreeing)."
       },
       "variants": [],
       "competitive": [],
@@ -10381,8 +10300,9 @@
         "level": 1,
         "strain": "N"
       },
+      "openerBid": null,
       "meaning": {
-        "description": "Direct: 15-17 balanced with stop (may contain singleton Ace). Refs: 1NT continuations; after (1x)-(1N)-(2y), 2x=Stayman without stop if available; other bids = Lebensohl.",
+        "description": "Direct 1NT overcall: 15-17 balanced with stop (may contain singleton Ace). 1NT continuations apply. After (1x)-(1N)-(2y): cue of 1x = Stayman without stop; other bids = Lebensohl.",
         "hcp": [
           15,
           17
@@ -10408,7 +10328,80 @@
       "competitive": [],
       "continuations": {
         "type": "nodes",
-        "nodes": [],
+        "nodes": [
+          {
+            "id": "oc-1nt-opp-2h",
+            "call": {
+              "type": "bid",
+              "level": 2,
+              "strain": "H"
+            },
+            "meaning": {
+              "description": "Opponent bids 2!h — Lebensohl applies"
+            },
+            "variants": [],
+            "competitive": [],
+            "continuations": {
+              "type": "ref",
+              "conventionId": "lebensohl"
+            },
+            "isOpponentCall": true
+          },
+          {
+            "id": "oc-1nt-opp-2s",
+            "call": {
+              "type": "bid",
+              "level": 2,
+              "strain": "S"
+            },
+            "meaning": {
+              "description": "Opponent bids 2!s — Lebensohl applies"
+            },
+            "variants": [],
+            "competitive": [],
+            "continuations": {
+              "type": "ref",
+              "conventionId": "lebensohl"
+            },
+            "isOpponentCall": true
+          },
+          {
+            "id": "oc-1nt-opp-2d",
+            "call": {
+              "type": "bid",
+              "level": 2,
+              "strain": "D"
+            },
+            "meaning": {
+              "description": "Opponent bids 2!d — Lebensohl applies"
+            },
+            "variants": [],
+            "competitive": [],
+            "continuations": {
+              "type": "ref",
+              "conventionId": "lebensohl"
+            },
+            "isOpponentCall": true
+          },
+          {
+            "id": "oc-1nt-opp-2c",
+            "call": {
+              "type": "bid",
+              "level": 2,
+              "strain": "C"
+            },
+            "meaning": {
+              "description": "Opponent bids 2!c — Lebensohl applies"
+            },
+            "variants": [],
+            "competitive": [],
+            "continuations": {
+              "type": "ref",
+              "conventionId": "lebensohl"
+            },
+            "isOpponentCall": true
+          }
+        ],
         "refs": [
           {
             "conventionId": "1nt-resp"
@@ -10424,10 +10417,11 @@
       "call": {
         "type": "bid",
         "level": 1,
-        "strain": "H"
+        "strainParam": "suit"
       },
+      "openerBid": null,
       "meaning": {
-        "description": "Simple suit overcall — constructive, natural 5+ cards, 10+ HCP. Responsive cue = good raise. Direct raises = preemptive.",
+        "description": "Simple suit overcall — constructive, natural 5+ cards, 10+ HCP. Responsive cue by partner = good raise (constructive+). Direct raises = preemptive.",
         "hcp": [
           10,
           null
@@ -10436,7 +10430,41 @@
       "variants": [],
       "competitive": [],
       "continuations": {
-        "type": "tbd"
+        "type": "nodes",
+        "nodes": [
+          {
+            "id": "oc-simple-opp-raise",
+            "call": {
+              "type": "bid",
+              "level": 2,
+              "strainParam": "cue"
+            },
+            "meaning": {
+              "description": "Opponent raises / cue-bids. Responsive double by partner = penalty interest or good raise."
+            },
+            "variants": [],
+            "competitive": [],
+            "continuations": {
+              "type": "tbd"
+            },
+            "isOpponentCall": true
+          },
+          {
+            "id": "oc-simple-opp-x",
+            "call": {
+              "type": "double"
+            },
+            "meaning": {
+              "description": "Opponent doubles — penalty or takeout interest."
+            },
+            "variants": [],
+            "competitive": [],
+            "continuations": {
+              "type": "tbd"
+            },
+            "isOpponentCall": true
+          }
+        ]
       }
     },
     {
@@ -10444,10 +10472,11 @@
       "call": {
         "type": "bid",
         "level": 2,
-        "strain": "S"
+        "strainParam": "suit"
       },
+      "openerBid": null,
       "meaning": {
-        "description": "Jump overcall — weak, 6-card suit, 4+ HCP favourable up to simple-overcall strength. Protective = intermediate (11-15, reasonable 6+ card suit). Also applies after (Pass)-(Pass)-(1NT).",
+        "description": "Jump overcall — weak, 6-card suit, 4+ HCP favourable up to simple-overcall strength. Protective seat = intermediate 11-15, reasonable 6+ card suit. Also applies after (P)-(P)-(1NT).",
         "hcp": [
           4,
           null
@@ -10464,10 +10493,11 @@
       "call": {
         "type": "bid",
         "level": 3,
-        "strain": "H"
+        "strainParam": "cue"
       },
+      "openerBid": null,
       "meaning": {
-        "description": "Jump cue bid — stopper-asking for 3NT; promises long running suit. Overcall of 3NT = long running suit + stopper; responses as gambling 3NT opening.",
+        "description": "Jump cuebid of opponent's suit — stopper-asking for 3NT; promises a long running side suit.",
         "alert": true
       },
       "variants": [],
@@ -10477,14 +10507,63 @@
       }
     },
     {
-      "id": "oc-michaels",
+      "id": "oc-3nt",
+      "call": {
+        "type": "bid",
+        "level": 3,
+        "strain": "N"
+      },
+      "openerBid": null,
+      "meaning": {
+        "description": "3NT overcall — long running suit with stop; gambling style. Responses as for gambling 3NT opening.",
+        "alert": true
+      },
+      "variants": [],
+      "competitive": [],
+      "continuations": {
+        "type": "tbd"
+      }
+    },
+    {
+      "id": "oc-michaels-minor",
       "call": {
         "type": "bid",
         "level": 2,
-        "strain": "H"
+        "strainParam": "minor"
+      },
+      "openerBid": {
+        "level": 1,
+        "strainParam": "minor"
       },
       "meaning": {
-        "description": "Michaels cue — simple cue over minor = both majors 5-5+; over major = other major + either minor 5-5+. Weak or strong. Bidding a shown suit after = pass-or-correct.",
+        "description": "Michaels cuebid over a minor opening — 5-5+ in both majors (!h and !s). Weak or strong. Bidding a shown suit = pass-or-correct.",
+        "alert": true
+      },
+      "variants": [],
+      "competitive": [],
+      "continuations": {
+        "type": "nodes",
+        "nodes": [],
+        "refs": [
+          {
+            "conventionId": "michaels-resp"
+          }
+        ]
+      }
+    },
+    {
+      "id": "oc-michaels-major",
+      "call": {
+        "type": "bid",
+        "level": 2,
+        "strainParam": "major"
+      },
+      "openerBid": {
+        "level": 1,
+        "strainParam": "major"
+      },
+      "meaning": {
+        "description": "Michaels cuebid over a major opening — 5-5+ in the other major and either minor. Weak or strong. Bidding a shown suit = pass-or-correct. 2NT = invitational+ enquiry for the minor.",
         "alert": true
       },
       "variants": [],
@@ -10506,8 +10585,9 @@
         "level": 2,
         "strain": "N"
       },
+      "openerBid": null,
       "meaning": {
-        "description": "Unusual 2NT — 5-5+ minors over major / other minor + either major over minor. Weak or strong. Bidding a shown suit after = pass-or-correct.",
+        "description": "Unusual 2NT — over a major: 5-5+ minors; over a minor: other minor + either major. Weak or strong. Bidding a shown suit = pass-or-correct.",
         "alert": true
       },
       "variants": [],
