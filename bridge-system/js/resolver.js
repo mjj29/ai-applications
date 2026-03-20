@@ -68,6 +68,32 @@ function bestBranch(competitive, intervention) {
   return matches[0] ?? null;
 }
 
+/**
+ * Check whether a BidNode call (our syntax) matches an incoming intervention.
+ * Used to resolve isOpponentCall inline nodes in the continuations tree.
+ */
+function callMatchesIntervention(call, iv) {
+  if (!call || !iv) return false;
+  switch (iv.type) {
+    case 'double':    return call.type === 'double';
+    case 'redouble':  return call.type === 'redouble';
+    case 'pass':      return call.type === 'pass';
+    case 'suit':
+      if (call.type !== 'bid' || call.strain === 'N') return false;
+      if (iv.level  != null && call.level  != null && iv.level  !== call.level)  return false;
+      if (iv.strain != null && call.strain != null && iv.strain !== call.strain) return false;
+      return true;
+    case 'notrump':
+      if (call.type !== 'bid' || call.strain !== 'N') return false;
+      if (iv.level != null && call.level != null && iv.level !== call.level) return false;
+      return true;
+    case 'any-suit':   return call.type === 'bid' && call.strain !== 'N';
+    case 'any-double': return call.type === 'double';
+    case 'any':        return true;
+    default:           return false;
+  }
+}
+
 // ─── Apply diffs to a node list ───────────────────────────────────────────────
 
 function callKey(call) {
@@ -328,6 +354,32 @@ export function resolveSequence(sys, steps, ctx) {
 
     if (step.intervention) {
       pendingIntervention = step.intervention;
+      const lastNode = path.at(-1)?.node;
+      if (lastNode) {
+        // Preferred: find a matching isOpponentCall inline child node and traverse it
+        const oppNode = currentNodes.find(
+          n => n.isOpponentCall && callMatchesIntervention(n.call, step.intervention)
+        );
+        if (oppNode) {
+          const oppResolved = resolve(oppNode, ctx, conventions);
+          path.push({ node: oppNode, call: oppNode.call, resolved: oppResolved,
+                      intervention: step.intervention });
+          pendingIntervention = null; // consumed by the inline node
+          currentNodes = oppResolved.nodes
+            .filter(r => r.status !== 'removed')
+            .map(r => r.node ?? r);
+        } else {
+          // Fallback: legacy competitive array on the previous node
+          const compCtx = { ...ctx, intervention: step.intervention };
+          const compResolved = resolve(lastNode, compCtx, conventions);
+          currentNodes = compResolved.nodes
+            .filter(r => r.status !== 'removed')
+            .map(r => r.node ?? r);
+        }
+      } else {
+        // Opponent bid leads the sequence — look only in overcalls
+        currentNodes = sys.overcalls ?? [];
+      }
       continue;
     }
     if (!step.call) continue;

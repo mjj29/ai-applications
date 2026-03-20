@@ -5,7 +5,7 @@
 
 import { callToHTML, callToString, parseCall, parseSequence, makeBidNode,
          makeMeaning, makeVariant, makeCondition, makeConvention, PASS,
-         sortNodes, variantBadgeText, renderText } from './model.js';
+         sortNodes, variantBadgeText, renderText, openerBidToString } from './model.js';
 import { getActiveSystem, saveSystem } from './store.js';
 import { flash }  from './ui.js';
 import { fetchLibraryIndex, fetchLibraryConvention } from './library.js';
@@ -281,7 +281,7 @@ function renderOvercallsTree() {
     return;
   }
   for (const node of sortNodes(overcalls)) {
-    container.appendChild(buildNodeElement(node, sys, []));
+    container.appendChild(buildNodeElement(node, sys, [], { isOvercall: true }));
   }
   addRootDropZone(container, s => (s.overcalls ?? (s.overcalls = [])), 'Overcalls');
 }
@@ -402,7 +402,7 @@ function showCardingForm(category, index) {
   }
 }
 
-function buildNodeElement(node, sys, path) {
+function buildNodeElement(node, sys, path, opts = {}) {
   const newPath = [...path, node.id];
   const el = document.createElement('div');
   el.className = 'bid-node';
@@ -417,9 +417,15 @@ function buildNodeElement(node, sys, path) {
     .map(v => `<span class="variant-badge">${variantBadgeText(v)}</span>`).join('');
   const cloneBtn = node.call?.type === 'bid'
     ? `<button class="btn-icon clone-down-btn" data-id="${node.id}" title="Clone → next call">⬇</button>` : '';
+  const overcallPrefix = opts.isOvercall
+    ? `<span style="color:var(--text-muted);font-size:0.82rem;margin-right:0.25rem">${openerBidToString(node.openerBid)}</span>`
+    : '';
+  const callBadge = node.isOpponentCall
+    ? `<span class="call-badge" style="color:var(--yellow);background:rgba(255,209,0,0.08);border-color:rgba(255,209,0,0.35)">(${callToHTML(node.call)})</span>`
+    : `<span class="call-badge">${callToHTML(node.call)}</span>`;
 
   header.innerHTML = `
-    <span class="call-badge">${callToHTML(node.call)}</span>
+    ${overcallPrefix}${callBadge}
     <span class="bid-meaning">${renderText(node.meaning?.description ?? '')}</span>
     ${hcpDisplay}
     ${variantBadges}
@@ -537,7 +543,7 @@ function buildNodeElement(node, sys, path) {
       const conv = sys.conventions?.[ref.conventionId];
       const badge = document.createElement('div');
       badge.style.cssText = 'padding:0.3rem 0.5rem;font-size:0.8rem;color:var(--accent)';
-      badge.textContent = `→ ${conv?.name ?? ref.conventionId}`;
+      badge.innerHTML = '→ ' + renderText(conv?.name ?? ref.conventionId);
       children.appendChild(badge);
     }
   } else if (node.continuations?.type === 'ref') {
@@ -545,7 +551,7 @@ function buildNodeElement(node, sys, path) {
     if (ref) {
       const badge = document.createElement('div');
       badge.style.cssText = 'padding:0.3rem 0.5rem;font-size:0.8rem;color:var(--accent)';
-      badge.textContent = `→ ${ref.name}`;
+      badge.innerHTML = '→ ' + renderText(ref.name);
       children.appendChild(badge);
     }
   }
@@ -558,11 +564,11 @@ function buildNodeElement(node, sys, path) {
 
   // Competitive branches
   if (node.competitive?.length) {
-    for (const branch of node.competitive) {
+    for (const [branchIdx, branch] of node.competitive.entries()) {
       const bel = document.createElement('div');
       bel.style.cssText = 'padding:0.2rem 0.5rem;font-size:0.78rem;color:var(--yellow);cursor:pointer';
       bel.textContent = `After ${interventionLabel(branch.after)}`;
-      bel.addEventListener('click', () => showEditCompetitive(node, branch, sys));
+      bel.addEventListener('click', () => showEditCompetitive(node, branchIdx));
       children.appendChild(bel);
     }
   }
@@ -579,8 +585,31 @@ function showEditForm(node, sys) {
   if (!formCol) return;
 
   const m = node.meaning ?? {};
+  const isOvercall = (sys.overcalls ?? []).some(n => n.id === node.id);
   const forcingOpts = ['', 'gf', '1r', 'inv', 'passable', 'relay', 'to-sign-off']
     .map(f => `<option value="${f}" ${m.forcing === f ? 'selected' : ''}>${f || '—'}</option>`).join('');
+
+  // openerBid field (only for overcall root nodes)
+  const ob = node.openerBid;
+  const openerBidHtml = isOvercall ? `
+    <div class="form-group">
+      <label>Opener's bid context</label>
+      <div style="display:flex;gap:0.4rem">
+        <select id="f-opener-level" style="width:60px;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:3px;padding:0.25rem 0.3rem">
+          <option value="">Any</option>
+          ${[1,2,3,4,5,6,7].map(l => `<option value="${l}" ${ob?.level===l?'selected':''}>${l}</option>`).join('')}
+        </select>
+        <select id="f-opener-strain" style="flex:1;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:3px;padding:0.25rem 0.3rem">
+          <option value="">Any</option>
+          <option value="C" ${ob?.strain==='C'?'selected':''}>&#9827; Clubs</option>
+          <option value="D" ${ob?.strain==='D'?'selected':''}>&#9830; Diamonds</option>
+          <option value="H" ${ob?.strain==='H'?'selected':''}>&#9829; Hearts</option>
+          <option value="S" ${ob?.strain==='S'?'selected':''}>&#9824; Spades</option>
+          <option value="N" ${ob?.strain==='N'?'selected':''}>NT</option>
+        </select>
+      </div>
+      <small style="color:var(--text-muted);font-size:0.72rem">What opponent opened (for display context, e.g. "(1♥) X")</small>
+    </div>` : '';
 
   formCol.innerHTML = `
     <h3 style="margin-bottom:0.75rem;font-size:0.95rem">${callToHTML(node.call)} <span style="color:var(--text-muted);font-size:0.8rem">${node.id.slice(0,8)}</span></h3>
@@ -619,6 +648,7 @@ function showEditForm(node, sys) {
       <label>Notes</label>
       <textarea id="f-notes" style="min-height:60px">${m.notes ?? ''}</textarea>
     </div>
+    ${openerBidHtml}
 
     <div style="margin-top:0.5rem;border-top:1px solid var(--border);padding-top:0.75rem">
       <div style="font-size:0.8rem;color:var(--text-muted);text-transform:uppercase;
@@ -688,7 +718,7 @@ function showEditForm(node, sys) {
        ${_makeParamBindingHtml(p, boundParams?.[p.name])}`
     ).join(' ');
     item.innerHTML = `
-      <span style="flex:1;font-size:0.83rem;color:var(--accent);font-weight:500">${conv.name}</span>
+      <span style="flex:1;font-size:0.83rem;color:var(--accent);font-weight:500">${renderText(conv.name)}</span>
       <span style="display:flex;align-items:center;gap:0.35rem;flex-wrap:wrap">${paramHtml}</span>
       <button class="btn btn-sm btn-danger" data-remove-conv-ref title="Remove">✕</button>`;
     item.querySelector('[data-remove-conv-ref]').addEventListener('click', () => item.remove());
@@ -710,7 +740,6 @@ function showEditForm(node, sys) {
   document.getElementById('btn-delete-node').addEventListener('click', () => deleteNode(node));
   document.getElementById('btn-add-variant').addEventListener('click', () => showAddVariantModal(node));
   document.getElementById('btn-copy-to-node').addEventListener('click', () => showCopyToModal(node));
-
   // Variant edit / delete
   document.getElementById('f-variants-list').addEventListener('click', (e) => {
     const editBtn = e.target.closest('[data-variant-edit]');
@@ -835,7 +864,19 @@ function saveNode(node) {
   });
   const continuations = { type: 'nodes', nodes: baseNodes, ...(refs.length ? { refs } : {}) };
 
-  updateNodeInSystem(sys, node.id, { meaning, continuations });
+  // openerBid (overcall context)
+  const opLevelEl  = document.getElementById('f-opener-level');
+  const opStrainEl = document.getElementById('f-opener-strain');
+  let openerBid = undefined;
+  if (opLevelEl && opStrainEl && opLevelEl.value && opStrainEl.value) {
+    openerBid = { level: +opLevelEl.value, strain: opStrainEl.value };
+  }
+
+  const changes = { meaning, continuations };
+  if (openerBid !== undefined) changes.openerBid = openerBid;
+  else if (opLevelEl) changes.openerBid = null; // cleared
+
+  updateNodeInSystem(sys, node.id, changes);
   saveSystem(sys);
   flash('Saved', 'ok');
   refreshAllTrees();
@@ -880,8 +921,11 @@ export function initAddBidModal() {
     const parentId = document.getElementById('add-bid-parent-id').value || null;
     const section  = document.getElementById('add-bid-section').value || 'openings';
 
-    const call = parseCall(callStr);
-    if (!call) { flash('Invalid call: use e.g. 1C, 2H, 3N, P, X, XX', 'err'); return; }
+    // Support (X), (2H), (P) etc. for opponent's bids inline in the response tree
+    const isOpponentCall = /^\([^)]+\)$/.test(callStr);
+    const callToParse    = isOpponentCall ? callStr.slice(1, -1) : callStr;
+    const call = parseCall(callToParse);
+    if (!call) { flash('Invalid call — use e.g. 1C, 2H, P, X, XX; or (X), (2H), (P) for opponent bids', 'err'); return; }
 
     const sys = getActiveSystem();
     if (!sys) return;
@@ -893,6 +937,7 @@ export function initAddBidModal() {
     const newNode = makeBidNode(crypto.randomUUID(), call, {
       meaning: Object.keys(meaning).length ? meaning : null,
       continuations: { type: 'tbd' },
+      ...(isOpponentCall ? { isOpponentCall: true } : {}),
     });
 
     if (!parentId) {
@@ -1110,7 +1155,7 @@ function renderConventionsSection() {
     const convHeader = document.createElement('div');
     convHeader.style.cssText = 'display:flex;align-items:center;gap:0.5rem;padding:0.35rem 0.6rem;background:rgba(74,158,255,0.07);cursor:pointer;user-select:none';
     convHeader.innerHTML = `
-      <span style="flex:1;font-size:0.88rem;font-weight:500;color:var(--accent)">${conv.name}</span>
+      <span style="flex:1;font-size:0.88rem;font-weight:500;color:var(--accent)">${renderText(conv.name)}</span>
       ${conv.params?.length
         ? `<span style="font-size:0.72rem;color:var(--text-muted);font-family:var(--font-mono)">{${conv.params.map(p => p.name).join(', ')}}</span>`
         : ''}
@@ -1199,7 +1244,7 @@ function showConventionForm(conv) {
   const formCol = document.getElementById('editor-form');
   if (!formCol) return;
   formCol.innerHTML = `
-    <h3 style="margin-bottom:0.75rem;font-size:0.95rem">Convention: <span style="color:var(--accent)">${conv.name}</span></h3>
+    <h3 style="margin-bottom:0.75rem;font-size:0.95rem">Convention: <span style="color:var(--accent)">${renderText(conv.name)}</span></h3>
     <div class="form-group">
       <label>Name</label>
       <input type="text" id="conv-name" value="${conv.name ?? ''}">
@@ -1340,22 +1385,161 @@ async function importConventionFromLibrary(id, name) {
 
 // ─── Competitive ──────────────────────────────────────────────────────────────
 
-function showEditCompetitive(node, branch, sys) {
-  // TODO: full competitive editor — for now show notes in flash
-  flash(`Competitive branch: after ${interventionLabel(branch.after)} — full editor coming soon`, 'ok');
+function renderCompetitiveList(branches) {
+  if (!branches.length) return '<div style="color:var(--text-muted);font-size:0.82rem">None</div>';
+  return branches.map((b, i) => {
+    const label = interventionLabel(b.after);
+    const contLabel = b.continuation?.type === 'ref'
+      ? `→ ${b.continuation.conventionId}`
+      : b.continuation?.type ?? 'tbd';
+    return `<div class="variant-item" style="display:flex;align-items:flex-start;gap:0.4rem;margin-bottom:0.3rem">
+      <div style="flex:1">
+        <div class="variant-condition">After ${label}</div>
+        ${b.notes ? `<div style="font-size:0.78rem;color:var(--text-muted)">${b.notes}</div>` : ''}
+        <div style="font-size:0.78rem;color:var(--accent)">${contLabel}</div>
+      </div>
+      <button class="btn btn-sm" data-comp-edit="${i}" title="Edit">✎</button>
+    </div>`;
+  }).join('');
+}
+
+function showEditCompetitive(node, editIndex) {
+  const modal = document.getElementById('modal-competitive');
+  if (!modal) return;
+  const sys = getActiveSystem();
+  if (!sys) return;
+
+  // Populate convention picker (it may have changed since last open)
+  const picker = document.getElementById('comp-cont-ref-id');
+  picker.innerHTML = '<option value="">— select —</option>'
+    + Object.values(sys.conventions ?? {})
+        .map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+
+  document.getElementById('comp-node-id').value = node.id;
+  document.getElementById('comp-branch-index').value = editIndex;
+  modal.querySelector('h2').textContent = editIndex >= 0 ? 'Edit Competitive Branch' : 'Add Competitive Branch';
+  document.getElementById('btn-comp-delete').style.display = editIndex >= 0 ? '' : 'none';
+  document.getElementById('btn-comp-save').textContent = editIndex >= 0 ? 'Save' : 'Add';
+
+  const b = editIndex >= 0 ? (node.competitive ?? [])[editIndex] : null;
+  const afterType = b?.after?.type ?? 'double';
+  document.getElementById('comp-after-type').value = afterType;
+  updateCompModalFields(afterType);
+
+  if (afterType === 'suit') {
+    document.getElementById('comp-after-level').value  = b?.after?.level  ?? '';
+    document.getElementById('comp-after-strain').value = b?.after?.strain ?? '';
+  } else if (afterType === 'notrump') {
+    document.getElementById('comp-after-nt-level').value = b?.after?.level ?? '';
+  }
+
+  document.getElementById('comp-notes').value = b?.notes ?? '';
+  const contType = b?.continuation?.type ?? 'tbd';
+  document.getElementById('comp-cont-type').value = contType;
+  document.getElementById('comp-cont-ref-field').style.display = contType === 'ref' ? '' : 'none';
+  if (contType === 'ref') document.getElementById('comp-cont-ref-id').value = b.continuation.conventionId ?? '';
+
+  modal.classList.remove('hidden');
+}
+
+export function updateCompModalFields(type) {
+  document.getElementById('comp-suit-fields').style.display = type === 'suit' ? '' : 'none';
+  document.getElementById('comp-nt-fields').style.display   = type === 'notrump' ? '' : 'none';
 }
 
 function interventionLabel(iv) {
   if (!iv) return '(P)';
   switch (iv.type) {
     case 'double':   return `(X${iv.nature ? ':'+iv.nature:''})`;
-    case 'suit':     return `(${iv.level}${iv.strain}${iv.nature==='art'?'*':''})`;
-    case 'notrump':  return `(${iv.level}N)`;
+    case 'redouble': return '(XX)';
+    case 'suit':     return `(${iv.level ?? '?'}${iv.strain ?? '?'}${iv.nature==='art'?'*':''})`;
+    case 'notrump':  return `(${iv.level ?? '?'}NT)`;
     case 'any-suit': return '(any suit)';
     case 'any-double': return '(any X)';
     case 'any':      return '(any)';
     default:         return '(P)';
   }
+}
+
+export function initAddCompetitiveModal() {
+  const modal = document.getElementById('modal-competitive');
+  if (!modal) return;
+
+  document.getElementById('comp-after-type').addEventListener('change', (e) => {
+    updateCompModalFields(e.target.value);
+  });
+
+  document.getElementById('comp-cont-type').addEventListener('change', (e) => {
+    document.getElementById('comp-cont-ref-field').style.display = e.target.value === 'ref' ? '' : 'none';
+  });
+
+  document.getElementById('btn-comp-cancel').addEventListener('click', () => {
+    modal.classList.add('hidden');
+  });
+
+  document.getElementById('btn-comp-delete').addEventListener('click', () => {
+    const nodeId = document.getElementById('comp-node-id').value;
+    const idx = +document.getElementById('comp-branch-index').value;
+    if (idx < 0) return;
+    if (!confirm('Delete this competitive branch?')) return;
+    const sys = getActiveSystem();
+    if (!sys) return;
+    const live = findNode(sys, nodeId);
+    if (!live) return;
+    live.competitive.splice(idx, 1);
+    saveSystem(sys);
+    modal.classList.add('hidden');
+    flash('Branch deleted', 'ok');
+    refreshAllTrees();
+    const updated = findNode(getActiveSystem(), nodeId);
+    if (updated) showEditForm(updated, getActiveSystem());
+  });
+
+  document.getElementById('btn-comp-save').addEventListener('click', () => {
+    const nodeId    = document.getElementById('comp-node-id').value;
+    const editIndex = +document.getElementById('comp-branch-index').value;
+    const afterType = document.getElementById('comp-after-type').value;
+
+    const after = { type: afterType };
+    if (afterType === 'suit') {
+      const lv  = document.getElementById('comp-after-level').value;
+      const str = document.getElementById('comp-after-strain').value;
+      if (lv)  after.level  = +lv;
+      if (str) after.strain = str;
+    } else if (afterType === 'notrump') {
+      const lv = document.getElementById('comp-after-nt-level').value;
+      if (lv) after.level = +lv;
+    }
+
+    const notes    = document.getElementById('comp-notes').value.trim();
+    const contType = document.getElementById('comp-cont-type').value;
+    const contRef  = document.getElementById('comp-cont-ref-id').value;
+
+    const continuation = contType === 'ref'
+      ? { type: 'ref', conventionId: contRef }
+      : { type: contType };
+
+    const branch = { after, continuation };
+    if (notes) branch.notes = notes;
+
+    const sys = getActiveSystem();
+    if (!sys) return;
+    const live = findNode(sys, nodeId);
+    if (!live) return;
+    live.competitive = live.competitive ?? [];
+    if (editIndex >= 0) {
+      live.competitive[editIndex] = branch;
+      flash('Branch updated', 'ok');
+    } else {
+      live.competitive.push(branch);
+      flash('Branch added', 'ok');
+    }
+    saveSystem(sys);
+    modal.classList.add('hidden');
+    refreshAllTrees();
+    const updated = findNode(getActiveSystem(), nodeId);
+    if (updated) showEditForm(updated, getActiveSystem());
+  });
 }
 
 // ─── Tree helpers ─────────────────────────────────────────────────────────────

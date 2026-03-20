@@ -116,6 +116,13 @@ export function callToHTML(call) {
   }
 }
 
+/** Render a node's call as HTML, adding parens for opponent-call (isOpponentCall) nodes. */
+export function nodeCallToHTML(node) {
+  if (!node?.call) return '';
+  const inner = callToHTML(node.call);
+  return node.isOpponentCall ? `(${inner})` : inner;
+}
+
 export function interventionToString(iv) {
   if (!iv || iv.type === 'pass') return '(P)';
   switch (iv.type) {
@@ -128,6 +135,17 @@ export function interventionToString(iv) {
     case 'any':      return '(any)';
     default:         return '(?)';
   }
+}
+
+/**
+ * Format the opener's bid that prompted an overcall, e.g. "(1♥)".
+ * openerBid is { level, strain } — strain 'N' means notrump.
+ */
+export function openerBidToString(openerBid) {
+  if (!openerBid) return '(any)';
+  if (openerBid.strain === 'N') return `(${openerBid.level}NT)`;
+  const sym = SUIT_SYMBOLS[openerBid.strain] ?? openerBid.strain;
+  return `(${openerBid.level}${sym})`;
 }
 
 // ─── Call parsing (keyboard input) ────────────────────────────────────────────

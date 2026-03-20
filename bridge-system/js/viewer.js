@@ -3,7 +3,7 @@
  */
 'use strict';
 
-import { callToHTML, callToString, interventionToString, sortNodes, renderText } from './model.js';
+import { callToHTML, callToString, interventionToString, openerBidToString, nodeCallToHTML, sortNodes, renderText } from './model.js';
 import { getActiveSystem } from './store.js';
 import { resolve } from './resolver.js';
 
@@ -56,7 +56,7 @@ function renderViewerTree() {
     h.style.cssText = 'font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin:1rem 0 0.4rem';
     h.textContent = 'Overcalls';
     treeEl.appendChild(h);
-    for (const node of overcalls) treeEl.appendChild(buildViewNode(node, sys));
+    for (const node of overcalls) treeEl.appendChild(buildViewNode(node, sys, { isOvercall: true }));
   }
 
   // ── Carding ─────────────────────────────────────────────────────────────────
@@ -70,7 +70,7 @@ function renderViewerTree() {
   }
 }
 
-function buildViewNode(node, sys) {
+function buildViewNode(node, sys, opts = {}) {
   const el = document.createElement('div');
   el.className = 'bid-node';
 
@@ -97,8 +97,15 @@ function buildViewNode(node, sys) {
       const active = resolved.trace.appliedVariant === v ? ' variant-badge-active' : '';
       return `<span class="variant-badge${active}">${cParts.join(' ')}${val ? ': '+val : ''}</span>`;
     }).join('');
+  // For overcall nodes, show the opener's bid context prefix
+  const overcallPrefix = opts.isOvercall
+    ? `<span style="color:var(--text-muted);font-size:0.82rem;margin-right:0.25rem">${openerBidToString(node.openerBid)}</span>`
+    : '';
+  const callBadge = node.isOpponentCall
+    ? `<span class="call-badge" style="color:var(--yellow);background:rgba(255,209,0,0.08);border-color:rgba(255,209,0,0.35)">(${callToHTML(node.call)})</span>`
+    : `<span class="call-badge">${callToHTML(node.call)}</span>`;
   header.innerHTML = `
-    <span class="call-badge">${callToHTML(node.call)}</span>
+    ${overcallPrefix}${callBadge}
     <span class="bid-meaning">${renderText(m?.description ?? '')}</span>
     ${hcpDisplay}
     ${variantBadges}
@@ -245,10 +252,10 @@ function renderResponsesTable(resolvedNodes, isCompetitive) {
     const removedStyle = status === 'removed' ? 'text-decoration:line-through;opacity:0.4' : '';
 
     return `<tr class="status-${status}">
-      <td style="${removedStyle}">${callToHTML(n?.call)}</td>
+      <td style="${removedStyle}">${nodeCallToHTML(n)}</td>
       <td style="${removedStyle}">
         ${oldMeaning}
-        ${m?.description ?? ''}${hcp}
+        ${renderText(m?.description ?? '')}${hcp}
         ${m?.forcing ? `<span class="tag tag-forcing" style="font-size:0.7rem">${m.forcing}</span>` : ''}
       </td>
       <td>${status !== 'inherited' ? `<span class="tag">${status}</span>` : ''}</td>

@@ -4,7 +4,7 @@
  */
 'use strict';
 
-import { callToHTML, interventionToString, sortNodes, renderText } from './model.js';
+import { callToHTML, interventionToString, openerBidToString, nodeCallToHTML, sortNodes, renderText } from './model.js';
 import { getActiveSystem } from './store.js';
 import { resolve } from './resolver.js';
 
@@ -74,7 +74,7 @@ function renderPositionTree() {
   const overcalls = sortNodes(sys.overcalls ?? []);
   if (overcalls.length) {
     appendSectionHeader(treeEl, 'Overcalls', true);
-    for (const node of overcalls) treeEl.appendChild(buildPositionNode(node, sys));
+    for (const node of overcalls) treeEl.appendChild(buildPositionNode(node, sys, { isOvercall: true }));
   }
 
   const carding = sys.carding;
@@ -91,7 +91,7 @@ function appendSectionHeader(parent, text, addMargin) {
   parent.appendChild(h);
 }
 
-function buildPositionNode(node, sys) {
+function buildPositionNode(node, sys, opts = {}) {
   const el = document.createElement('div');
   el.className = 'bid-node';
 
@@ -100,8 +100,14 @@ function buildPositionNode(node, sys) {
 
   const header = document.createElement('div');
   header.className = 'bid-node-header';
+  const overcallPrefix = opts.isOvercall
+    ? `<span style="color:var(--text-muted);font-size:0.82rem;margin-right:0.25rem">${openerBidToString(node.openerBid)}</span>`
+    : '';
+  const callBadge = node.isOpponentCall
+    ? `<span class="call-badge" style="color:var(--yellow);background:rgba(255,209,0,0.08);border-color:rgba(255,209,0,0.35)">(${callToHTML(node.call)})</span>`
+    : `<span class="call-badge">${callToHTML(node.call)}</span>`;
   header.innerHTML = `
-    <span class="call-badge">${callToHTML(node.call)}</span>
+    ${overcallPrefix}${callBadge}
     <span class="bid-meaning">${renderText(m?.description ?? '')}</span>
     ${m?.hcp     ? `<span class="node-hcp">[${m.hcp[0] ?? ''}–${m.hcp[1] ?? ''}]</span>` : ''}
     ${m?.announce ? `<span style="color:var(--accent);font-size:0.78rem;margin-left:0.3rem">"${m.announce}"</span>` : ''}

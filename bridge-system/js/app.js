@@ -10,7 +10,7 @@ import { listSystems, createSystem, getActiveSystem, setActiveId,
          listCollaborators, addCollaborator, removeCollaborator,
          findUserByEmail } from './store.js';
 import { signInWithGitHub, signOut, onAuthChange } from './supabase.js';
-import { renderEditor, initAddBidModal, initAddVariantModal, initCopyToModal } from './editor.js';
+import { renderEditor, initAddBidModal, initAddVariantModal, initCopyToModal, initAddCompetitiveModal } from './editor.js';
 import { renderPosition } from './position.js';
 import { renderLookup }   from './lookup.js';
 import { renderPrint }    from './print.js';
@@ -421,6 +421,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initAddBidModal();
   initAddVariantModal();
   initCopyToModal();
+  initAddCompetitiveModal();
 
   // Share modal close on backdrop click
   document.getElementById('modal-share')?.addEventListener('click', e => {

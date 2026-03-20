@@ -3,7 +3,7 @@
  */
 'use strict';
 
-import { callToHTML, callToString, interventionToString, parseSequence, sortNodes, renderText } from './model.js';
+import { callToHTML, callToString, interventionToString, nodeCallToHTML, parseSequence, sortNodes, renderText } from './model.js';
 import { getActiveSystem } from './store.js';
 import { resolveSequence } from './resolver.js';
 
@@ -174,7 +174,7 @@ function renderResult(res) {
       const nm = node.meaning;
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td>${callToHTML(node.call)}</td>
+        <td>${nodeCallToHTML(node)}</td>
         <td>${nm?.description ? renderText(nm.description) : '<span style="color:var(--text-muted)">—</span>'}
             ${nm?.announce ? `<span style="color:var(--accent);font-size:0.78rem;margin-left:0.3rem">"${nm.announce}"</span>` : ''}
             ${nm?.alert    ? '<span class="tag tag-alert" style="margin-left:0.25rem">Alert</span>' : ''}</td>

@@ -64,8 +64,8 @@
   <div class="modal">
     <h2>Add Bid</h2>
     <input type="hidden" id="add-bid-parent-id">    <input type="hidden" id="add-bid-section" value="openings">    <div class="form-group">
-      <label>Call (e.g. 1C, 2H, 3N, P, X, XX)</label>
-      <input type="text" id="add-bid-call" placeholder="1C" autocomplete="off" spellcheck="false">
+      <label>Call — or <code>(X)</code>, <code>(2H)</code>, <code>(P)</code> for opponent's bid</label>
+      <input type="text" id="add-bid-call" placeholder="e.g. 1C or (X)" autocomplete="off" spellcheck="false">
     </div>
     <div class="form-group">
       <label>Description (optional)</label>
@@ -157,6 +157,91 @@
     <div class="modal-footer">
       <button class="btn" id="btn-copy-to-cancel">Cancel</button>
       <button class="btn btn-primary" id="btn-copy-to-confirm">Copy here</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit competitive branch modal -->
+<div id="modal-competitive" class="modal-backdrop hidden">
+  <div class="modal">
+    <h2>Add Competitive Branch</h2>
+    <input type="hidden" id="comp-node-id">
+    <input type="hidden" id="comp-branch-index" value="-1">
+    <div class="form-group">
+      <label>After intervention</label>
+      <select id="comp-after-type">
+        <option value="double">Double (X)</option>
+        <option value="redouble">Redouble (XX)</option>
+        <option value="suit">Suit overcall</option>
+        <option value="notrump">Notrump overcall</option>
+        <option value="pass">Pass (P)</option>
+        <option value="any-suit">Any suit overcall</option>
+        <option value="any-double">Any double (X)</option>
+        <option value="any">Any call</option>
+      </select>
+    </div>
+    <div id="comp-suit-fields" style="display:none">
+      <div style="display:flex;gap:0.5rem">
+        <div class="form-group" style="flex:1">
+          <label>Level</label>
+          <select id="comp-after-level">
+            <option value="">Any</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+            <option value="7">7</option>
+          </select>
+        </div>
+        <div class="form-group" style="flex:1">
+          <label>Strain</label>
+          <select id="comp-after-strain">
+            <option value="">Any</option>
+            <option value="C">&#9827; Clubs</option>
+            <option value="D">&#9830; Diamonds</option>
+            <option value="H">&#9829; Hearts</option>
+            <option value="S">&#9824; Spades</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div id="comp-nt-fields" style="display:none">
+      <div class="form-group">
+        <label>Level</label>
+        <select id="comp-after-nt-level">
+          <option value="">Any</option>
+          <option value="1">1NT</option>
+          <option value="2">2NT</option>
+          <option value="3">3NT</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Notes</label>
+      <textarea id="comp-notes" style="min-height:55px" placeholder="e.g. Modified suction escape…"></textarea>
+    </div>
+    <div class="form-group">
+      <label>Continuation type</label>
+      <select id="comp-cont-type">
+        <option value="tbd">TBD — to be defined</option>
+        <option value="end">End — sign-off</option>
+        <option value="ref">Convention reference</option>
+      </select>
+    </div>
+    <div id="comp-cont-ref-field" style="display:none">
+      <div class="form-group">
+        <label>Convention</label>
+        <select id="comp-cont-ref-id">
+          <option value="">— select —</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" id="btn-comp-cancel">Cancel</button>
+      <button class="btn btn-danger" id="btn-comp-delete" style="display:none">Delete branch</button>
+      <button class="btn btn-primary" id="btn-comp-save">Save</button>
     </div>
   </div>
 </div>
