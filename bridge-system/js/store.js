@@ -44,6 +44,8 @@ function localDelete(id) {
 
 // ─── Active system ID ─────────────────────────────────────────────────────────
 
+const PREVIEW_KEY = 'bridge:preview';
+
 export function getActiveId() {
   return localStorage.getItem(ACTIVE_KEY) ?? null;
 }
@@ -53,7 +55,29 @@ export function setActiveId(id) {
 }
 export function getActiveSystem() {
   const id = getActiveId();
-  return id ? localList().find(s => s.id === id) ?? null : null;
+  if (!id) return null;
+  if (id === '__preview__') {
+    try { return JSON.parse(localStorage.getItem(PREVIEW_KEY) ?? 'null'); } catch { return null; }
+  }
+  return localList().find(s => s.id === id) ?? null;
+}
+
+/** Load a public system for read-only browsing without persisting it to the systems list. */
+export function setPreviewSystem(sys) {
+  const preview = { ...sys, id: '__preview__', _readOnly: true };
+  localStorage.setItem(PREVIEW_KEY, JSON.stringify(preview));
+  setActiveId('__preview__');
+}
+
+/** Remove the read-only preview and deactivate it. */
+export function clearPreviewSystem() {
+  localStorage.removeItem(PREVIEW_KEY);
+  if (getActiveId() === '__preview__') setActiveId(null);
+}
+
+/** Returns true when the currently active system is a read-only preview. */
+export function isPreviewSystem() {
+  return getActiveId() === '__preview__';
 }
 
 // ─── Cloud sync ───────────────────────────────────────────────────────────────
@@ -110,6 +134,19 @@ export async function syncFromCloud() {
   return merged;
 }
 
+/**
+ * Remove all cloud-synced systems from the local cache.
+ * Call this on sign-out so that private systems are not visible to the next user.
+ */
+export function clearCloudSystems() {
+  const remaining = localList().filter(s => !s._cloud);
+  localStorage.setItem(SYSTEMS_KEY, JSON.stringify(remaining));
+  // Clear active pointer if it was a cloud system or a preview
+  const activeId = getActiveId();
+  if (activeId && activeId !== '__preview__' && !remaining.find(s => s.id === activeId)) setActiveId(null);
+  clearPreviewSystem();
+}
+
 // ─── Public API ───────────────────────────────────────────────────────────────
 
 export function listSystems() {
@@ -121,6 +158,7 @@ export function loadSystem(id) {
 }
 
 export async function saveSystem(system) {
+  if (system._readOnly) return system; // never persist read-only previews
   system.metadata.modified = new Date().toISOString();
   localSave(system);
 
@@ -245,6 +283,30 @@ export async function loadPublicSystem(slug) {
     .single();
   if (error) throw new Error('System not found or not public');
   return { ...data.data, id: data.id, name: data.name, _ownerId: data.owner_id };
+}
+
+/**
+ * Fetch all public systems from Supabase — no auth required.
+ * Returns lightweight records (no full data blob) suitable for displaying in a list.
+ */
+export async function listPublicSystems() {
+  const { data, error } = await supabase
+    .from('systems')
+    .select('id, name, slug, owner_id, updated_at')
+    .eq('visibility', 'public')
+    .order('updated_at', { ascending: false });
+  if (error) { console.warn('listPublicSystems error:', error.message); return []; }
+  return (data ?? []).map(row => ({
+    id:          row.id,
+    name:        row.name,
+    _cloud:      true,
+    _ownerId:    row.owner_id,
+    _isOwner:    false,
+    _visibility: 'public',
+    _slug:       row.slug,
+    _publicOnly: true, // flag: no full data loaded yet
+    metadata:    { modified: row.updated_at },
+  }));
 }
 
 /** Clone a public system into the logged-in user's account. */

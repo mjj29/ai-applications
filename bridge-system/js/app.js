@@ -5,8 +5,9 @@
 
 import { listSystems, createSystem, getActiveSystem, setActiveId,
          deleteSystem, exportSystem, importSystemFromJSON, saveSystem,
-         syncFromCloud, currentUser,
-         publishSystem, unpublishSystem, cloneSystem,
+         syncFromCloud, currentUser, clearCloudSystems,
+         setPreviewSystem, clearPreviewSystem, isPreviewSystem,
+         publishSystem, unpublishSystem, cloneSystem, listPublicSystems, loadPublicSystem,
          listCollaborators, addCollaborator, removeCollaborator,
          findUserByEmail } from './store.js';
 import { signInWithGitHub, signOut, onAuthChange } from './supabase.js';
@@ -52,7 +53,41 @@ function setView(id) {
 function refreshCurrentView(id) {
   const sys = getActiveSystem();
   document.getElementById('system-name-display').textContent = sys?.name ?? '(no system)';
-  if (id === 'view-editor')  renderSubtab(activeSubtab());
+  if (id === 'view-editor') {
+    // Show/hide read-only preview banner
+    let banner = document.getElementById('readonly-preview-banner');
+    if (isPreviewSystem()) {
+      if (!banner) {
+        banner = document.createElement('div');
+        banner.id = 'readonly-preview-banner';
+        banner.style.cssText = 'background:rgba(243,156,18,0.12);border-bottom:1px solid rgba(243,156,18,0.4);padding:0.4rem 1rem;font-size:0.82rem;display:flex;align-items:center;gap:0.75rem';
+        const viewEditor = document.getElementById('view-editor');
+        viewEditor.insertBefore(banner, viewEditor.firstChild);
+      }
+      banner.innerHTML = `<span>👁 Read-only preview — <strong>${sys?.name ?? ''}</strong></span>
+        <button class="btn btn-sm btn-primary" id="btn-banner-clone">Clone to my account</button>
+        <button class="btn btn-sm" id="btn-banner-close" style="margin-left:auto">✕ Exit preview</button>`;
+      document.getElementById('btn-banner-close').onclick = () => {
+        clearPreviewSystem();
+        setView('view-systems');
+      };
+      document.getElementById('btn-banner-clone').onclick = async () => {
+        const s = getActiveSystem();
+        const user = await currentUser();
+        if (!user) { signInWithGitHub(); return; }
+        try {
+          const cloned = await cloneSystem(s);
+          clearPreviewSystem();
+          setActiveId(cloned.id);
+          flash(`Cloned "${cloned.name}"`, 'ok');
+          refreshCurrentView('view-editor');
+        } catch (e) { flash(e.message, 'err'); }
+      };
+    } else if (banner) {
+      banner.remove();
+    }
+    renderSubtab(activeSubtab());
+  }
   if (id === 'view-systems') renderSystemsList();
 }
 
@@ -119,13 +154,7 @@ async function renderSystemsList() {
   }
 
   const systems = listSystems();
-
-  if (!systems.length && !user) {
-    container.innerHTML = `<div class="empty-state"><div class="big">📋</div>No systems yet. Create one below.</div>`;
-    return;
-  }
-
-  const active = getActiveSystem();
+  const active  = getActiveSystem();
 
   const renderList = (sysList, currentUser) => {
     if (!sysList.length) return `<div class="empty-state" style="padding:1rem 0">No systems yet. Create one below.</div>`;
@@ -163,11 +192,15 @@ async function renderSystemsList() {
        </div>`
     : '';
 
-  container.innerHTML = syncBanner + uploadBanner + renderList(systems, user);
+  container.innerHTML = syncBanner + uploadBanner + renderList(systems, user) + `
+    <div style="margin-top:1.5rem">
+      <div style="font-size:0.78rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:0.5rem">🌐 Public systems</div>
+      <div id="public-systems-list"><span style="font-size:0.82rem;color:var(--text-muted)">⧳ Loading…</span></div>
+    </div>`;
 
   document.getElementById('btn-upload-all')?.addEventListener('click', uploadLocalSystems);
 
-  // Async sync if logged in — refresh the list after
+  // Async sync of own systems if logged in
   if (user) {
     syncFromCloud().then(synced => {
       const statusEl = document.getElementById('sync-status');
@@ -179,9 +212,11 @@ async function renderSystemsList() {
             <button class="btn btn-sm btn-primary" id="btn-upload-all">☁ Upload all to cloud</button>
            </div>`
         : '';
-      container.innerHTML = newBanner + renderList(synced, user);
+      const pubSectionEl = document.getElementById('public-systems-list')?.closest('div[style*="margin-top"]');
+      container.innerHTML = newBanner + renderList(synced, user) + (pubSectionEl?.outerHTML ?? '');
       document.getElementById('btn-upload-all')?.addEventListener('click', uploadLocalSystems);
       attachSystemActions(container, user);
+      attachPublicActions(container, [], user);
     }).catch(e => {
       const statusEl = document.getElementById('sync-status');
       if (statusEl) statusEl.textContent = `⚠ Cloud sync failed: ${e.message}`;
@@ -189,6 +224,62 @@ async function renderSystemsList() {
   }
 
   attachSystemActions(container, user);
+
+  // Load public systems — no auth required
+  listPublicSystems().then(pubList => {
+    const el = document.getElementById('public-systems-list');
+    if (!el) return;
+    const ownedIds = new Set(listSystems().map(s => s.id));
+    const unowned = pubList.filter(s => !ownedIds.has(s.id));
+    el.innerHTML = unowned.length
+      ? unowned.map(s => `
+          <div class="system-item">
+            <div style="display:flex;align-items:center;gap:0.75rem">
+              <div style="flex:1;min-width:0">
+                <div style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap">
+                  <span style="font-weight:500">${s.name}</span>
+                  <span class="sys-badge sys-badge-public">public</span>
+                </div>
+                <div style="font-size:0.78rem;color:var(--text-muted)">${s.metadata?.modified?.slice(0,10) ?? ''}</div>
+              </div>
+              <button class="btn btn-sm" data-pub-action="view" data-pub-id="${s.id}">View</button>
+              <button class="btn btn-sm btn-primary" data-pub-action="clone" data-pub-id="${s.id}">Clone</button>
+            </div>
+          </div>`).join('')
+      : '<div style="font-size:0.82rem;color:var(--text-muted);padding:0.5rem 0">No public systems available.</div>';
+    attachPublicActions(container, pubList, user);
+  }).catch(() => {
+    const el = document.getElementById('public-systems-list');
+    if (el) el.innerHTML = '<span style="font-size:0.82rem;color:var(--text-muted)">Could not load public systems.</span>';
+  });
+}
+
+function attachPublicActions(container, pubList, user) {
+  container.querySelectorAll('button[data-pub-action]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id     = btn.dataset.pubId;
+      const action = btn.dataset.pubAction;
+      let sys = pubList.find(s => s.id === id);
+      if (action === 'view') {
+        if (sys?._publicOnly) {
+          try { sys = await loadPublicSystem(sys._slug ?? id); } catch (e) { flash(e.message, 'err'); return; }
+        }
+        showPublicPreview(sys);
+      } else if (action === 'clone') {
+        if (sys?._publicOnly) {
+          try { sys = await loadPublicSystem(sys._slug ?? id); } catch (e) { flash(e.message, 'err'); return; }
+        }
+        if (!user) { showPublicPreview(sys); return; }
+        try {
+          const cloned = await cloneSystem(sys);
+          clearPreviewSystem();
+          setActiveId(cloned.id);
+          flash(`Cloned "${cloned.name}"`, 'ok');
+          setView('view-editor');
+        } catch (e) { flash(e.message, 'err'); }
+      }
+    });
+  });
 }
 
 function attachSystemActions(container, user) {
@@ -312,9 +403,7 @@ async function handlePublicSlug() {
   if (!slug) return false;
 
   try {
-    const { loadPublicSystem } = await import('./store.js');
     const sys = await loadPublicSystem(slug);
-    // Show the system in a read-only preview — offer Clone if logged in
     showPublicPreview(sys);
     return true;
   } catch { return false; }
@@ -329,6 +418,15 @@ async function showPublicPreview(sys) {
   document.getElementById('preview-desc').textContent =
     sys.metadata?.description ?? sys.metadata?.notes ?? '';
 
+  // View read-only
+  document.getElementById('btn-preview-view').onclick = () => {
+    setPreviewSystem(sys);
+    modal.classList.add('hidden');
+    history.replaceState({}, '', window.location.pathname);
+    setView('view-editor');
+  };
+
+  // Clone
   const cloneBtn = document.getElementById('btn-preview-clone');
   if (user) {
     cloneBtn.textContent = '📋 Clone to my account';
@@ -336,6 +434,7 @@ async function showPublicPreview(sys) {
     cloneBtn.onclick = async () => {
       try {
         const cloned = await cloneSystem(sys);
+        clearPreviewSystem();
         setActiveId(cloned.id);
         modal.classList.add('hidden');
         flash(`Cloned "${cloned.name}"`, 'ok');
@@ -347,9 +446,9 @@ async function showPublicPreview(sys) {
     cloneBtn.disabled = false;
     cloneBtn.onclick = () => signInWithGitHub();
   }
+
   document.getElementById('btn-preview-close').onclick = () => {
     modal.classList.add('hidden');
-    // Clear the ?s= from the URL without reload
     history.replaceState({}, '', window.location.pathname);
   };
 }
@@ -370,10 +469,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   onAuthChange(async (event) => {
     await renderAuthBar();
     if (event === 'SIGNED_IN') {
+      clearPreviewSystem();
       flash('Signed in', 'ok');
       renderSystemsList();
     } else if (event === 'SIGNED_OUT') {
-      renderSystemsList();
+      clearCloudSystems(); // also calls clearPreviewSystem()
+      setView('view-systems');
     }
   });
 
