@@ -14,6 +14,7 @@ import { fetchLibraryIndex, fetchLibraryConvention } from './library.js';
 
 let selectedPath  = [];   // array of node ids from root to current selection
 let editingNode   = null; // id of node currently in the editor form
+let editingNodeOuterParams = []; // params of the convention containing the editing node
 let _justDragged  = false; // suppresses the click that browsers fire after dragend
 let expandedNodes = new Set(); // node IDs whose children are currently visible
 let expandedConventions = new Set(); // convention IDs whose body is expanded
@@ -402,7 +403,7 @@ function showCardingForm(category, index) {
   }
 }
 
-function buildNodeElement(node, sys, path, opts = {}) {
+function buildNodeElement(node, sys, path, opts = {}, outerParams = []) {
   const newPath = [...path, node.id];
   const el = document.createElement('div');
   el.className = 'bid-node';
@@ -451,6 +452,7 @@ function buildNodeElement(node, sys, path, opts = {}) {
     selectedPath = newPath;
     document.querySelectorAll('.bid-node-header.selected').forEach(h => h.classList.remove('selected'));
     header.classList.add('selected');
+    editingNodeOuterParams = outerParams;
     showEditForm(node, sys);
   });
 
@@ -537,7 +539,7 @@ function buildNodeElement(node, sys, path, opts = {}) {
 
   if (node.continuations?.type === 'nodes') {
     for (const child of sortNodes(node.continuations.nodes)) {
-      children.appendChild(buildNodeElement(child, sys, newPath));
+      children.appendChild(buildNodeElement(child, sys, newPath, opts, outerParams));
     }
     for (const ref of node.continuations.refs ?? []) {
       const conv = sys.conventions?.[ref.conventionId];
@@ -684,7 +686,12 @@ function showEditForm(node, sys) {
   // ── Convention refs ─────────────────────────────────────────────────────
   const _convOptions = Object.values(getActiveSystem()?.conventions ?? {});
 
-  function _makeParamBindingHtml(param, boundVal) {
+  function _makeParamBindingHtml(param, boundVal, outerParams) {
+    // Options for passing through a parameter from the enclosing convention
+    const passthroughOpts = (outerParams ?? []).map(op => {
+      const val = `{${op.name}}`;
+      return `<option value="${val}" ${boundVal===val?'selected':''}>${val}</option>`;
+    }).join('');
     if (param.type === 'strain')
       return `<select data-param-binding="${param.name}"
                 style="font-size:0.78rem;padding:0.1rem 0.25rem;background:var(--surface);
@@ -695,6 +702,7 @@ function showEditForm(node, sys) {
                <option value="H" ${boundVal==='H'?'selected':''}>&#9829;</option>
                <option value="S" ${boundVal==='S'?'selected':''}>&#9824;</option>
                <option value="N" ${boundVal==='N'?'selected':''}>NT</option>
+               ${passthroughOpts}
              </select>`;
     if (param.type === 'level')
       return `<input type="number" min="1" max="7" data-param-binding="${param.name}" value="${boundVal??''}"
@@ -706,6 +714,7 @@ function showEditForm(node, sys) {
   }
 
   function _appendConvRefItem(convId, boundParams) {
+    const outerParams = editingNodeOuterParams;
     const conv = _convOptions.find(c => c.id === convId);
     if (!conv) return;
     const item = document.createElement('div');
@@ -715,7 +724,7 @@ function showEditForm(node, sys) {
       + 'background:rgba(74,158,255,0.06);border:1px solid var(--border);border-radius:4px;margin-bottom:0.3rem';
     const paramHtml = (conv.params ?? []).map(p =>
       `<span style="font-size:0.75rem;color:var(--text-muted);">{${p.name}}</span>
-       ${_makeParamBindingHtml(p, boundParams?.[p.name])}`
+       ${_makeParamBindingHtml(p, boundParams?.[p.name], outerParams)}`
     ).join(' ');
     item.innerHTML = `
       <span style="flex:1;font-size:0.83rem;color:var(--accent);font-weight:500">${renderText(conv.name)}</span>
@@ -1180,7 +1189,7 @@ function renderConventionsSection() {
     if (!nodes.length) {
       convTree.innerHTML = `<div style="color:var(--text-muted);font-size:0.8rem;padding:0.2rem 0">No responses yet — use ＋ to add.</div>`;
     } else {
-      for (const n of sortNodes(nodes)) convTree.appendChild(buildNodeElement(n, sys, []));
+      for (const n of sortNodes(nodes)) convTree.appendChild(buildNodeElement(n, sys, [], {}, conv.params ?? []));
     }
     const _convId = conv.id;
     addRootDropZone(convTree,

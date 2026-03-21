@@ -320,7 +320,17 @@ function materializeNodeParams(node, params) {
         isParam: !!(c.call?.levelParam || c.call?.strainParam),
       }))
     );
-    cont = { type: 'nodes', nodes: deduped };
+    // Preserve refs, resolving any {paramName} passthrough values with outer params.
+    const refs = (node.continuations.refs ?? []).map(ref => {
+      if (!ref.params || !Object.keys(ref.params).length) return ref;
+      const resolvedParams = {};
+      for (const [k, v] of Object.entries(ref.params)) {
+        const match = typeof v === 'string' && v.match(/^\{(\w+)\}$/);
+        resolvedParams[k] = (match && params[match[1]] !== undefined) ? params[match[1]] : v;
+      }
+      return { ...ref, params: resolvedParams };
+    });
+    cont = { type: 'nodes', nodes: deduped, ...(refs.length ? { refs } : {}) };
   }
   if (call === node.call && cont === node.continuations) return node;
   return { ...node, call, continuations: cont };
