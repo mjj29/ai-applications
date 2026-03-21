@@ -1,7 +1,62 @@
 {
   "id": "7095f88c-2678-4e84-ab09-be26c9f8554e",
   "name": "Pascal's Encrypted Club (Level 4)",
-  "carding": null,
+  "carding": {
+    "leads": [
+      {
+        "id": "238296f9-a537-402f-9189-7951c868b614",
+        "notes": "Fibonacci numbers are A2358K. Non-Fibonacci are 4679TJQ",
+        "method": "Modified italian (Fibonacci numbers encouraging, others suit preference Lavinthal-style)",
+        "context": "Discards"
+      }
+    ],
+    "signals": [
+      {
+        "id": "eaaafe86-8607-4437-9704-fe80df99a8ae",
+        "notes": "may vary between odd/even based on signal requested",
+        "method": "standard (2nd from bad suits, 4th from an honour, top of sequences)",
+        "context": "vs suit"
+      },
+      {
+        "id": "c0e86b3d-a4aa-40a1-9b83-d6baddde5768",
+        "notes": "may vary between odd/even based on signal requested",
+        "method": "top of bad suits, 4th from honour, top of sequences",
+        "context": "vs NT"
+      },
+      {
+        "id": "bbae9272-c863-4cf1-a440-7493365fe1ef",
+        "notes": "",
+        "method": "top of bad suits, bottom of good suits",
+        "context": "After initial lead"
+      }
+    ],
+    "discards": [
+      {
+        "id": "460e7bc9-12b3-42c1-8351-a465ad78cd3c",
+        "notes": "",
+        "method": "reverse attitude (low encourages)",
+        "context": "on AQ or even pip leads"
+      },
+      {
+        "id": "28f7b580-b165-456d-8776-baac6f17aea2",
+        "notes": "",
+        "method": "standard count (high even)",
+        "context": "on KJ or odd pip leads"
+      },
+      {
+        "id": "606539b8-4cfb-4734-935b-a70ca6222fd8",
+        "notes": "Frequent false carding",
+        "method": "standard count (high even)",
+        "context": "On declarer's lead"
+      },
+      {
+        "id": "22b270c4-5b05-4bcf-b3c4-19f28673bd65",
+        "notes": "",
+        "method": "may be lead directing lavinthal-style",
+        "context": "Leads to ruff etc"
+      }
+    ]
+  },
   "metadata": {
     "notes": "EBU Level 4 system. Brown/Red sticker. Precision-style 1!c (may be short), strong 1!d, Level 4 majors, multi-meaning 2-level openings.",
     "format": "v1",
@@ -9,7 +64,7 @@
       "Matthew Johnson",
       "Henry Lockwood"
     ],
-    "modified": "2026-03-20T18:53:53.330Z"
+    "modified": "2026-03-21T20:39:33.262Z"
   },
   "openings": [
     {
@@ -25,7 +80,7 @@
           15
         ],
         "announce": "May be short",
-        "description": "One of: (a) balanced 4333/4432/5332 (possibly 2254); (b) 10-15 unbalanced, no 5-card major, at most one 4-card major. Announced 'May be short'."
+        "description": "10-15 unbalanced, no 5-card major, at most one 4-card major. Announced 'May be short'."
       },
       "variants": [
         {
@@ -95,10 +150,13 @@
       },
       "variants": [
         {
-          "id": "open-1d-bal-vul",
           "condition": {
             "vul": [
               "vul"
+            ],
+            "seats": [
+              1,
+              2
             ]
           },
           "meaningOverride": {
@@ -107,21 +165,6 @@
               null
             ],
             "description": "Balanced: 17-19. Distributional: 16-GF."
-          }
-        },
-        {
-          "id": "open-1d-bal-nv",
-          "condition": {
-            "vul": [
-              "nv"
-            ]
-          },
-          "meaningOverride": {
-            "hcp": [
-              16,
-              null
-            ],
-            "description": "Balanced: 16-19. Distributional: 16-GF."
           }
         }
       ],
@@ -263,25 +306,6 @@
             ],
             "announce": "9 to 15",
             "description": "9-15 balanced (3rd seat NV)"
-          }
-        },
-        {
-          "id": "open-1nt-4th-nv",
-          "condition": {
-            "vul": [
-              "nv"
-            ],
-            "seats": [
-              4
-            ]
-          },
-          "meaningOverride": {
-            "hcp": [
-              12,
-              15
-            ],
-            "announce": "12 to 15",
-            "description": "12-15 balanced (4th seat NV)"
           }
         }
       ],
@@ -504,7 +528,17 @@
       "continuations": {
         "refs": [
           {
+            "params": {
+              "xfer": "D",
+              "above": "H"
+            },
             "conventionId": "3xfer-resp"
+          },
+          {
+            "params": {
+              "suit": "D"
+            },
+            "conventionId": "general-swiss"
           }
         ],
         "type": "nodes",
@@ -527,7 +561,17 @@
       "continuations": {
         "refs": [
           {
+            "params": {
+              "xfer": "H",
+              "above": "S"
+            },
             "conventionId": "3xfer-resp"
+          },
+          {
+            "params": {
+              "suit": "H"
+            },
+            "conventionId": "general-swiss"
           }
         ],
         "type": "nodes",
@@ -550,7 +594,17 @@
       "continuations": {
         "refs": [
           {
+            "params": {
+              "xfer": "S",
+              "above": "N"
+            },
             "conventionId": "3xfer-resp"
+          },
+          {
+            "params": {
+              "suit": "S"
+            },
+            "conventionId": "general-swiss"
           }
         ],
         "type": "nodes",
@@ -619,7 +673,17 @@
       "continuations": {
         "refs": [
           {
+            "params": {
+              "next": "D",
+              "suit": "H"
+            },
             "conventionId": "namyats-resp"
+          },
+          {
+            "params": {
+              "suit": "H"
+            },
+            "conventionId": "rkcb"
           }
         ],
         "type": "nodes",
@@ -642,7 +706,17 @@
       "continuations": {
         "refs": [
           {
+            "params": {
+              "next": "H",
+              "suit": "S"
+            },
             "conventionId": "namyats-resp"
+          },
+          {
+            "params": {
+              "suit": "S"
+            },
+            "conventionId": "rkcb"
           }
         ],
         "type": "nodes",
@@ -1122,12 +1196,19 @@
                         "strain": "H"
                       },
                       "meaning": {
-                        "forcing": "1round",
                         "description": "4+ !s; may also have 4 !h. Opener now bids naturally."
                       },
                       "variants": [],
                       "competitive": [],
                       "continuations": {
+                        "refs": [
+                          {
+                            "params": {
+                              "suit": "S"
+                            },
+                            "conventionId": "general-swiss"
+                          }
+                        ],
                         "type": "nodes",
                         "nodes": [
                           {
@@ -1138,12 +1219,19 @@
                               "strain": "S"
                             },
                             "meaning": {
-                              "forcing": "1round",
                               "description": "Forcing — promises 4 !h (over 4!s showing hand)"
                             },
                             "variants": [],
                             "competitive": [],
                             "continuations": {
+                              "refs": [
+                                {
+                                  "params": {
+                                    "suit": "H"
+                                  },
+                                  "conventionId": "general-swiss"
+                                }
+                              ],
                               "type": "nodes",
                               "nodes": [
                                 {
@@ -1154,12 +1242,13 @@
                                     "strain": "N"
                                   },
                                   "meaning": {
-                                    "description": "Minimum — denies 4 !h"
+                                    "description": "invitational — denies 4 !h"
                                   },
                                   "variants": [],
                                   "competitive": [],
                                   "continuations": {
-                                    "type": "tbd"
+                                    "type": "nodes",
+                                    "nodes": []
                                   }
                                 },
                                 {
@@ -1170,12 +1259,13 @@
                                     "strain": "C"
                                   },
                                   "meaning": {
-                                    "description": "4 !s + feature in !c, maximum"
+                                    "description": "4 !h + feature in !c, maximum"
                                   },
                                   "variants": [],
                                   "competitive": [],
                                   "continuations": {
-                                    "type": "tbd"
+                                    "type": "nodes",
+                                    "nodes": []
                                   }
                                 },
                                 {
@@ -1186,12 +1276,13 @@
                                     "strain": "D"
                                   },
                                   "meaning": {
-                                    "description": "4 !s + feature in !d, maximum"
+                                    "description": "4 !h + feature in !d, maximum"
                                   },
                                   "variants": [],
                                   "competitive": [],
                                   "continuations": {
-                                    "type": "tbd"
+                                    "type": "nodes",
+                                    "nodes": []
                                   }
                                 },
                                 {
@@ -1218,12 +1309,13 @@
                                     "strain": "N"
                                   },
                                   "meaning": {
-                                    "description": "Maximum balanced, denies 4 !h"
+                                    "description": "to play"
                                   },
                                   "variants": [],
                                   "competitive": [],
                                   "continuations": {
-                                    "type": "end"
+                                    "type": "nodes",
+                                    "nodes": []
                                   }
                                 },
                                 {
@@ -1234,44 +1326,21 @@
                                     "strain": "S"
                                   },
                                   "meaning": {
-                                    "description": "4 !s maximum — GF auto-Swiss"
+                                    "description": "4!H, GF, forces swiss"
                                   },
                                   "variants": [],
                                   "competitive": [],
                                   "continuations": {
-                                    "type": "tbd"
-                                  }
-                                },
-                                {
-                                  "id": "keri-2h-2s-4c",
-                                  "call": {
-                                    "type": "bid",
-                                    "level": 4,
-                                    "strain": "C"
-                                  },
-                                  "meaning": {
-                                    "description": "GF 4 !h Swiss (!c feature)"
-                                  },
-                                  "variants": [],
-                                  "competitive": [],
-                                  "continuations": {
-                                    "type": "tbd"
-                                  }
-                                },
-                                {
-                                  "id": "keri-2h-2s-4d",
-                                  "call": {
-                                    "type": "bid",
-                                    "level": 4,
-                                    "strain": "D"
-                                  },
-                                  "meaning": {
-                                    "description": "GF 4 !h Swiss (!d feature)"
-                                  },
-                                  "variants": [],
-                                  "competitive": [],
-                                  "continuations": {
-                                    "type": "tbd"
+                                    "refs": [
+                                      {
+                                        "params": {
+                                          "suit": "H"
+                                        },
+                                        "conventionId": "general-swiss"
+                                      }
+                                    ],
+                                    "type": "nodes",
+                                    "nodes": []
                                   }
                                 },
                                 {
@@ -1342,19 +1411,20 @@
                             }
                           },
                           {
-                            "id": "keri-2h-3h",
+                            "id": "319f82d1-4073-48f6-b9f0-e996ce2d741d",
                             "call": {
                               "type": "bid",
                               "level": 3,
                               "strain": "H"
                             },
                             "meaning": {
-                              "description": "4 !s — invitational (denies 4!h)"
+                              "description": "4 !s + !h feature, maximum"
                             },
                             "variants": [],
                             "competitive": [],
                             "continuations": {
-                              "type": "tbd"
+                              "type": "nodes",
+                              "nodes": []
                             }
                           },
                           {
@@ -1390,30 +1460,14 @@
                             }
                           },
                           {
-                            "id": "keri-2h-4c",
+                            "id": "29787b42-c702-45d3-89d1-a833527e05aa",
                             "call": {
                               "type": "bid",
-                              "level": 4,
-                              "strain": "C"
+                              "level": 3,
+                              "strain": "S"
                             },
                             "meaning": {
-                              "description": "Maximum non-serious Swiss for !s"
-                            },
-                            "variants": [],
-                            "competitive": [],
-                            "continuations": {
-                              "type": "tbd"
-                            }
-                          },
-                          {
-                            "id": "keri-2h-4d",
-                            "call": {
-                              "type": "bid",
-                              "level": 4,
-                              "strain": "D"
-                            },
-                            "meaning": {
-                              "description": "Maximum non-serious Swiss for !s"
+                              "description": "4!S, min"
                             },
                             "variants": [],
                             "competitive": [],
@@ -1432,12 +1486,19 @@
                         "strain": "S"
                       },
                       "meaning": {
-                        "forcing": "1round",
                         "description": "4 !h — denies 4 !s. Opener bids naturally."
                       },
                       "variants": [],
                       "competitive": [],
                       "continuations": {
+                        "refs": [
+                          {
+                            "params": {
+                              "suit": "H"
+                            },
+                            "conventionId": "general-swiss"
+                          }
+                        ],
                         "type": "nodes",
                         "nodes": [
                           {
@@ -1549,39 +1610,16 @@
                             "variants": [],
                             "competitive": [],
                             "continuations": {
-                              "type": "tbd"
-                            }
-                          },
-                          {
-                            "id": "keri-2s-4c",
-                            "call": {
-                              "type": "bid",
-                              "level": 4,
-                              "strain": "C"
-                            },
-                            "meaning": {
-                              "description": "GF 4 !h Swiss (!c feature)"
-                            },
-                            "variants": [],
-                            "competitive": [],
-                            "continuations": {
-                              "type": "tbd"
-                            }
-                          },
-                          {
-                            "id": "keri-2s-4d",
-                            "call": {
-                              "type": "bid",
-                              "level": 4,
-                              "strain": "D"
-                            },
-                            "meaning": {
-                              "description": "GF 4 !h Swiss (!d feature)"
-                            },
-                            "variants": [],
-                            "competitive": [],
-                            "continuations": {
-                              "type": "tbd"
+                              "refs": [
+                                {
+                                  "params": {
+                                    "suit": "H"
+                                  },
+                                  "conventionId": "general-swiss"
+                                }
+                              ],
+                              "type": "nodes",
+                              "nodes": []
                             }
                           }
                         ]
@@ -1687,23 +1725,6 @@
                       }
                     },
                     {
-                      "id": "keri-2h-resp-2s",
-                      "call": {
-                        "type": "bid",
-                        "level": 2,
-                        "strain": "S"
-                      },
-                      "meaning": {
-                        "forcing": "1round",
-                        "description": "Forcing inquiry — fit or other hand"
-                      },
-                      "variants": [],
-                      "competitive": [],
-                      "continuations": {
-                        "type": "tbd"
-                      }
-                    },
-                    {
                       "id": "keri-2h-resp-3h",
                       "call": {
                         "type": "bid",
@@ -1733,6 +1754,52 @@
                       "competitive": [],
                       "continuations": {
                         "type": "end"
+                      }
+                    },
+                    {
+                      "id": "23b2ceff-2a6f-4cd7-8ed6-4d6333274b7c",
+                      "call": {
+                        "type": "pass"
+                      },
+                      "meaning": {
+                        "description": "to play"
+                      },
+                      "variants": [],
+                      "competitive": [],
+                      "continuations": {
+                        "type": "tbd"
+                      }
+                    },
+                    {
+                      "id": "898e3314-faa8-40d4-9d71-c8f03a3062eb",
+                      "call": {
+                        "type": "bid",
+                        "level": 2,
+                        "strain": "N"
+                      },
+                      "meaning": {
+                        "description": "Invitational for !N"
+                      },
+                      "variants": [],
+                      "competitive": [],
+                      "continuations": {
+                        "type": "tbd"
+                      }
+                    },
+                    {
+                      "id": "336f4303-81d3-46e2-a94f-457463d859a7",
+                      "call": {
+                        "type": "bid",
+                        "level": 3,
+                        "strain": "N"
+                      },
+                      "meaning": {
+                        "description": "to play"
+                      },
+                      "variants": [],
+                      "competitive": [],
+                      "continuations": {
+                        "type": "tbd"
                       }
                     }
                   ]
@@ -1787,23 +1854,6 @@
                       }
                     },
                     {
-                      "id": "keri-2s-resp-2nt",
-                      "call": {
-                        "type": "bid",
-                        "level": 2,
-                        "strain": "N"
-                      },
-                      "meaning": {
-                        "forcing": "1round",
-                        "description": "Forcing inquiry"
-                      },
-                      "variants": [],
-                      "competitive": [],
-                      "continuations": {
-                        "type": "tbd"
-                      }
-                    },
-                    {
                       "id": "keri-2s-resp-3s",
                       "call": {
                         "type": "bid",
@@ -1833,6 +1883,52 @@
                       "competitive": [],
                       "continuations": {
                         "type": "end"
+                      }
+                    },
+                    {
+                      "id": "45468f24-9b2c-4a04-b7dc-bdc3b06dc597",
+                      "call": {
+                        "type": "pass"
+                      },
+                      "meaning": {
+                        "description": "to play"
+                      },
+                      "variants": [],
+                      "competitive": [],
+                      "continuations": {
+                        "type": "tbd"
+                      }
+                    },
+                    {
+                      "id": "d2e3e5ad-3585-43ba-9536-d1895a581521",
+                      "call": {
+                        "type": "bid",
+                        "level": 2,
+                        "strain": "N"
+                      },
+                      "meaning": {
+                        "description": "Invitational for !N"
+                      },
+                      "variants": [],
+                      "competitive": [],
+                      "continuations": {
+                        "type": "tbd"
+                      }
+                    },
+                    {
+                      "id": "56e80f68-5611-468d-a3e0-19f6bdfd4437",
+                      "call": {
+                        "type": "bid",
+                        "level": 3,
+                        "strain": "N"
+                      },
+                      "meaning": {
+                        "description": "to play"
+                      },
+                      "variants": [],
+                      "competitive": [],
+                      "continuations": {
+                        "type": "tbd"
                       }
                     }
                   ]
@@ -2274,12 +2370,15 @@
                   "strain": "N"
                 },
                 "meaning": {
+                  "hcp": [
+                    12,
+                    15
+                  ],
                   "announce": "natural non-forcing",
-                  "description": "11-13(vul)/12-15(nv) balanced — to play"
+                  "description": "balanced"
                 },
                 "variants": [
                   {
-                    "id": "1c-1d-1nt-v1",
                     "condition": {
                       "vul": [
                         "vul"
@@ -2294,13 +2393,93 @@
                         11,
                         13
                       ],
-                      "description": "11-13 balanced — to play"
+                      "description": "11-13 balanced"
                     }
                   }
                 ],
                 "competitive": [],
                 "continuations": {
-                  "type": "end"
+                  "type": "nodes",
+                  "nodes": [
+                    {
+                      "id": "67912b97-0a55-43c4-9ef3-76d6488c098b",
+                      "call": {
+                        "type": "bid",
+                        "level": 2,
+                        "strain": "C"
+                      },
+                      "meaning": {
+                        "description": "natural to play"
+                      },
+                      "variants": [],
+                      "competitive": [],
+                      "continuations": {
+                        "type": "tbd"
+                      }
+                    },
+                    {
+                      "id": "8bc161d8-6f4b-4670-b6a2-9e1801cb763f",
+                      "call": {
+                        "type": "bid",
+                        "level": 2,
+                        "strain": "D"
+                      },
+                      "meaning": {
+                        "description": "natural to play"
+                      },
+                      "variants": [],
+                      "competitive": [],
+                      "continuations": {
+                        "type": "tbd"
+                      }
+                    },
+                    {
+                      "id": "272cd533-3dde-4024-ac1a-c14f0b1333ef",
+                      "call": {
+                        "type": "bid",
+                        "level": 2,
+                        "strain": "H"
+                      },
+                      "meaning": {
+                        "description": "natural to play"
+                      },
+                      "variants": [],
+                      "competitive": [],
+                      "continuations": {
+                        "type": "tbd"
+                      }
+                    },
+                    {
+                      "id": "7ac973ac-73bf-4688-8cd5-f2ede44898bb",
+                      "call": {
+                        "type": "bid",
+                        "level": 2,
+                        "strain": "S"
+                      },
+                      "meaning": {
+                        "description": "natural to play"
+                      },
+                      "variants": [],
+                      "competitive": [],
+                      "continuations": {
+                        "type": "tbd"
+                      }
+                    },
+                    {
+                      "id": "8fbb830d-6f45-48d8-8049-1698c65e19a2",
+                      "call": {
+                        "type": "pass"
+                      },
+                      "meaning": {
+                        "description": "to play"
+                      },
+                      "variants": [],
+                      "competitive": [],
+                      "continuations": {
+                        "type": "tbd"
+                      }
+                    }
+                  ]
                 }
               },
               {
@@ -2312,15 +2491,16 @@
                 },
                 "meaning": {
                   "hcp": [
-                    12,
+                    10,
                     15
                   ],
-                  "description": "12-15 unbalanced, exactly 4!h (4441 or longer minor canape)"
+                  "description": "unbalanced, exactly 4!h (4441 or longer minor canape)"
                 },
                 "variants": [],
                 "competitive": [],
                 "continuations": {
-                  "type": "tbd"
+                  "type": "nodes",
+                  "nodes": []
                 }
               },
               {
@@ -2332,15 +2512,16 @@
                 },
                 "meaning": {
                   "hcp": [
-                    12,
+                    10,
                     15
                   ],
-                  "description": "12-15 unbalanced, exactly 4!s (4441 or longer minor canape)"
+                  "description": "unbalanced, exactly 4!s (4441 or longer minor canape)"
                 },
                 "variants": [],
                 "competitive": [],
                 "continuations": {
-                  "type": "tbd"
+                  "type": "nodes",
+                  "nodes": []
                 }
               },
               {
@@ -2351,12 +2532,17 @@
                   "strain": "C"
                 },
                 "meaning": {
-                  "description": "12-15 unbalanced, denies 4-card major, 5+!c"
+                  "hcp": [
+                    10,
+                    15
+                  ],
+                  "description": "unbalanced, denies 4-card major, 5+!c"
                 },
                 "variants": [],
                 "competitive": [],
                 "continuations": {
-                  "type": "tbd"
+                  "type": "nodes",
+                  "nodes": []
                 }
               },
               {
@@ -2367,12 +2553,17 @@
                   "strain": "D"
                 },
                 "meaning": {
-                  "description": "12-15 unbalanced, denies 4-card major, 5+!d"
+                  "hcp": [
+                    10,
+                    15
+                  ],
+                  "description": "unbalanced, denies 4-card major, 5+!d"
                 },
                 "variants": [],
                 "competitive": [],
                 "continuations": {
-                  "type": "tbd"
+                  "type": "nodes",
+                  "nodes": []
                 }
               }
             ]
@@ -2407,8 +2598,11 @@
                   "strain": "S"
                 },
                 "meaning": {
+                  "hcp": [
+                    10,
+                    11
+                  ],
                   "alert": true,
-                  "forcing": "1round",
                   "description": "Any 10-11 (artificial waiting relay)"
                 },
                 "variants": [],
@@ -2424,12 +2618,96 @@
                         "strain": "N"
                       },
                       "meaning": {
+                        "hcp": [
+                          9,
+                          12
+                        ],
                         "description": "Balanced, no game interest — natural non-forcing weak takeout"
                       },
                       "variants": [],
                       "competitive": [],
                       "continuations": {
-                        "type": "end"
+                        "type": "nodes",
+                        "nodes": [
+                          {
+                            "id": "734fddc7-1ba9-4f6a-9f5b-36c684558e67",
+                            "call": {
+                              "type": "bid",
+                              "level": 2,
+                              "strain": "C"
+                            },
+                            "meaning": {
+                              "description": "natural, to play"
+                            },
+                            "variants": [],
+                            "competitive": [],
+                            "continuations": {
+                              "type": "tbd"
+                            }
+                          },
+                          {
+                            "id": "e5319055-f6f8-4a27-90ef-7cf60334e249",
+                            "call": {
+                              "type": "bid",
+                              "level": 2,
+                              "strain": "D"
+                            },
+                            "meaning": {
+                              "description": "natural, to play"
+                            },
+                            "variants": [],
+                            "competitive": [],
+                            "continuations": {
+                              "type": "tbd"
+                            }
+                          },
+                          {
+                            "id": "e9744b36-7a00-4a6a-ba31-d3c647c15d15",
+                            "call": {
+                              "type": "bid",
+                              "level": 2,
+                              "strain": "H"
+                            },
+                            "meaning": {
+                              "description": "natural, to play"
+                            },
+                            "variants": [],
+                            "competitive": [],
+                            "continuations": {
+                              "type": "tbd"
+                            }
+                          },
+                          {
+                            "id": "548bf8f5-7ac7-4bd8-a455-9ccc6b2ca8cd",
+                            "call": {
+                              "type": "bid",
+                              "level": 2,
+                              "strain": "S"
+                            },
+                            "meaning": {
+                              "description": "natural, to play"
+                            },
+                            "variants": [],
+                            "competitive": [],
+                            "continuations": {
+                              "type": "tbd"
+                            }
+                          },
+                          {
+                            "id": "da4a79fe-ddae-4a45-9bd7-a2070f588eb7",
+                            "call": {
+                              "type": "pass"
+                            },
+                            "meaning": {
+                              "description": "to play"
+                            },
+                            "variants": [],
+                            "competitive": [],
+                            "continuations": {
+                              "type": "tbd"
+                            }
+                          }
+                        ]
                       }
                     },
                     {
@@ -2440,60 +2718,68 @@
                         "strain": "C"
                       },
                       "meaning": {
-                        "description": "Natural, non-forcing"
+                        "forcing": "1r",
+                        "description": "Natural"
                       },
                       "variants": [],
                       "competitive": [],
                       "continuations": {
-                        "type": "tbd"
+                        "type": "nodes",
+                        "nodes": []
                       }
                     },
                     {
-                      "id": "1c-1h-1s-2d",
+                      "id": "08dc9a52-86b7-470c-b5c8-a33e62d3884a",
                       "call": {
                         "type": "bid",
                         "level": 2,
                         "strain": "D"
                       },
                       "meaning": {
-                        "description": "Natural, non-forcing"
+                        "forcing": "1r",
+                        "description": "Natural"
                       },
                       "variants": [],
                       "competitive": [],
                       "continuations": {
-                        "type": "tbd"
+                        "type": "nodes",
+                        "nodes": []
                       }
                     },
                     {
-                      "id": "1c-1h-1s-2h",
+                      "id": "34d4d13b-a15c-4347-9398-c38b390ee398",
                       "call": {
                         "type": "bid",
                         "level": 2,
                         "strain": "H"
                       },
                       "meaning": {
-                        "description": "Natural, non-forcing"
+                        "forcing": "1r",
+                        "description": "Natural"
                       },
                       "variants": [],
                       "competitive": [],
                       "continuations": {
-                        "type": "tbd"
+                        "type": "nodes",
+                        "nodes": []
                       }
                     },
                     {
-                      "id": "1c-1h-1s-2s",
+                      "id": "05a1f9f6-16fb-4765-8688-ca68b8876c23",
                       "call": {
                         "type": "bid",
                         "level": 2,
                         "strain": "S"
                       },
                       "meaning": {
-                        "description": "Natural, non-forcing"
+                        "forcing": "1r",
+                        "description": "Natural"
                       },
                       "variants": [],
                       "competitive": [],
                       "continuations": {
-                        "type": "tbd"
+                        "type": "nodes",
+                        "nodes": []
                       }
                     },
                     {
@@ -2534,11 +2820,37 @@
                   ],
                   "description": "12-13(vul)/12-15(nv) balanced"
                 },
-                "variants": [],
+                "variants": [
+                  {
+                    "condition": {
+                      "vul": [
+                        "vul"
+                      ],
+                      "seats": [
+                        1,
+                        2
+                      ]
+                    },
+                    "meaningOverride": {
+                      "hcp": [
+                        11,
+                        13
+                      ]
+                    }
+                  }
+                ],
                 "competitive": [],
                 "continuations": {
-                  "type": "ref",
-                  "conventionId": "1nt-resp"
+                  "refs": [
+                    {
+                      "conventionId": "1nt-resp"
+                    },
+                    {
+                      "conventionId": "keri"
+                    }
+                  ],
+                  "type": "nodes",
+                  "nodes": []
                 }
               },
               {
@@ -2549,12 +2861,13 @@
                   "strain": "C"
                 },
                 "meaning": {
-                  "description": "Natural, non-forcing, not canape — 5+!c"
+                  "description": "Natural, non-forcing, not canape"
                 },
                 "variants": [],
                 "competitive": [],
                 "continuations": {
-                  "type": "tbd"
+                  "type": "nodes",
+                  "nodes": []
                 }
               },
               {
@@ -2565,12 +2878,13 @@
                   "strain": "D"
                 },
                 "meaning": {
-                  "description": "Natural, non-forcing, not canape — 5+!d"
+                  "description": "Natural, non-forcing, not canape"
                 },
                 "variants": [],
                 "competitive": [],
                 "continuations": {
-                  "type": "tbd"
+                  "type": "nodes",
+                  "nodes": []
                 }
               },
               {
@@ -2581,12 +2895,13 @@
                   "strain": "H"
                 },
                 "meaning": {
-                  "description": "Natural, non-forcing — 5+!h"
+                  "description": "Natural, non-forcing"
                 },
                 "variants": [],
                 "competitive": [],
                 "continuations": {
-                  "type": "tbd"
+                  "type": "nodes",
+                  "nodes": []
                 }
               },
               {
@@ -2597,12 +2912,13 @@
                   "strain": "S"
                 },
                 "meaning": {
-                  "description": "Natural, non-forcing — 5+!s"
+                  "description": "Natural, non-forcing"
                 },
                 "variants": [],
                 "competitive": [],
                 "continuations": {
-                  "type": "tbd"
+                  "type": "nodes",
+                  "nodes": []
                 }
               }
             ]
@@ -2638,16 +2954,48 @@
                 },
                 "meaning": {
                   "hcp": [
-                    11,
+                    12,
                     15
                   ],
-                  "description": "11-13(vul)/12-15(nv) balanced"
+                  "description": "balanced"
                 },
-                "variants": [],
+                "variants": [
+                  {
+                    "condition": {
+                      "vul": [
+                        "vul"
+                      ],
+                      "seats": [
+                        1,
+                        2
+                      ]
+                    },
+                    "meaningOverride": {
+                      "hcp": [
+                        11,
+                        13
+                      ]
+                    }
+                  }
+                ],
                 "competitive": [],
                 "continuations": {
-                  "type": "ref",
-                  "conventionId": "1nt-resp"
+                  "refs": [
+                    {
+                      "conventionId": "1nt-resp"
+                    },
+                    {
+                      "conventionId": "keri"
+                    },
+                    {
+                      "conventionId": "viscount"
+                    },
+                    {
+                      "conventionId": "rkqg"
+                    }
+                  ],
+                  "type": "nodes",
+                  "nodes": []
                 }
               },
               {
@@ -3032,11 +3380,37 @@
                   ],
                   "description": "17-19(vul)/16-19(nv) balanced"
                 },
-                "variants": [],
+                "variants": [
+                  {
+                    "condition": {
+                      "vul": [
+                        "vul"
+                      ],
+                      "seats": [
+                        1,
+                        2
+                      ]
+                    },
+                    "meaningOverride": {
+                      "hcp": [
+                        17,
+                        19
+                      ]
+                    }
+                  }
+                ],
                 "competitive": [],
                 "continuations": {
-                  "type": "ref",
-                  "conventionId": "1nt-resp"
+                  "refs": [
+                    {
+                      "conventionId": "keri"
+                    },
+                    {
+                      "conventionId": "1nt-resp"
+                    }
+                  ],
+                  "type": "nodes",
+                  "nodes": []
                 }
               },
               {
@@ -3047,12 +3421,13 @@
                   "strain": "S"
                 },
                 "meaning": {
-                  "description": "Natural — 5+!s (may have longer minor, canape possible)"
+                  "description": "Natural"
                 },
                 "variants": [],
                 "competitive": [],
                 "continuations": {
-                  "type": "tbd"
+                  "type": "nodes",
+                  "nodes": []
                 }
               },
               {
@@ -3063,44 +3438,47 @@
                   "strain": "C"
                 },
                 "meaning": {
-                  "description": "Natural — 5+!c"
+                  "description": "Natural"
                 },
                 "variants": [],
                 "competitive": [],
                 "continuations": {
-                  "type": "tbd"
+                  "type": "nodes",
+                  "nodes": []
                 }
               },
               {
-                "id": "1d-1h-2d",
+                "id": "32e85585-68c2-4a6f-ba1c-e6245e3ac77e",
                 "call": {
                   "type": "bid",
                   "level": 2,
                   "strain": "D"
                 },
                 "meaning": {
-                  "description": "Natural — 5+!d"
+                  "description": "Natural"
                 },
                 "variants": [],
                 "competitive": [],
                 "continuations": {
-                  "type": "tbd"
+                  "type": "nodes",
+                  "nodes": []
                 }
               },
               {
-                "id": "1d-1h-2h",
+                "id": "18a90d39-5107-4974-a170-8dc72c23bd9d",
                 "call": {
                   "type": "bid",
                   "level": 2,
                   "strain": "H"
                 },
                 "meaning": {
-                  "description": "Natural — 5+!h"
+                  "description": "Natural"
                 },
                 "variants": [],
                 "competitive": [],
                 "continuations": {
-                  "type": "tbd"
+                  "type": "nodes",
+                  "nodes": []
                 }
               },
               {
@@ -3203,13 +3581,45 @@
                     16,
                     19
                   ],
-                  "description": "17-19(vul)/16-19(nv) balanced"
+                  "description": "balanced"
                 },
-                "variants": [],
+                "variants": [
+                  {
+                    "condition": {
+                      "vul": [
+                        "vul"
+                      ],
+                      "seats": [
+                        1,
+                        2
+                      ]
+                    },
+                    "meaningOverride": {
+                      "hcp": [
+                        17,
+                        19
+                      ]
+                    }
+                  }
+                ],
                 "competitive": [],
                 "continuations": {
-                  "type": "ref",
-                  "conventionId": "1nt-resp"
+                  "refs": [
+                    {
+                      "conventionId": "1nt-resp"
+                    },
+                    {
+                      "conventionId": "keri"
+                    },
+                    {
+                      "conventionId": "rkqg"
+                    },
+                    {
+                      "conventionId": "viscount"
+                    }
+                  ],
+                  "type": "nodes",
+                  "nodes": []
                 }
               },
               {
@@ -3259,59 +3669,7 @@
                             "competitive": [],
                             "continuations": {
                               "type": "nodes",
-                              "nodes": [
-                                {
-                                  "id": "1d-1s-2c-2d-2nt-3c",
-                                  "call": {
-                                    "type": "bid",
-                                    "level": 3,
-                                    "strain": "C"
-                                  },
-                                  "meaning": {
-                                    "forcing": "1round",
-                                    "description": "Relay — asks length/quality"
-                                  },
-                                  "variants": [],
-                                  "competitive": [],
-                                  "continuations": {
-                                    "type": "nodes",
-                                    "nodes": [
-                                      {
-                                        "id": "1d-1s-suct-d-16-18",
-                                        "call": {
-                                          "type": "bid",
-                                          "level": 3,
-                                          "strain": "D"
-                                        },
-                                        "meaning": {
-                                          "description": "!d single-suiter 16-18"
-                                        },
-                                        "variants": [],
-                                        "competitive": [],
-                                        "continuations": {
-                                          "type": "tbd"
-                                        }
-                                      },
-                                      {
-                                        "id": "1d-1s-suct-d-19-21",
-                                        "call": {
-                                          "type": "bid",
-                                          "level": 3,
-                                          "strain": "H"
-                                        },
-                                        "meaning": {
-                                          "description": "!d single-suiter 19-21"
-                                        },
-                                        "variants": [],
-                                        "competitive": [],
-                                        "continuations": {
-                                          "type": "tbd"
-                                        }
-                                      }
-                                    ]
-                                  }
-                                }
-                              ]
+                              "nodes": []
                             }
                           },
                           {
@@ -3328,87 +3686,7 @@
                             "competitive": [],
                             "continuations": {
                               "type": "nodes",
-                              "nodes": [
-                                {
-                                  "id": "1d-1s-2c-2d-2h-2s",
-                                  "call": {
-                                    "type": "bid",
-                                    "level": 2,
-                                    "strain": "S"
-                                  },
-                                  "meaning": {
-                                    "forcing": "1round",
-                                    "description": "Relay — asks for more detail"
-                                  },
-                                  "variants": [],
-                                  "competitive": [],
-                                  "continuations": {
-                                    "type": "tbd"
-                                  }
-                                },
-                                {
-                                  "id": "1d-1s-2c-2d-2h-3h",
-                                  "call": {
-                                    "type": "bid",
-                                    "level": 3,
-                                    "strain": "H"
-                                  },
-                                  "meaning": {
-                                    "description": "Agree !h — slam try; Swiss/RKCB to follow"
-                                  },
-                                  "variants": [],
-                                  "competitive": [],
-                                  "continuations": {
-                                    "refs": [
-                                      {
-                                        "params": {
-                                          "suit": "H"
-                                        },
-                                        "conventionId": "general-swiss"
-                                      },
-                                      {
-                                        "params": {
-                                          "suit": "H"
-                                        },
-                                        "conventionId": "rkcb"
-                                      }
-                                    ],
-                                    "type": "nodes",
-                                    "nodes": []
-                                  }
-                                },
-                                {
-                                  "id": "1d-1s-2c-2d-2h-3s",
-                                  "call": {
-                                    "type": "bid",
-                                    "level": 3,
-                                    "strain": "S"
-                                  },
-                                  "meaning": {
-                                    "description": "Agree !s — slam try; Swiss/RKCB to follow"
-                                  },
-                                  "variants": [],
-                                  "competitive": [],
-                                  "continuations": {
-                                    "refs": [
-                                      {
-                                        "params": {
-                                          "suit": "S"
-                                        },
-                                        "conventionId": "general-swiss"
-                                      },
-                                      {
-                                        "params": {
-                                          "suit": "S"
-                                        },
-                                        "conventionId": "rkcb"
-                                      }
-                                    ],
-                                    "type": "nodes",
-                                    "nodes": []
-                                  }
-                                }
-                              ]
+                              "nodes": []
                             }
                           },
                           {
@@ -4223,12 +4501,13 @@
                               "strain": "D"
                             },
                             "meaning": {
-                              "description": "Swiss-or-correct agreeing !d (pass if !h+!d with !d preference)"
+                              "description": "Swiss-or-correct for !d"
                             },
                             "variants": [],
                             "competitive": [],
                             "continuations": {
-                              "type": "tbd"
+                              "type": "nodes",
+                              "nodes": []
                             }
                           },
                           {
@@ -4239,12 +4518,13 @@
                               "strain": "H"
                             },
                             "meaning": {
-                              "description": "Swiss-or-correct agreeing !h (pass if !h+!d with !h preference)"
+                              "description": "Swiss-or-correct for !h"
                             },
                             "variants": [],
                             "competitive": [],
                             "continuations": {
-                              "type": "tbd"
+                              "type": "nodes",
+                              "nodes": []
                             }
                           }
                         ]
@@ -4262,63 +4542,13 @@
                 },
                 "meaning": {
                   "alert": true,
-                  "forcing": "game",
                   "description": "Non-touching two-suiter: !c+!h or !d+!s"
                 },
                 "variants": [],
                 "competitive": [],
                 "continuations": {
                   "type": "nodes",
-                  "nodes": [
-                    {
-                      "id": "1d-1s-2nt-3c",
-                      "call": {
-                        "type": "bid",
-                        "level": 3,
-                        "strain": "C"
-                      },
-                      "meaning": {
-                        "description": "Pass or correct to !d (if !d+!s two-suiter)"
-                      },
-                      "variants": [],
-                      "competitive": [],
-                      "continuations": {
-                        "type": "tbd"
-                      }
-                    },
-                    {
-                      "id": "1d-1s-2nt-3h",
-                      "call": {
-                        "type": "bid",
-                        "level": 3,
-                        "strain": "H"
-                      },
-                      "meaning": {
-                        "description": "Pass or correct to !s (if !d+!s two-suiter)"
-                      },
-                      "variants": [],
-                      "competitive": [],
-                      "continuations": {
-                        "type": "tbd"
-                      }
-                    },
-                    {
-                      "id": "1d-1s-2nt-3d",
-                      "call": {
-                        "type": "bid",
-                        "level": 3,
-                        "strain": "D"
-                      },
-                      "meaning": {
-                        "description": "Swiss-or-correct — invite to 3NT if suitable"
-                      },
-                      "variants": [],
-                      "competitive": [],
-                      "continuations": {
-                        "type": "tbd"
-                      }
-                    }
-                  ]
+                  "nodes": []
                 }
               },
               {
@@ -4711,8 +4941,19 @@
                 "variants": [],
                 "competitive": [],
                 "continuations": {
-                  "type": "ref",
-                  "conventionId": "2nt-resp"
+                  "refs": [
+                    {
+                      "conventionId": "2nt-resp"
+                    },
+                    {
+                      "conventionId": "viscount"
+                    },
+                    {
+                      "conventionId": "rkqg"
+                    }
+                  ],
+                  "type": "nodes",
+                  "nodes": []
                 }
               },
               {
@@ -4754,12 +4995,13 @@
                         "strain": "C"
                       },
                       "meaning": {
-                        "description": "To play !h"
+                        "description": "To play !c"
                       },
                       "variants": [],
                       "competitive": [],
                       "continuations": {
-                        "type": "end"
+                        "type": "nodes",
+                        "nodes": []
                       }
                     },
                     {
@@ -4770,12 +5012,27 @@
                         "strain": "D"
                       },
                       "meaning": {
-                        "description": "To play !d (good fit)"
+                        "description": "To play !d"
                       },
                       "variants": [],
                       "competitive": [],
                       "continuations": {
-                        "type": "end"
+                        "type": "nodes",
+                        "nodes": []
+                      }
+                    },
+                    {
+                      "id": "97f50c42-f2f1-4bc4-af79-5d8e6b22ad4e",
+                      "call": {
+                        "type": "pass"
+                      },
+                      "meaning": {
+                        "description": "to play !H"
+                      },
+                      "variants": [],
+                      "competitive": [],
+                      "continuations": {
+                        "type": "tbd"
                       }
                     }
                   ]
@@ -4838,12 +5095,13 @@
                   "type": "pass"
                 },
                 "meaning": {
-                  "description": "Minimum weak !h+!s, !h preference"
+                  "description": "Minimum weak !h+!s"
                 },
                 "variants": [],
                 "competitive": [],
                 "continuations": {
-                  "type": "end"
+                  "type": "nodes",
+                  "nodes": []
                 }
               },
               {
@@ -4859,24 +5117,19 @@
                 "variants": [],
                 "competitive": [],
                 "continuations": {
-                  "type": "ref",
-                  "conventionId": "2nt-resp"
-                }
-              },
-              {
-                "id": "2c-2h-2s",
-                "call": {
-                  "type": "bid",
-                  "level": 2,
-                  "strain": "S"
-                },
-                "meaning": {
-                  "description": "Min weak !h+!s, !s preference"
-                },
-                "variants": [],
-                "competitive": [],
-                "continuations": {
-                  "type": "end"
+                  "refs": [
+                    {
+                      "conventionId": "rkqg"
+                    },
+                    {
+                      "conventionId": "viscount"
+                    },
+                    {
+                      "conventionId": "2nt-resp"
+                    }
+                  ],
+                  "type": "nodes",
+                  "nodes": []
                 }
               },
               {
@@ -4960,7 +5213,116 @@
           "variants": [],
           "competitive": [],
           "continuations": {
-            "type": "tbd"
+            "type": "nodes",
+            "nodes": [
+              {
+                "id": "0baf2c27-8f26-4c60-a934-da26ea8272aa",
+                "call": {
+                  "type": "pass"
+                },
+                "meaning": {
+                  "description": "Minimum weak !h+!s"
+                },
+                "variants": [],
+                "competitive": [],
+                "continuations": {
+                  "type": "nodes",
+                  "nodes": []
+                }
+              },
+              {
+                "id": "a9738cdc-d65e-4fad-82d1-f0336f0b227b",
+                "call": {
+                  "type": "bid",
+                  "level": 2,
+                  "strain": "N"
+                },
+                "meaning": {
+                  "description": "20-23 balanced"
+                },
+                "variants": [],
+                "competitive": [],
+                "continuations": {
+                  "refs": [
+                    {
+                      "conventionId": "2nt-resp"
+                    },
+                    {
+                      "conventionId": "viscount"
+                    },
+                    {
+                      "conventionId": "rkqg"
+                    }
+                  ],
+                  "type": "nodes",
+                  "nodes": []
+                }
+              },
+              {
+                "id": "9605476c-296f-46f8-8b64-e892e61f581a",
+                "call": {
+                  "type": "bid",
+                  "level": 3,
+                  "strain": "C"
+                },
+                "meaning": {
+                  "description": "GF two-suiter"
+                },
+                "variants": [],
+                "competitive": [],
+                "continuations": {
+                  "type": "tbd"
+                }
+              },
+              {
+                "id": "4ce58dbc-1872-4ca4-bd5a-edb0ef770edd",
+                "call": {
+                  "type": "bid",
+                  "level": 3,
+                  "strain": "D"
+                },
+                "meaning": {
+                  "description": "Weak !d — rebid"
+                },
+                "variants": [],
+                "competitive": [],
+                "continuations": {
+                  "type": "end"
+                }
+              },
+              {
+                "id": "bb4d9dcb-f34c-4431-a501-1a5448270bc1",
+                "call": {
+                  "type": "bid",
+                  "level": 3,
+                  "strain": "H"
+                },
+                "meaning": {
+                  "description": "Max weak majors, !h preference"
+                },
+                "variants": [],
+                "competitive": [],
+                "continuations": {
+                  "type": "tbd"
+                }
+              },
+              {
+                "id": "f52f664b-e11d-4f69-a5d4-1e2212f2c97e",
+                "call": {
+                  "type": "bid",
+                  "level": 3,
+                  "strain": "S"
+                },
+                "meaning": {
+                  "description": "Max weak majors, !s preference"
+                },
+                "variants": [],
+                "competitive": [],
+                "continuations": {
+                  "type": "tbd"
+                }
+              }
+            ]
           }
         },
         {
@@ -5057,8 +5419,13 @@
                 "variants": [],
                 "competitive": [],
                 "continuations": {
-                  "type": "ref",
-                  "conventionId": "2nt-resp"
+                  "refs": [
+                    {
+                      "conventionId": "3n-continuations"
+                    }
+                  ],
+                  "type": "nodes",
+                  "nodes": []
                 }
               }
             ]
@@ -5194,7 +5561,7 @@
                   "strain": "S"
                 },
                 "meaning": {
-                  "description": "Weak !s+!c — !s preference"
+                  "description": "Weak !s+!c"
                 },
                 "variants": [],
                 "competitive": [],
@@ -5241,12 +5608,27 @@
                         "strain": "H"
                       },
                       "meaning": {
-                        "description": "To play !h (good fit)"
+                        "description": "To play !h"
                       },
                       "variants": [],
                       "competitive": [],
                       "continuations": {
-                        "type": "end"
+                        "type": "nodes",
+                        "nodes": []
+                      }
+                    },
+                    {
+                      "id": "cd9a2caf-27bf-4381-be5d-fdd425a3a70c",
+                      "call": {
+                        "type": "pass"
+                      },
+                      "meaning": {
+                        "description": "To play !S"
+                      },
+                      "variants": [],
+                      "competitive": [],
+                      "continuations": {
+                        "type": "tbd"
                       }
                     }
                   ]
@@ -5301,7 +5683,90 @@
           "variants": [],
           "competitive": [],
           "continuations": {
-            "type": "tbd"
+            "type": "nodes",
+            "nodes": [
+              {
+                "id": "523628b5-c51e-4d47-b462-831834839d96",
+                "call": {
+                  "type": "pass"
+                },
+                "meaning": {
+                  "description": "Min weak !C+!S"
+                },
+                "variants": [],
+                "competitive": [],
+                "continuations": {
+                  "type": "tbd"
+                }
+              },
+              {
+                "id": "fd80ee21-0586-408a-a26a-53953245ca04",
+                "call": {
+                  "type": "bid",
+                  "level": 3,
+                  "strain": "D"
+                },
+                "meaning": {
+                  "description": "GF !S+!C"
+                },
+                "variants": [],
+                "competitive": [],
+                "continuations": {
+                  "type": "nodes",
+                  "nodes": []
+                }
+              },
+              {
+                "id": "c56ff9e8-7f20-4910-a313-28c6bc48ff4f",
+                "call": {
+                  "type": "bid",
+                  "level": 3,
+                  "strain": "H"
+                },
+                "meaning": {
+                  "description": "Weak !H"
+                },
+                "variants": [],
+                "competitive": [],
+                "continuations": {
+                  "type": "nodes",
+                  "nodes": []
+                }
+              },
+              {
+                "id": "ab6240bf-2185-4199-b8fe-63c16a16fb15",
+                "call": {
+                  "type": "bid",
+                  "level": 3,
+                  "strain": "S"
+                },
+                "meaning": {
+                  "description": "Max weak better !S"
+                },
+                "variants": [],
+                "competitive": [],
+                "continuations": {
+                  "type": "tbd"
+                }
+              },
+              {
+                "id": "d4ecc5f6-5efb-416e-8d73-21ec11e0fa50",
+                "call": {
+                  "type": "bid",
+                  "level": 3,
+                  "strain": "N"
+                },
+                "meaning": {
+                  "description": "Max weak better !C"
+                },
+                "variants": [],
+                "competitive": [],
+                "continuations": {
+                  "type": "nodes",
+                  "nodes": []
+                }
+              }
+            ]
           }
         },
         {
@@ -5318,7 +5783,90 @@
           "variants": [],
           "competitive": [],
           "continuations": {
-            "type": "tbd"
+            "type": "nodes",
+            "nodes": [
+              {
+                "id": "087780f5-65c6-4da4-8827-c79b247a3585",
+                "call": {
+                  "type": "pass"
+                },
+                "meaning": {
+                  "description": "Min weak !C+!S"
+                },
+                "variants": [],
+                "competitive": [],
+                "continuations": {
+                  "type": "tbd"
+                }
+              },
+              {
+                "id": "4844b288-0fec-47ba-ba10-8c32f89dd030",
+                "call": {
+                  "type": "bid",
+                  "level": 3,
+                  "strain": "D"
+                },
+                "meaning": {
+                  "description": "GF !S+!C"
+                },
+                "variants": [],
+                "competitive": [],
+                "continuations": {
+                  "type": "nodes",
+                  "nodes": []
+                }
+              },
+              {
+                "id": "01f3595e-7025-483b-8638-3754475c6579",
+                "call": {
+                  "type": "bid",
+                  "level": 3,
+                  "strain": "H"
+                },
+                "meaning": {
+                  "description": "Weak !H"
+                },
+                "variants": [],
+                "competitive": [],
+                "continuations": {
+                  "type": "nodes",
+                  "nodes": []
+                }
+              },
+              {
+                "id": "146650b8-deab-4f83-88a8-112f3e34fe95",
+                "call": {
+                  "type": "bid",
+                  "level": 3,
+                  "strain": "S"
+                },
+                "meaning": {
+                  "description": "Max weak better !S"
+                },
+                "variants": [],
+                "competitive": [],
+                "continuations": {
+                  "type": "tbd"
+                }
+              },
+              {
+                "id": "9122b2df-1b46-418d-b19d-9954fd28d546",
+                "call": {
+                  "type": "bid",
+                  "level": 3,
+                  "strain": "N"
+                },
+                "meaning": {
+                  "description": "Max weak better !C"
+                },
+                "variants": [],
+                "competitive": [],
+                "continuations": {
+                  "type": "nodes",
+                  "nodes": []
+                }
+              }
+            ]
           }
         },
         {
@@ -5658,7 +6206,104 @@
           "variants": [],
           "competitive": [],
           "continuations": {
-            "type": "tbd"
+            "type": "nodes",
+            "nodes": [
+              {
+                "id": "ac1f7ab4-8e2e-48f6-92ee-55bf0827b748",
+                "call": {
+                  "type": "pass"
+                },
+                "meaning": {
+                  "description": "min weak !C+!D"
+                },
+                "variants": [],
+                "competitive": [],
+                "continuations": {
+                  "type": "tbd"
+                }
+              },
+              {
+                "id": "5fae37ac-c86b-4c51-a37a-cf0948e2e4a0",
+                "call": {
+                  "type": "bid",
+                  "level": 3,
+                  "strain": "H"
+                },
+                "meaning": {
+                  "description": "GF !C+!D"
+                },
+                "variants": [],
+                "competitive": [],
+                "continuations": {
+                  "type": "tbd"
+                }
+              },
+              {
+                "id": "dc15e61e-c70a-4e5a-ba00-0fdaceb531f9",
+                "call": {
+                  "type": "bid",
+                  "level": 3,
+                  "strain": "S"
+                },
+                "meaning": {
+                  "description": "weak !S"
+                },
+                "variants": [],
+                "competitive": [],
+                "continuations": {
+                  "type": "tbd"
+                }
+              },
+              {
+                "id": "8addec7e-e5e9-49a4-aff2-2810cb707aa3",
+                "call": {
+                  "type": "bid",
+                  "level": 3,
+                  "strain": "N"
+                },
+                "meaning": {
+                  "description": "Max weak !C+!D equal"
+                },
+                "variants": [],
+                "competitive": [],
+                "continuations": {
+                  "type": "tbd"
+                }
+              },
+              {
+                "id": "0b32d055-13bc-4682-84f6-489b3608fb82",
+                "call": {
+                  "type": "bid",
+                  "level": 4,
+                  "strain": "C"
+                },
+                "meaning": {
+                  "description": "Max weak !C+!D better !C"
+                },
+                "variants": [],
+                "competitive": [],
+                "continuations": {
+                  "type": "tbd"
+                }
+              },
+              {
+                "id": "7f1c3864-64b1-4bab-90b2-ed5706728723",
+                "call": {
+                  "type": "bid",
+                  "level": 4,
+                  "strain": "D"
+                },
+                "meaning": {
+                  "description": "Max weak !C+!D better !D"
+                },
+                "variants": [],
+                "competitive": [],
+                "continuations": {
+                  "type": "nodes",
+                  "nodes": []
+                }
+              }
+            ]
           }
         },
         {
@@ -5675,7 +6320,104 @@
           "variants": [],
           "competitive": [],
           "continuations": {
-            "type": "tbd"
+            "type": "nodes",
+            "nodes": [
+              {
+                "id": "8a015890-1873-46d0-ae71-a0c248490d2e",
+                "call": {
+                  "type": "bid",
+                  "level": 3,
+                  "strain": "H"
+                },
+                "meaning": {
+                  "description": "GF !C+!D"
+                },
+                "variants": [],
+                "competitive": [],
+                "continuations": {
+                  "type": "tbd"
+                }
+              },
+              {
+                "id": "14e90ad0-bc6a-470d-88a0-e8a1fd048017",
+                "call": {
+                  "type": "pass"
+                },
+                "meaning": {
+                  "description": "min weak !C+!D"
+                },
+                "variants": [],
+                "competitive": [],
+                "continuations": {
+                  "type": "tbd"
+                }
+              },
+              {
+                "id": "51d0ad6d-410f-4762-ae69-9ef53a28748a",
+                "call": {
+                  "type": "bid",
+                  "level": 3,
+                  "strain": "S"
+                },
+                "meaning": {
+                  "description": "weak !S"
+                },
+                "variants": [],
+                "competitive": [],
+                "continuations": {
+                  "type": "tbd"
+                }
+              },
+              {
+                "id": "96f31af1-c8f6-46bd-bdac-376b21c52776",
+                "call": {
+                  "type": "bid",
+                  "level": 3,
+                  "strain": "N"
+                },
+                "meaning": {
+                  "description": "Max weak !C+!D equal"
+                },
+                "variants": [],
+                "competitive": [],
+                "continuations": {
+                  "type": "tbd"
+                }
+              },
+              {
+                "id": "15b56183-7875-4e97-a2e5-d90fea2000d3",
+                "call": {
+                  "type": "bid",
+                  "level": 4,
+                  "strain": "C"
+                },
+                "meaning": {
+                  "description": "Max weak !C+!D better !C"
+                },
+                "variants": [],
+                "competitive": [],
+                "continuations": {
+                  "type": "tbd"
+                }
+              },
+              {
+                "id": "f1b70873-8aba-4967-b2f4-dc5df3c0b456",
+                "call": {
+                  "type": "bid",
+                  "level": 4,
+                  "strain": "D"
+                },
+                "meaning": {
+                  "description": "Max weak !C+!D better !D"
+                },
+                "variants": [],
+                "competitive": [],
+                "continuations": {
+                  "type": "nodes",
+                  "nodes": []
+                }
+              }
+            ]
           }
         },
         {
@@ -6270,12 +7012,13 @@
                   "strain": "C"
                 },
                 "meaning": {
-                  "description": "Singleton in other minor (!c)"
+                  "description": "Singleton in other minor (!d)"
                 },
                 "variants": [],
                 "competitive": [],
                 "continuations": {
-                  "type": "end"
+                  "type": "nodes",
+                  "nodes": []
                 }
               },
               {
@@ -6286,12 +7029,13 @@
                   "strain": "D"
                 },
                 "meaning": {
-                  "description": "Singleton in other minor (!d)"
+                  "description": "Singleton in other minor (!c)"
                 },
                 "variants": [],
                 "competitive": [],
                 "continuations": {
-                  "type": "end"
+                  "type": "nodes",
+                  "nodes": []
                 }
               }
             ]
@@ -6616,6 +7360,38 @@
                       "continuations": {
                         "type": "tbd"
                       }
+                    },
+                    {
+                      "id": "87416067-71e2-4a4f-9ae6-00396b01dd32",
+                      "call": {
+                        "type": "bid",
+                        "level": 3,
+                        "strain": "H"
+                      },
+                      "meaning": {
+                        "description": "GF clubs + side suit (!h feature)"
+                      },
+                      "variants": [],
+                      "competitive": [],
+                      "continuations": {
+                        "type": "tbd"
+                      }
+                    },
+                    {
+                      "id": "129f7e5b-e455-4e3f-a451-0edbaf78afff",
+                      "call": {
+                        "type": "bid",
+                        "level": 3,
+                        "strain": "S"
+                      },
+                      "meaning": {
+                        "description": "GF clubs + side suit (!s feature)"
+                      },
+                      "variants": [],
+                      "competitive": [],
+                      "continuations": {
+                        "type": "tbd"
+                      }
                     }
                   ]
                 }
@@ -6749,12 +7525,16 @@
           },
           "meaning": {
             "alert": true,
-            "forcing": "1round",
             "description": "5-5 majors, at least invitational"
           },
           "variants": [],
           "competitive": [],
           "continuations": {
+            "refs": [
+              {
+                "conventionId": "general-swiss"
+              }
+            ],
             "type": "nodes",
             "nodes": [
               {
@@ -6820,38 +7600,6 @@
                 "continuations": {
                   "type": "end"
                 }
-              },
-              {
-                "id": "1nt-3d-4c",
-                "call": {
-                  "type": "bid",
-                  "level": 4,
-                  "strain": "C"
-                },
-                "meaning": {
-                  "description": "General Swiss for !h or !s"
-                },
-                "variants": [],
-                "competitive": [],
-                "continuations": {
-                  "type": "tbd"
-                }
-              },
-              {
-                "id": "1nt-3d-4d",
-                "call": {
-                  "type": "bid",
-                  "level": 4,
-                  "strain": "D"
-                },
-                "meaning": {
-                  "description": "General Swiss for !h or !s"
-                },
-                "variants": [],
-                "competitive": [],
-                "continuations": {
-                  "type": "tbd"
-                }
               }
             ]
           }
@@ -6865,12 +7613,19 @@
           },
           "meaning": {
             "alert": true,
-            "forcing": "game",
             "description": "Slam try in !c — asks opener for help"
           },
           "variants": [],
           "competitive": [],
           "continuations": {
+            "refs": [
+              {
+                "params": {
+                  "suit": "C"
+                },
+                "conventionId": "general-swiss"
+              }
+            ],
             "type": "nodes",
             "nodes": [
               {
@@ -6886,6 +7641,14 @@
                 "variants": [],
                 "competitive": [],
                 "continuations": {
+                  "refs": [
+                    {
+                      "params": {
+                        "suit": "C"
+                      },
+                      "conventionId": "general-swiss"
+                    }
+                  ],
                   "type": "nodes",
                   "nodes": [
                     {
@@ -6903,56 +7666,8 @@
                       "continuations": {
                         "type": "tbd"
                       }
-                    },
-                    {
-                      "id": "1nt-3h-3nt-4c",
-                      "call": {
-                        "type": "bid",
-                        "level": 4,
-                        "strain": "C"
-                      },
-                      "meaning": {
-                        "description": "Swiss — try for !c slam anyway"
-                      },
-                      "variants": [],
-                      "competitive": [],
-                      "continuations": {
-                        "type": "tbd"
-                      }
                     }
                   ]
-                }
-              },
-              {
-                "id": "1nt-3h-4c",
-                "call": {
-                  "type": "bid",
-                  "level": 4,
-                  "strain": "C"
-                },
-                "meaning": {
-                  "description": "Good !c fit — Swiss"
-                },
-                "variants": [],
-                "competitive": [],
-                "continuations": {
-                  "type": "tbd"
-                }
-              },
-              {
-                "id": "1nt-3h-4d",
-                "call": {
-                  "type": "bid",
-                  "level": 4,
-                  "strain": "D"
-                },
-                "meaning": {
-                  "description": "!c fit + !d feature — Swiss"
-                },
-                "variants": [],
-                "competitive": [],
-                "continuations": {
-                  "type": "tbd"
                 }
               }
             ]
@@ -6967,12 +7682,19 @@
           },
           "meaning": {
             "alert": true,
-            "forcing": "game",
             "description": "Slam try in !d — asks opener for help"
           },
           "variants": [],
           "competitive": [],
           "continuations": {
+            "refs": [
+              {
+                "params": {
+                  "suit": "D"
+                },
+                "conventionId": "general-swiss"
+              }
+            ],
             "type": "nodes",
             "nodes": [
               {
@@ -6988,39 +7710,33 @@
                 "variants": [],
                 "competitive": [],
                 "continuations": {
-                  "type": "tbd"
-                }
-              },
-              {
-                "id": "1nt-3s-4c",
-                "call": {
-                  "type": "bid",
-                  "level": 4,
-                  "strain": "C"
-                },
-                "meaning": {
-                  "description": "Good !d fit — Swiss"
-                },
-                "variants": [],
-                "competitive": [],
-                "continuations": {
-                  "type": "tbd"
-                }
-              },
-              {
-                "id": "1nt-3s-4d",
-                "call": {
-                  "type": "bid",
-                  "level": 4,
-                  "strain": "D"
-                },
-                "meaning": {
-                  "description": "!d fit max — Swiss"
-                },
-                "variants": [],
-                "competitive": [],
-                "continuations": {
-                  "type": "tbd"
+                  "refs": [
+                    {
+                      "params": {
+                        "suit": "D"
+                      },
+                      "conventionId": "general-swiss"
+                    }
+                  ],
+                  "type": "nodes",
+                  "nodes": [
+                    {
+                      "id": "a09fbe90-99ae-4b1a-b078-9e934226ae29",
+                      "call": {
+                        "type": "bid",
+                        "level": 4,
+                        "strain": "N"
+                      },
+                      "meaning": {
+                        "description": "Quantitative — still interested in 6NT"
+                      },
+                      "variants": [],
+                      "competitive": [],
+                      "continuations": {
+                        "type": "tbd"
+                      }
+                    }
+                  ]
                 }
               }
             ]
@@ -7064,24 +7780,16 @@
                 "variants": [],
                 "competitive": [],
                 "continuations": {
+                  "refs": [
+                    {
+                      "params": {
+                        "suit": "H"
+                      },
+                      "conventionId": "general-swiss"
+                    }
+                  ],
                   "type": "nodes",
                   "nodes": [
-                    {
-                      "id": "2nt-3c-3h-3s",
-                      "call": {
-                        "type": "bid",
-                        "level": 3,
-                        "strain": "S"
-                      },
-                      "meaning": {
-                        "description": "3-card !h support — slam try"
-                      },
-                      "variants": [],
-                      "competitive": [],
-                      "continuations": {
-                        "type": "tbd"
-                      }
-                    },
                     {
                       "id": "2nt-3c-3h-3nt",
                       "call": {
@@ -7113,6 +7821,20 @@
                       "continuations": {
                         "type": "end"
                       }
+                    },
+                    {
+                      "id": "2b843e97-7856-4feb-930d-66edb4201169",
+                      "call": {
+                        "type": "pass"
+                      },
+                      "meaning": {
+                        "description": "to play"
+                      },
+                      "variants": [],
+                      "competitive": [],
+                      "continuations": {
+                        "type": "tbd"
+                      }
                     }
                   ]
                 }
@@ -7130,6 +7852,14 @@
                 "variants": [],
                 "competitive": [],
                 "continuations": {
+                  "refs": [
+                    {
+                      "params": {
+                        "suit": "S"
+                      },
+                      "conventionId": "general-swiss"
+                    }
+                  ],
                   "type": "nodes",
                   "nodes": [
                     {
@@ -7165,14 +7895,12 @@
                       }
                     },
                     {
-                      "id": "2nt-3c-3s-4h",
+                      "id": "b744c463-928b-47fd-9c0a-a84550018b4c",
                       "call": {
-                        "type": "bid",
-                        "level": 4,
-                        "strain": "H"
+                        "type": "pass"
                       },
                       "meaning": {
-                        "description": "3-card !s support — slam try"
+                        "description": "to play"
                       },
                       "variants": [],
                       "competitive": [],
@@ -7196,6 +7924,11 @@
                 "variants": [],
                 "competitive": [],
                 "continuations": {
+                  "refs": [
+                    {
+                      "conventionId": "rkqg"
+                    }
+                  ],
                   "type": "nodes",
                   "nodes": [
                     {
@@ -7211,24 +7944,16 @@
                       "variants": [],
                       "competitive": [],
                       "continuations": {
+                        "refs": [
+                          {
+                            "params": {
+                              "suit": "S"
+                            },
+                            "conventionId": "general-swiss"
+                          }
+                        ],
                         "type": "nodes",
                         "nodes": [
-                          {
-                            "id": "2nt-3c-3d-3h-3s",
-                            "call": {
-                              "type": "bid",
-                              "level": 3,
-                              "strain": "S"
-                            },
-                            "meaning": {
-                              "description": "4!s fit"
-                            },
-                            "variants": [],
-                            "competitive": [],
-                            "continuations": {
-                              "type": "tbd"
-                            }
-                          },
                           {
                             "id": "2nt-3c-3d-3h-3nt",
                             "call": {
@@ -7246,30 +7971,14 @@
                             }
                           },
                           {
-                            "id": "2nt-3c-3d-3h-4c",
+                            "id": "67bcf04e-a945-42ca-9827-094da7b1f650",
                             "call": {
                               "type": "bid",
                               "level": 4,
-                              "strain": "C"
+                              "strain": "S"
                             },
                             "meaning": {
-                              "description": "Swiss for !s"
-                            },
-                            "variants": [],
-                            "competitive": [],
-                            "continuations": {
-                              "type": "tbd"
-                            }
-                          },
-                          {
-                            "id": "2nt-3c-3d-3h-4d",
-                            "call": {
-                              "type": "bid",
-                              "level": 4,
-                              "strain": "D"
-                            },
-                            "meaning": {
-                              "description": "Swiss for !s"
+                              "description": "to play"
                             },
                             "variants": [],
                             "competitive": [],
@@ -7293,6 +8002,14 @@
                       "variants": [],
                       "competitive": [],
                       "continuations": {
+                        "refs": [
+                          {
+                            "params": {
+                              "suit": "H"
+                            },
+                            "conventionId": "general-swiss"
+                          }
+                        ],
                         "type": "nodes",
                         "nodes": [
                           {
@@ -7326,38 +8043,6 @@
                             "continuations": {
                               "type": "end"
                             }
-                          },
-                          {
-                            "id": "2nt-3c-3d-3s-4c",
-                            "call": {
-                              "type": "bid",
-                              "level": 4,
-                              "strain": "C"
-                            },
-                            "meaning": {
-                              "description": "Swiss for !h"
-                            },
-                            "variants": [],
-                            "competitive": [],
-                            "continuations": {
-                              "type": "tbd"
-                            }
-                          },
-                          {
-                            "id": "2nt-3c-3d-3s-4d",
-                            "call": {
-                              "type": "bid",
-                              "level": 4,
-                              "strain": "D"
-                            },
-                            "meaning": {
-                              "description": "Swiss for !h"
-                            },
-                            "variants": [],
-                            "competitive": [],
-                            "continuations": {
-                              "type": "tbd"
-                            }
                           }
                         ]
                       }
@@ -7370,12 +8055,74 @@
                         "strain": "N"
                       },
                       "meaning": {
-                        "description": "To play — no fit needed"
+                        "description": "4-4 majors"
                       },
                       "variants": [],
                       "competitive": [],
                       "continuations": {
-                        "type": "end"
+                        "type": "nodes",
+                        "nodes": [
+                          {
+                            "id": "50c15511-0d3d-478f-983e-8c79104dd071",
+                            "call": {
+                              "type": "pass"
+                            },
+                            "meaning": {
+                              "description": "to play"
+                            },
+                            "variants": [],
+                            "competitive": [],
+                            "continuations": {
+                              "type": "tbd"
+                            }
+                          },
+                          {
+                            "id": "8544dffd-bd3a-485f-9dfe-e7e0923cbdac",
+                            "call": {
+                              "type": "bid",
+                              "level": 4,
+                              "strain": "H"
+                            },
+                            "meaning": {
+                              "description": "With 4!H"
+                            },
+                            "variants": [],
+                            "competitive": [],
+                            "continuations": {
+                              "type": "tbd"
+                            }
+                          },
+                          {
+                            "id": "9efec009-bc43-4638-b302-f9712598b625",
+                            "call": {
+                              "type": "bid",
+                              "level": 4,
+                              "strain": "S"
+                            },
+                            "meaning": {
+                              "description": "With 4!S"
+                            },
+                            "variants": [],
+                            "competitive": [],
+                            "continuations": {
+                              "type": "tbd"
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "id": "74bf8ccb-a2cb-4857-9119-fc829fd40b93",
+                      "call": {
+                        "type": "pass"
+                      },
+                      "meaning": {
+                        "description": "to play"
+                      },
+                      "variants": [],
+                      "competitive": [],
+                      "continuations": {
+                        "type": "tbd"
                       }
                     }
                   ]
@@ -7446,7 +8193,16 @@
                 "variants": [],
                 "competitive": [],
                 "continuations": {
-                  "type": "tbd"
+                  "refs": [
+                    {
+                      "params": {
+                        "suit": "H"
+                      },
+                      "conventionId": "general-swiss"
+                    }
+                  ],
+                  "type": "nodes",
+                  "nodes": []
                 }
               },
               {
@@ -7495,6 +8251,23 @@
                 "competitive": [],
                 "continuations": {
                   "type": "tbd"
+                }
+              },
+              {
+                "id": "115e284f-867b-4b2b-bb5e-c31160ad63a6",
+                "call": {
+                  "type": "bid",
+                  "level": 4,
+                  "strain": "H"
+                },
+                "meaning": {
+                  "description": "Super-accept with 4!h and no side suit"
+                },
+                "variants": [],
+                "competitive": [],
+                "continuations": {
+                  "type": "nodes",
+                  "nodes": []
                 }
               }
             ]
@@ -7546,7 +8319,16 @@
                 "variants": [],
                 "competitive": [],
                 "continuations": {
-                  "type": "tbd"
+                  "refs": [
+                    {
+                      "params": {
+                        "suit": "S"
+                      },
+                      "conventionId": "general-swiss"
+                    }
+                  ],
+                  "type": "nodes",
+                  "nodes": []
                 }
               },
               {
@@ -7595,6 +8377,23 @@
                 "competitive": [],
                 "continuations": {
                   "type": "tbd"
+                }
+              },
+              {
+                "id": "9efd5732-f02f-4607-a7b2-8a8a9e914b10",
+                "call": {
+                  "type": "bid",
+                  "level": 4,
+                  "strain": "S"
+                },
+                "meaning": {
+                  "description": "Super-accept —4 !s  no side suit"
+                },
+                "variants": [],
+                "competitive": [],
+                "continuations": {
+                  "type": "nodes",
+                  "nodes": []
                 }
               }
             ]
@@ -7730,44 +8529,56 @@
           "variants": [],
           "competitive": [],
           "continuations": {
-            "type": "tbd"
-          }
-        },
-        {
-          "id": "2nt-4c",
-          "call": {
-            "type": "bid",
-            "level": 4,
-            "strain": "C"
-          },
-          "meaning": {
-            "alert": true,
-            "forcing": "gf",
-            "description": "Roman Key-Quant Gerber (RKQG)"
-          },
-          "variants": [],
-          "competitive": [],
-          "continuations": {
-            "type": "ref",
-            "conventionId": "rkqg"
-          }
-        },
-        {
-          "id": "2nt-4nt",
-          "call": {
-            "type": "bid",
-            "level": 4,
-            "strain": "N"
-          },
-          "meaning": {
-            "alert": true,
-            "description": "Viscount — quantitative slam invite"
-          },
-          "variants": [],
-          "competitive": [],
-          "continuations": {
-            "type": "ref",
-            "conventionId": "viscount"
+            "type": "nodes",
+            "nodes": [
+              {
+                "id": "b7225a71-d265-447f-8745-4a0d5bafa229",
+                "call": {
+                  "type": "pass"
+                },
+                "meaning": {
+                  "description": "max 2 !S and 3 !H"
+                },
+                "variants": [],
+                "competitive": [],
+                "continuations": {
+                  "type": "tbd"
+                }
+              },
+              {
+                "id": "30dd53fa-e834-45a6-ab76-e87bfe0a86fe",
+                "call": {
+                  "type": "bid",
+                  "level": 4,
+                  "strain": "H"
+                },
+                "meaning": {
+                  "description": "4+!H"
+                },
+                "variants": [],
+                "competitive": [],
+                "continuations": {
+                  "type": "nodes",
+                  "nodes": []
+                }
+              },
+              {
+                "id": "f1e4c87b-451a-42b4-a17d-5af91cc1dc77",
+                "call": {
+                  "type": "bid",
+                  "level": 4,
+                  "strain": "S"
+                },
+                "meaning": {
+                  "description": "3+!S"
+                },
+                "variants": [],
+                "competitive": [],
+                "continuations": {
+                  "type": "tbd"
+                }
+              }
+            ]
           }
         }
       ],
@@ -7779,16 +8590,14 @@
       "name": "Viscount",
       "nodes": [
         {
-          "id": "viscount-4nt",
+          "id": "d4d20a5b-cd85-49e6-a48a-9e66e0072b7c",
           "call": {
             "type": "bid",
             "level": 4,
             "strain": "N"
           },
           "meaning": {
-            "alert": true,
-            "forcing": "game",
-            "description": "Viscount — bid 4-card suits up the line (like Baron); slam investigation in NT"
+            "description": "Viscount slam try"
           },
           "variants": [],
           "competitive": [],
@@ -7796,14 +8605,14 @@
             "type": "nodes",
             "nodes": [
               {
-                "id": "viscount-5c",
+                "id": "1777805e-ba51-4c59-aa55-b11390d5f0ed",
                 "call": {
                   "type": "bid",
                   "level": 5,
                   "strain": "C"
                 },
                 "meaning": {
-                  "description": "4+ !c, no 4-card suit below"
+                  "description": "!C is lowest 4 card suit"
                 },
                 "variants": [],
                 "competitive": [],
@@ -7812,14 +8621,14 @@
                 }
               },
               {
-                "id": "viscount-5d",
+                "id": "a7621f80-6dc6-46c7-811f-9fc131d93bc4",
                 "call": {
                   "type": "bid",
                   "level": 5,
                   "strain": "D"
                 },
                 "meaning": {
-                  "description": "4+ !d, no 4-card suit below (denies 4!c)"
+                  "description": "!D is lowest 4 card suit"
                 },
                 "variants": [],
                 "competitive": [],
@@ -7828,14 +8637,14 @@
                 }
               },
               {
-                "id": "viscount-5h",
+                "id": "9551cd92-58d6-477a-a0af-f67c17454179",
                 "call": {
                   "type": "bid",
                   "level": 5,
                   "strain": "H"
                 },
                 "meaning": {
-                  "description": "4+ !h, no 4-card minor"
+                  "description": "!H is lowest 4 card suit"
                 },
                 "variants": [],
                 "competitive": [],
@@ -7844,35 +8653,19 @@
                 }
               },
               {
-                "id": "viscount-5s",
+                "id": "c8b3ba97-24c3-441d-93c4-b6b1322cf1a3",
                 "call": {
                   "type": "bid",
                   "level": 5,
                   "strain": "S"
                 },
                 "meaning": {
-                  "description": "4+ !s, no 4-card suit below (flat hand, 4333 or similar)"
+                  "description": "!S is lowest 4 card suit"
                 },
                 "variants": [],
                 "competitive": [],
                 "continuations": {
                   "type": "tbd"
-                }
-              },
-              {
-                "id": "viscount-5nt",
-                "call": {
-                  "type": "bid",
-                  "level": 5,
-                  "strain": "N"
-                },
-                "meaning": {
-                  "description": "No 4-card suit — pure balanced"
-                },
-                "variants": [],
-                "competitive": [],
-                "continuations": {
-                  "type": "end"
                 }
               }
             ]
@@ -8140,20 +8933,11 @@
           },
           "meaning": {
             "alert": true,
-            "forcing": "game",
-            "description": "Good raise to 3!h or slam try in !h — forces to game or invites slam"
+            "description": "Good raise to 3!h or slam try in !h — invite to game or slam"
           },
           "variants": [],
           "competitive": [],
           "continuations": {
-            "refs": [
-              {
-                "params": {
-                  "suit": "H"
-                },
-                "conventionId": "general-swiss"
-              }
-            ],
             "type": "nodes",
             "nodes": [
               {
@@ -8196,12 +8980,47 @@
                   "strain": "S"
                 },
                 "meaning": {
-                  "description": "Long suit trial in !s"
+                  "description": "1st/2nd round cue"
                 },
                 "variants": [],
                 "competitive": [],
                 "continuations": {
-                  "type": "tbd"
+                  "type": "nodes",
+                  "nodes": []
+                }
+              },
+              {
+                "id": "5bc08dbc-6c63-4b1d-9d7b-698d931e8fcb",
+                "call": {
+                  "type": "bid",
+                  "level": 4,
+                  "strain": "C"
+                },
+                "meaning": {
+                  "description": "1st/2nd round cue"
+                },
+                "variants": [],
+                "competitive": [],
+                "continuations": {
+                  "type": "nodes",
+                  "nodes": []
+                }
+              },
+              {
+                "id": "bcd7df31-8fc4-449d-bca7-20715eecd951",
+                "call": {
+                  "type": "bid",
+                  "level": 4,
+                  "strain": "D"
+                },
+                "meaning": {
+                  "description": "1st/2nd round cue"
+                },
+                "variants": [],
+                "competitive": [],
+                "continuations": {
+                  "type": "nodes",
+                  "nodes": []
                 }
               },
               {
@@ -8499,20 +9318,11 @@
           },
           "meaning": {
             "alert": true,
-            "forcing": "game",
-            "description": "Good raise to 3!s or slam try in !s — forces to game or invites slam"
+            "description": "Good raise to 3!s or slam try in !s —invite to game or  slam"
           },
           "variants": [],
           "competitive": [],
           "continuations": {
-            "refs": [
-              {
-                "params": {
-                  "suit": "S"
-                },
-                "conventionId": "general-swiss"
-              }
-            ],
             "type": "nodes",
             "nodes": [
               {
@@ -8593,6 +9403,54 @@
                 "competitive": [],
                 "continuations": {
                   "type": "end"
+                }
+              },
+              {
+                "id": "8dc51428-fd7d-4f5e-896b-0ab8693c1585",
+                "call": {
+                  "type": "bid",
+                  "level": 4,
+                  "strain": "C"
+                },
+                "meaning": {
+                  "description": "1st/2nd round cue"
+                },
+                "variants": [],
+                "competitive": [],
+                "continuations": {
+                  "type": "tbd"
+                }
+              },
+              {
+                "id": "254dc89b-364c-4da3-8fdc-aca97629fadd",
+                "call": {
+                  "type": "bid",
+                  "level": 4,
+                  "strain": "D"
+                },
+                "meaning": {
+                  "description": "1st/2nd round cue"
+                },
+                "variants": [],
+                "competitive": [],
+                "continuations": {
+                  "type": "tbd"
+                }
+              },
+              {
+                "id": "b189b41d-17bf-4ac4-b914-5c365b63e4e1",
+                "call": {
+                  "type": "bid",
+                  "level": 4,
+                  "strain": "H"
+                },
+                "meaning": {
+                  "description": "1st/2nd round cue"
+                },
+                "variants": [],
+                "competitive": [],
+                "continuations": {
+                  "type": "tbd"
                 }
               }
             ]
@@ -8759,94 +9617,125 @@
     "3xfer-resp": {
       "id": "3xfer-resp",
       "name": "3!c/3!d/3!h Transfer Responses",
+      "tags": [],
       "nodes": [
         {
-          "id": "3xfer-complete",
+          "id": "1ffa7339-4f17-4181-9b3f-019dbf51cd18",
           "call": {
             "type": "bid",
             "level": 3,
             "strain": null,
-            "strainParam": "suit"
+            "strainParam": "xfer"
           },
           "meaning": {
-            "description": "Complete transfer — to play vs weak option; no extras"
+            "description": "to play vs weak option"
           },
           "variants": [],
           "competitive": [],
           "continuations": {
-            "type": "end"
+            "type": "nodes",
+            "nodes": [
+              {
+                "id": "ad7be5d8-f5f0-4dbd-a58e-21d5c0856d9c",
+                "call": {
+                  "type": "bid",
+                  "level": 3,
+                  "strain": "N"
+                },
+                "meaning": {
+                  "description": "GF option"
+                },
+                "variants": [],
+                "competitive": [],
+                "continuations": {
+                  "type": "tbd"
+                }
+              }
+            ]
           }
         },
         {
-          "id": "3xfer-step",
+          "id": "a1cb3e92-c4dd-42a5-99d1-3728587c5806",
           "call": {
             "type": "bid",
             "level": 3,
             "strain": "N"
           },
           "meaning": {
-            "alert": true,
-            "forcing": "1round",
-            "description": "Shortage ask (one step above completing transfer) — are you weak or GF? If weak: 3NT=no shortage; 4x=shortage in that suit; If GF: GF responses"
+            "description": "to play vs weak option; opener slam tries with GF option"
           },
           "variants": [],
           "competitive": [],
           "continuations": {
-            "type": "tbd"
+            "type": "nodes",
+            "nodes": []
           }
         },
         {
-          "id": "3xfer-3nt",
+          "id": "8514bba9-5042-4c9a-96cd-b1365cecd08e",
           "call": {
             "type": "bid",
             "level": 3,
-            "strain": "N"
+            "strain": null,
+            "strainParam": "above"
           },
           "meaning": {
-            "description": "To play 3NT (vs weak option only; GF explores further)"
+            "description": "shortage ask"
           },
           "variants": [],
           "competitive": [],
           "continuations": {
-            "type": "end"
-          }
-        },
-        {
-          "id": "3xfer-4c",
-          "call": {
-            "type": "bid",
-            "level": 4,
-            "strain": "C"
-          },
-          "meaning": {
-            "alert": true,
-            "description": "General Swiss for weak option in transfer suit"
-          },
-          "variants": [],
-          "competitive": [],
-          "continuations": {
-            "type": "tbd"
-          }
-        },
-        {
-          "id": "3xfer-4d",
-          "call": {
-            "type": "bid",
-            "level": 4,
-            "strain": "D"
-          },
-          "meaning": {
-            "alert": true,
-            "description": "General Swiss for weak option in transfer suit"
-          },
-          "variants": [],
-          "competitive": [],
-          "continuations": {
-            "type": "tbd"
+            "type": "nodes",
+            "nodes": [
+              {
+                "id": "53fcffdf-5186-4f37-bbf1-bac88d001932",
+                "call": {
+                  "type": "bid",
+                  "level": 3,
+                  "strain": "N"
+                },
+                "meaning": {
+                  "description": "no shortage, weak option"
+                },
+                "variants": [],
+                "competitive": [],
+                "continuations": {
+                  "type": "tbd"
+                }
+              },
+              {
+                "id": "d756ac3b-56a3-46df-a9ad-e35cdeb394be",
+                "call": {
+                  "type": "bid",
+                  "level": 4,
+                  "strain": null,
+                  "strainParam": "xfer"
+                },
+                "meaning": {
+                  "description": "GF option"
+                },
+                "variants": [],
+                "competitive": [],
+                "continuations": {
+                  "type": "tbd"
+                }
+              }
+            ]
           }
         }
       ],
-      "params": [],
+      "params": [
+        {
+          "name": "xfer",
+          "type": "strain",
+          "label": "Xfer suit"
+        },
+        {
+          "name": "above",
+          "type": "strain",
+          "label": "Suit above"
+        }
+      ],
       "description": "Responses to 3!c (GF !c or preempt !d), 3!d (GF !d or preempt !h), 3!h (GF !h or preempt !s). Complete transfer = to play vs weak; step above = shortage ask; 3NT vs weak = to play; 4!c/4!d = Swiss for weak option."
     },
     "1nt-doubled": {
@@ -9039,7 +9928,7 @@
           },
           "meaning": {
             "alert": true,
-            "description": "Puppet to 2!d. Weak with !d+!s OR !h+!s (majors)."
+            "description": "Puppet to 2!d. Weak with !d OR !h+!s (majors)."
           },
           "variants": [],
           "competitive": [],
@@ -9067,12 +9956,13 @@
                         "type": "pass"
                       },
                       "meaning": {
-                        "description": "Weak with !d+!s — to play 2!d"
+                        "description": "Weak with !d"
                       },
                       "variants": [],
                       "competitive": [],
                       "continuations": {
-                        "type": "end"
+                        "type": "nodes",
+                        "nodes": []
                       }
                     },
                     {
@@ -9105,12 +9995,13 @@
             "strain": "D"
           },
           "meaning": {
-            "description": "Natural — weak with !d+!s"
+            "description": "weak with !d+!s"
           },
           "variants": [],
           "competitive": [],
           "continuations": {
-            "type": "end"
+            "type": "nodes",
+            "nodes": []
           }
         },
         {
@@ -9152,80 +10043,54 @@
     "namyats-resp": {
       "id": "namyats-resp",
       "name": "Namyats Responses",
+      "tags": [],
       "nodes": [
         {
-          "id": "namyats-complete-h",
+          "id": "1f5d8e24-e87d-45e1-8ae7-25416406069a",
           "call": {
             "type": "bid",
             "level": 4,
-            "strain": "H"
+            "strain": null,
+            "strainParam": "next"
           },
           "meaning": {
-            "description": "Complete transfer to 4!h — to play (after 4!c opening)"
+            "description": "Slam try with support; new suits = cues"
           },
           "variants": [],
           "competitive": [],
           "continuations": {
-            "type": "end"
+            "type": "nodes",
+            "nodes": [
+              {
+                "id": "045778ba-e408-4ff6-9d7b-70d05fdc8754",
+                "call": {
+                  "type": "bid",
+                  "level": 4,
+                  "strain": null,
+                  "strainParam": "suit"
+                },
+                "meaning": {
+                  "description": "decline"
+                },
+                "variants": [],
+                "competitive": [],
+                "continuations": {
+                  "type": "tbd"
+                }
+              }
+            ]
           }
         },
         {
-          "id": "namyats-complete-s",
+          "id": "bb260a5a-ac30-4e2f-aa58-e4842db9652e",
           "call": {
             "type": "bid",
             "level": 4,
-            "strain": "S"
+            "strain": null,
+            "strainParam": "suit"
           },
           "meaning": {
-            "description": "Complete transfer to 4!s — to play (after 4!d opening)"
-          },
-          "variants": [],
-          "competitive": [],
-          "continuations": {
-            "type": "end"
-          }
-        },
-        {
-          "id": "namyats-4d-slam",
-          "call": {
-            "type": "bid",
-            "level": 4,
-            "strain": "D"
-          },
-          "meaning": {
-            "description": "Slam try with support (after 4!c): opener completes = min; cue bids = max with cue"
-          },
-          "variants": [],
-          "competitive": [],
-          "continuations": {
-            "type": "tbd"
-          }
-        },
-        {
-          "id": "namyats-4h-slam",
-          "call": {
-            "type": "bid",
-            "level": 4,
-            "strain": "H"
-          },
-          "meaning": {
-            "description": "Slam try with support (after 4!d): opener completes = min; cue bids = max with cue"
-          },
-          "variants": [],
-          "competitive": [],
-          "continuations": {
-            "type": "tbd"
-          }
-        },
-        {
-          "id": "namyats-4nt",
-          "call": {
-            "type": "bid",
-            "level": 4,
-            "strain": "N"
-          },
-          "meaning": {
-            "description": "RKCB for opener's major"
+            "description": "to play"
           },
           "variants": [],
           "competitive": [],
@@ -9234,7 +10099,18 @@
           }
         }
       ],
-      "params": [],
+      "params": [
+        {
+          "name": "suit",
+          "type": "strain",
+          "label": "Suit shown"
+        },
+        {
+          "name": "next",
+          "type": "strain",
+          "label": "Next step"
+        }
+      ],
       "description": "Responses to 4!c (strong 4!h, 8-9 tricks) or 4!d (strong 4!s, 8-9 tricks)."
     },
     "3nt-open-resp": {
@@ -9266,13 +10142,11 @@
           },
           "meaning": {
             "alert": true,
-            "forcing": "1round",
-            "description": "Enquiry — opener: 4!h=clubs; 4!s=diamonds"
+            "description": "Enquiry"
           },
           "variants": [],
           "competitive": [],
           "continuations": {
-            "refs": [],
             "type": "nodes",
             "nodes": [
               {
@@ -10094,12 +10968,13 @@
             "strain": "D"
           },
           "meaning": {
-            "description": "Simple preference — pass or rebid for weak two-suiter"
+            "description": "Simple preference"
           },
           "variants": [],
           "competitive": [],
           "continuations": {
-            "type": "end"
+            "type": "nodes",
+            "nodes": []
           }
         },
         {
@@ -10159,8 +11034,7 @@
           },
           "meaning": {
             "alert": true,
-            "forcing": "1round",
-            "description": "Transfer preference invitational for !h (opener breaks if GF two-suiter)"
+            "description": "Transfer preference invitational for !d (opener breaks if GF two-suiter)"
           },
           "variants": [],
           "competitive": [],
@@ -10175,12 +11049,13 @@
                   "strain": "H"
                 },
                 "meaning": {
-                  "description": "Completing transfer — showing !d+!s (not !h)"
+                  "description": "GF better !D"
                 },
                 "variants": [],
                 "competitive": [],
                 "continuations": {
-                  "type": "tbd"
+                  "type": "nodes",
+                  "nodes": []
                 }
               },
               {
@@ -10196,8 +11071,13 @@
                 "variants": [],
                 "competitive": [],
                 "continuations": {
-                  "type": "ref",
-                  "conventionId": "2nt-resp"
+                  "refs": [
+                    {
+                      "conventionId": "3n-continuations"
+                    }
+                  ],
+                  "type": "nodes",
+                  "nodes": []
                 }
               },
               {
@@ -10208,12 +11088,13 @@
                   "strain": "D"
                 },
                 "meaning": {
-                  "description": "GF with !d (breaking transfer)"
+                  "description": "weak !D+!S"
                 },
                 "variants": [],
                 "competitive": [],
                 "continuations": {
-                  "type": "tbd"
+                  "type": "nodes",
+                  "nodes": []
                 }
               },
               {
@@ -10224,7 +11105,24 @@
                   "strain": "S"
                 },
                 "meaning": {
-                  "description": "GF with !s (breaking transfer)"
+                  "description": "GF better !s"
+                },
+                "variants": [],
+                "competitive": [],
+                "continuations": {
+                  "type": "nodes",
+                  "nodes": []
+                }
+              },
+              {
+                "id": "10853b18-e9eb-45fd-b977-57d84008f0a1",
+                "call": {
+                  "type": "bid",
+                  "level": 4,
+                  "strain": "D"
+                },
+                "meaning": {
+                  "description": "max weak !D+!S"
                 },
                 "variants": [],
                 "competitive": [],
@@ -10244,13 +11142,113 @@
           },
           "meaning": {
             "alert": true,
-            "forcing": "1round",
             "description": "Transfer preference invitational for !s (opener breaks if GF two-suiter)"
           },
           "variants": [],
           "competitive": [],
           "continuations": {
-            "type": "tbd"
+            "type": "nodes",
+            "nodes": [
+              {
+                "id": "1b5ade1d-b38c-4ff5-83ad-12ddbfc6ae10",
+                "call": {
+                  "type": "bid",
+                  "level": 3,
+                  "strain": "S"
+                },
+                "meaning": {
+                  "description": "weak !D+!S"
+                },
+                "variants": [],
+                "competitive": [],
+                "continuations": {
+                  "type": "nodes",
+                  "nodes": [
+                    {
+                      "id": "3f9c381e-b4e2-423b-8019-3a231b1f6142",
+                      "call": {
+                        "type": "bid",
+                        "level": 4,
+                        "strain": "S"
+                      },
+                      "meaning": {
+                        "description": "Max weak !D+!S"
+                      },
+                      "variants": [],
+                      "competitive": [],
+                      "continuations": {
+                        "type": "tbd"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "46b88cb8-7fad-4a10-baf5-a4e61458fd64",
+                "call": {
+                  "type": "bid",
+                  "level": 4,
+                  "strain": "S"
+                },
+                "meaning": {
+                  "description": "Max weak !D+!S"
+                },
+                "variants": [],
+                "competitive": [],
+                "continuations": {
+                  "type": "tbd"
+                }
+              },
+              {
+                "id": "153b91ad-4570-4cdf-b1c8-9f2d71db43cf",
+                "call": {
+                  "type": "bid",
+                  "level": 3,
+                  "strain": "N"
+                },
+                "meaning": {
+                  "description": "24+ balanced"
+                },
+                "variants": [],
+                "competitive": [],
+                "continuations": {
+                  "type": "nodes",
+                  "nodes": []
+                }
+              },
+              {
+                "id": "5f2e27d3-a8b2-4aac-97c0-c219cf16de5f",
+                "call": {
+                  "type": "bid",
+                  "level": 4,
+                  "strain": "C"
+                },
+                "meaning": {
+                  "description": "GF better !S"
+                },
+                "variants": [],
+                "competitive": [],
+                "continuations": {
+                  "type": "tbd"
+                }
+              },
+              {
+                "id": "d80e5fc8-38c8-4641-81e8-323a6e38c9a2",
+                "call": {
+                  "type": "bid",
+                  "level": 4,
+                  "strain": "D"
+                },
+                "meaning": {
+                  "description": "GF better !D"
+                },
+                "variants": [],
+                "competitive": [],
+                "continuations": {
+                  "type": "tbd"
+                }
+              }
+            ]
           }
         },
         {
@@ -10262,12 +11260,13 @@
           },
           "meaning": {
             "alert": true,
-            "description": "Transfer preference mixed raise — !h side interest"
+            "description": "Transfer preference mixed raise"
           },
           "variants": [],
           "competitive": [],
           "continuations": {
-            "type": "tbd"
+            "type": "nodes",
+            "nodes": []
           }
         },
         {
@@ -10279,12 +11278,13 @@
           },
           "meaning": {
             "alert": true,
-            "description": "Transfer preference mixed raise — !s side interest"
+            "description": "Transfer preference mixed raise"
           },
           "variants": [],
           "competitive": [],
           "continuations": {
-            "type": "tbd"
+            "type": "nodes",
+            "nodes": []
           }
         }
       ],
@@ -10573,6 +11573,94 @@
       ],
       "params": [],
       "description": "After our 2NT unusual (over major=both minors 5-5+; over minor=other minor + either major 5-5+). Weak or strong. Bidding a shown suit at any level=pass-or-correct; overcaller corrects=weak, breaks=strong. Non-shown suits: re-cue=any stronger hand (responses = which other suit); 3NT=to play."
+    },
+    "3n-continuations": {
+      "id": "3n-continuations",
+      "name": "3N Continuations",
+      "tags": [],
+      "nodes": [
+        {
+          "id": "735308c7-b015-4b4f-95c9-fc821e0d7051",
+          "call": {
+            "type": "bid",
+            "level": 4,
+            "strain": "C"
+          },
+          "meaning": {
+            "description": "Transfer to !H"
+          },
+          "variants": [],
+          "competitive": [],
+          "continuations": {
+            "type": "tbd"
+          }
+        },
+        {
+          "id": "728497ec-be56-4254-8d10-9e5e119f9813",
+          "call": {
+            "type": "bid",
+            "level": 4,
+            "strain": "D"
+          },
+          "meaning": {
+            "description": "Transfer to !S"
+          },
+          "variants": [],
+          "competitive": [],
+          "continuations": {
+            "type": "tbd"
+          }
+        },
+        {
+          "id": "280f1a7b-6690-4394-bb1d-3dbe0051dd60",
+          "call": {
+            "type": "bid",
+            "level": 4,
+            "strain": "H"
+          },
+          "meaning": {
+            "description": "RKQG"
+          },
+          "variants": [],
+          "competitive": [],
+          "continuations": {
+            "type": "tbd"
+          }
+        },
+        {
+          "id": "ed794e07-0c76-428d-9959-339645679bb1",
+          "call": {
+            "type": "bid",
+            "level": 4,
+            "strain": "S"
+          },
+          "meaning": {
+            "description": "Either minor"
+          },
+          "variants": [],
+          "competitive": [],
+          "continuations": {
+            "type": "tbd"
+          }
+        },
+        {
+          "id": "fea2ba8a-0e0f-48b6-887d-a095f28c92e9",
+          "call": {
+            "type": "bid",
+            "level": 4,
+            "strain": "N"
+          },
+          "meaning": {
+            "description": "Both Minors"
+          },
+          "variants": [],
+          "competitive": [],
+          "continuations": {
+            "type": "tbd"
+          }
+        }
+      ],
+      "description": ""
     }
   }
 }
