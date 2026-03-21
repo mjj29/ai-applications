@@ -181,6 +181,9 @@ export function resolve(node, ctx, conventions = {}) {
   let baseContinuation = node.continuations;
   if (variant?.continuationOverride) {
     baseContinuation = variant.continuationOverride;
+  } else if (variant?.refsOverride !== undefined) {
+    // Replace only the refs (convention pointers), keeping inline opponent-call nodes
+    baseContinuation = { ...baseContinuation, refs: variant.refsOverride };
   } else if (variant?.continuationDiff) {
     // Apply variant diffs on top of base continuation nodes
     if (baseContinuation.type === 'nodes') {
