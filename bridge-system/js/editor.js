@@ -868,7 +868,6 @@ function saveNode(node) {
   // Preserve live inline nodes (captures any children added since form opened)
   const baseNodes = liveNode.continuations?.type === 'nodes' ? liveNode.continuations.nodes : [];
   const refs = [...document.querySelectorAll('#f-cont-refs-list .conv-ref-item')].map(row => {
-  const refs = [...document.querySelectorAll('#f-cont-refs-list .conv-ref-item')].map(row => {
     const bindings = {};
     row.querySelectorAll('[data-param-binding]').forEach(el => {
       if (el.value) bindings[el.dataset.paramBinding] = el.value;
