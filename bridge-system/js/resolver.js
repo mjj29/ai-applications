@@ -221,7 +221,7 @@ export function resolve(node, ctx, conventions = {}) {
     result.nodes = resolveBaseNodes(baseContinuation, conventions).map(n => ({
       node: n, status: 'inherited', origin: { from: 'base' }
     }));
-    if (baseContinuation.type === 'ref') result.ref = baseContinuation.conventionId;
+    if (baseContinuation?.type === 'ref') result.ref = baseContinuation.conventionId;
   }
 
   return result;
