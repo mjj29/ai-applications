@@ -834,6 +834,10 @@ function saveNode(node) {
   const sys = getActiveSystem();
   if (!sys) return;
 
+  // Always re-fetch the live node so we don't lose changes made since the form was opened
+  // (e.g. a child copied in via drag-and-drop after the form was rendered).
+  const liveNode = findNode(sys, node.id) ?? node;
+
   const desc    = document.getElementById('f-desc').value.trim();
   const hcpMin  = document.getElementById('f-hcp-min').value;
   const hcpMax  = document.getElementById('f-hcp-max').value;
@@ -852,8 +856,9 @@ function saveNode(node) {
   if (announce)meaning.announce = announce;
   if (notes)   meaning.notes    = notes;
 
-  // Always nodes — preserve existing inline nodes, collect convention refs from the list
-  const baseNodes = node.continuations?.type === 'nodes' ? node.continuations.nodes : [];
+  // Preserve live inline nodes (captures any children added since form opened)
+  const baseNodes = liveNode.continuations?.type === 'nodes' ? liveNode.continuations.nodes : [];
+  const refs = [...document.querySelectorAll('#f-cont-refs-list .conv-ref-item')].map(row => {
   const refs = [...document.querySelectorAll('#f-cont-refs-list .conv-ref-item')].map(row => {
     const bindings = {};
     row.querySelectorAll('[data-param-binding]').forEach(el => {
