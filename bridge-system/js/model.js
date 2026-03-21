@@ -42,6 +42,7 @@ export function makeBidNode(id, call, opts = {}) {
     variants:      opts.variants      ?? [],
     continuations: opts.continuations ?? { type: 'tbd' },
     competitive:   opts.competitive   ?? [],
+    ...(opts.isOpponentCall ? { isOpponentCall: true } : {}),
   };
 }
 

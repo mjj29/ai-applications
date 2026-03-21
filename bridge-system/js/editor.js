@@ -996,14 +996,45 @@ function showAddVariantModal(node, editIndex = -1) {
   document.getElementById('var-announce').value = v?.meaningOverride?.announce   ?? '';
   document.getElementById('var-desc').value     = v?.meaningOverride?.description ?? '';
   document.getElementById('var-notes').value    = v?.notes ?? '';
+
+  // Populate continuation override fields
+  const sys = getActiveSystem();
+  const convIds = Object.keys(sys?.conventions ?? {});
+  const convList = document.getElementById('var-override-conv-list');
+  const refsList = document.getElementById('var-override-refs-list');
+  convList.innerHTML = convIds.map(id => `<option value="${id}">`).join('');
+  refsList.innerHTML = convList.innerHTML;
+
+  let overrideType = '';
+  if (v?.continuationOverride) {
+    overrideType = 'ref';
+    document.getElementById('var-override-conv').value = v.continuationOverride.conventionId ?? '';
+    document.getElementById('var-override-refs').value = '';
+  } else if (v?.refsOverride !== undefined) {
+    overrideType = 'refsOnly';
+    document.getElementById('var-override-conv').value = '';
+    document.getElementById('var-override-refs').value = (v.refsOverride ?? []).map(r => r.conventionId).join('\n');
+  } else {
+    document.getElementById('var-override-conv').value = '';
+    document.getElementById('var-override-refs').value = '';
+  }
+  document.getElementById('var-override-type').value = overrideType;
+  _updateVarOverrideGroups(overrideType);
+
   modal.querySelector('h2').textContent = editIndex >= 0 ? 'Edit Variant' : 'Add Variant';
   document.getElementById('btn-add-variant-confirm').textContent = editIndex >= 0 ? 'Save Variant' : 'Add Variant';
   modal.classList.remove('hidden');
 }
 
+function _updateVarOverrideGroups(type) {
+  document.getElementById('var-override-conv-group').style.display = type === 'ref'      ? '' : 'none';
+  document.getElementById('var-override-refs-group').style.display = type === 'refsOnly' ? '' : 'none';
+}
+
 export function initAddVariantModal() {
   const modal = document.getElementById('modal-add-variant');
   document.getElementById('btn-add-variant-cancel').addEventListener('click', () => modal.classList.add('hidden'));
+  document.getElementById('var-override-type').addEventListener('change', (e) => _updateVarOverrideGroups(e.target.value));
   document.getElementById('btn-add-variant-confirm').addEventListener('click', () => {
     const nodeId    = document.getElementById('var-node-id').value;
     const editIndex = +document.getElementById('var-variant-index').value;
@@ -1014,6 +1045,9 @@ export function initAddVariantModal() {
     const announce = document.getElementById('var-announce').value.trim();
     const desc     = document.getElementById('var-desc').value.trim();
     const notes    = document.getElementById('var-notes').value.trim();
+    const overrideType = document.getElementById('var-override-type').value;
+    const overrideConv = document.getElementById('var-override-conv').value.trim();
+    const overrideRefs = document.getElementById('var-override-refs').value.trim();
 
     const condition = {};
     if (seatsStr) condition.seats = seatsStr.split(/[,\s]+/).map(Number).filter(n => n >= 1 && n <= 4);
@@ -1028,12 +1062,22 @@ export function initAddVariantModal() {
     if (Object.keys(meaningOverride).length) variant.meaningOverride = meaningOverride;
     if (notes) variant.notes = notes;
 
+    if (overrideType === 'ref' && overrideConv) {
+      variant.continuationOverride = { type: 'ref', conventionId: overrideConv };
+    } else if (overrideType === 'refsOnly') {
+      const ids = overrideRefs.split(/[\n,]+/).map(s => s.trim()).filter(Boolean);
+      variant.refsOverride = ids.map(id => ({ conventionId: id }));
+    }
+
     const sys = getActiveSystem();
     if (!sys) return;
     const node = findNode(sys, nodeId);
     if (!node) return;
     node.variants = node.variants ?? [];
+    // Preserve the variant id if editing
     if (editIndex >= 0) {
+      const existingId = node.variants[editIndex]?.id;
+      if (existingId) variant.id = existingId;
       node.variants[editIndex] = variant;
       flash('Variant updated', 'ok');
     } else {

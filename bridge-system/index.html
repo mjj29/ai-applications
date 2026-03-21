@@ -138,6 +138,25 @@
       <label>Notes</label>
       <input type="text" id="var-notes" placeholder="e.g. system off — wide range">
     </div>
+    <div class="form-group" style="margin-top:0.5rem;border-top:1px solid var(--border);padding-top:0.75rem">
+      <label>Continuation override</label>
+      <select id="var-override-type">
+        <option value="">None — inherit base continuation</option>
+        <option value="ref">Replace entire continuation → convention</option>
+        <option value="refsOnly">Replace refs only (keep inline nodes)</option>
+      </select>
+    </div>
+    <div class="form-group" id="var-override-conv-group" style="display:none">
+      <label>Convention ID</label>
+      <input type="text" id="var-override-conv" list="var-override-conv-list" placeholder="e.g. 1nt-doubled-9-15">
+      <datalist id="var-override-conv-list"></datalist>
+    </div>
+    <div class="form-group" id="var-override-refs-group" style="display:none">
+      <label>Convention IDs (one per line)</label>
+      <textarea id="var-override-refs" style="min-height:60px" placeholder="one convention id per line&#10;e.g. keri&#10;1nt-resp-weak"></textarea>
+      <datalist id="var-override-refs-list"></datalist>
+      <small style="color:var(--text-muted);font-size:0.72rem">These replace the refs array; inline opponent-call nodes are kept</small>
+    </div>
     <div class="modal-footer">
       <button class="btn" id="btn-add-variant-cancel">Cancel</button>
       <button class="btn btn-primary" id="btn-add-variant-confirm">Add Variant</button>
