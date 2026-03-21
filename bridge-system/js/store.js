@@ -101,7 +101,8 @@ async function collaboratorSystemIds(userId) {
  * write them into the local cache, and return the merged list.
  */
 export async function syncFromCloud() {
-  const user = await getUser();
+  const session = await supabase.auth.getSession();
+  const user = session.data.session?.user ?? null;
   if (!user) return localList();
 
   const collabIds = await collaboratorSystemIds(user.id);
@@ -111,21 +112,37 @@ export async function syncFromCloud() {
 
   const { data: rows, error } = await supabase
     .from('systems')
-    .select('id, name, data, visibility, slug, owner_id')
+    .select('id, name, data, visibility, slug, owner_id, updated_at')
     .or(orFilter);
 
   if (error) { console.warn('Cloud sync error:', error.message); return localList(); }
 
-  const cloudSystems = (rows ?? []).map(row => ({
-    ...row.data,
-    id:          row.id,
-    name:        row.name,
-    _cloud:      true,
-    _ownerId:    row.owner_id,
-    _isOwner:    row.owner_id === user.id,
-    _visibility: row.visibility,
-    _slug:       row.slug,
-  }));
+  // Build a map of current local cloud systems so we can detect pending writes
+  const localCloudById = {};
+  for (const s of localList()) {
+    if (s._cloud && s.id) localCloudById[s.id] = s;
+  }
+
+  const cloudSystems = (rows ?? []).map(row => {
+    const base = {
+      ...row.data,
+      id:          row.id,
+      name:        row.name,
+      _cloud:      true,
+      _ownerId:    row.owner_id,
+      _isOwner:    row.owner_id === user.id,
+      _visibility: row.visibility,
+      _slug:       row.slug,
+    };
+    // If local version was modified more recently, keep it (pending upload not yet reflected in cloud)
+    const local = localCloudById[row.id];
+    if (local?.metadata?.modified > (row.updated_at ?? '')) {
+      return { ...base, ...local,
+               _cloud: true, _ownerId: base._ownerId, _isOwner: base._isOwner,
+               _visibility: base._visibility, _slug: base._slug };
+    }
+    return base;
+  });
 
   // Keep local-only (never synced) records alongside cloud records
   const localOnly = localList().filter(s => !s._cloud);
@@ -162,7 +179,8 @@ export async function saveSystem(system) {
   system.metadata.modified = new Date().toISOString();
   localSave(system);
 
-  const user = await getUser();
+  const session = await supabase.auth.getSession();
+  const user = session.data.session?.user ?? null;
   if (!user) return system;
 
   if (system._cloud) {
