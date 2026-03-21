@@ -64,7 +64,7 @@
       "Matthew Johnson",
       "Henry Lockwood"
     ],
-    "modified": "2026-03-21T20:39:33.262Z"
+    "modified": "2026-03-21T21:05:35.339Z"
   },
   "openings": [
     {
@@ -130,7 +130,437 @@
           }
         ],
         "type": "nodes",
-        "nodes": []
+        "nodes": [
+          {
+            "id": "abed4de2-e802-415a-ac9c-1086d0a60bbb",
+            "call": {
+              "type": "double"
+            },
+            "meaning": {
+              "description": "Penalty interest",
+              "hcp": [
+                16,
+                null
+              ]
+            },
+            "variants": [],
+            "continuations": {
+              "type": "nodes",
+              "nodes": [
+                {
+                  "id": "2bb33975-eded-4d53-87fa-d89127a7ff82",
+                  "call": {
+                    "type": "redouble"
+                  },
+                  "meaning": {
+                    "description": "!D or !H+!S"
+                  },
+                  "variants": [],
+                  "continuations": {
+                    "type": "tbd"
+                  },
+                  "competitive": []
+                },
+                {
+                  "id": "d2e8c543-fb1a-448e-88de-480553d66aed",
+                  "call": {
+                    "type": "pass"
+                  },
+                  "meaning": {
+                    "description": "Forces XX, to play or !D+ (!H or !S)"
+                  },
+                  "variants": [],
+                  "continuations": {
+                    "type": "tbd"
+                  },
+                  "competitive": []
+                },
+                {
+                  "id": "066b2d83-d507-4021-b0bc-d5a45d868d68",
+                  "call": {
+                    "type": "bid",
+                    "level": 1,
+                    "strain": "D"
+                  },
+                  "meaning": {
+                    "description": "Transfer to !H"
+                  },
+                  "variants": [],
+                  "continuations": {
+                    "type": "tbd"
+                  },
+                  "competitive": []
+                },
+                {
+                  "id": "1b2304da-9eb1-44e5-aa8c-22c100f59a7c",
+                  "call": {
+                    "type": "bid",
+                    "level": 1,
+                    "strain": "H"
+                  },
+                  "meaning": {
+                    "description": "Transfer to !S"
+                  },
+                  "variants": [],
+                  "continuations": {
+                    "type": "tbd"
+                  },
+                  "competitive": []
+                }
+              ]
+            },
+            "competitive": []
+          },
+          {
+            "id": "1addebff-de9b-49dc-ae6c-66ba7355748f",
+            "call": {
+              "type": "double"
+            },
+            "meaning": {
+              "description": "Showing !C"
+            },
+            "variants": [],
+            "continuations": {
+              "type": "nodes",
+              "nodes": [
+                {
+                  "id": "c186fd4e-d68c-4b0f-94ab-1ec314e676d2",
+                  "call": {
+                    "type": "pass"
+                  },
+                  "meaning": {
+                    "description": "weak hand, nowhere particular to play",
+                    "hcp": [
+                      0,
+                      5
+                    ]
+                  },
+                  "variants": [],
+                  "continuations": {
+                    "type": "nodes",
+                    "nodes": []
+                  },
+                  "competitive": []
+                },
+                {
+                  "id": "f9aa126c-7b3c-4c8f-bd60-2b6f482af9b0",
+                  "call": {
+                    "type": "redouble"
+                  },
+                  "meaning": {
+                    "description": "Game force, forcing passes and doubles for penalty",
+                    "hcp": [
+                      15,
+                      null
+                    ]
+                  },
+                  "variants": [],
+                  "continuations": {
+                    "type": "nodes",
+                    "nodes": []
+                  },
+                  "competitive": []
+                },
+                {
+                  "id": "4a9e0319-417a-4f7d-badf-01d0831709fc",
+                  "call": {
+                    "type": "bid",
+                    "level": 1,
+                    "strain": "D"
+                  },
+                  "meaning": {
+                    "description": "6-9 any shape",
+                    "hcp": [
+                      6,
+                      9
+                    ]
+                  },
+                  "variants": [],
+                  "continuations": {
+                    "type": "tbd"
+                  },
+                  "competitive": []
+                },
+                {
+                  "id": "6cf2bbb6-b91b-491e-bc8c-9df1125fd282",
+                  "call": {
+                    "type": "bid",
+                    "level": 1,
+                    "strain": "H"
+                  },
+                  "meaning": {
+                    "description": "Natural",
+                    "hcp": [
+                      10,
+                      14
+                    ]
+                  },
+                  "variants": [],
+                  "continuations": {
+                    "type": "tbd"
+                  },
+                  "competitive": []
+                },
+                {
+                  "id": "db7936da-7e9a-477d-8738-2a8d5000b777",
+                  "call": {
+                    "type": "bid",
+                    "level": 1,
+                    "strain": "S"
+                  },
+                  "meaning": {
+                    "description": "Natural",
+                    "hcp": [
+                      10,
+                      14
+                    ]
+                  },
+                  "variants": [],
+                  "continuations": {
+                    "type": "tbd"
+                  },
+                  "competitive": []
+                },
+                {
+                  "id": "d1fada4a-8e42-4fd7-8a55-05b4b8c1e324",
+                  "call": {
+                    "type": "bid",
+                    "level": 2,
+                    "strain": "C"
+                  },
+                  "meaning": {
+                    "description": "Natural",
+                    "hcp": [
+                      10,
+                      14
+                    ]
+                  },
+                  "variants": [],
+                  "continuations": {
+                    "type": "tbd"
+                  },
+                  "competitive": []
+                },
+                {
+                  "id": "42ad94ef-380e-4bba-ba66-529895998706",
+                  "call": {
+                    "type": "bid",
+                    "level": 2,
+                    "strain": "D"
+                  },
+                  "meaning": {
+                    "description": "Natural",
+                    "hcp": [
+                      10,
+                      14
+                    ]
+                  },
+                  "variants": [],
+                  "continuations": {
+                    "type": "tbd"
+                  },
+                  "competitive": []
+                },
+                {
+                  "id": "a2c60abf-b5b0-4187-8da3-d725c3603ff0",
+                  "call": {
+                    "type": "bid",
+                    "level": 1,
+                    "strain": "N"
+                  },
+                  "meaning": {
+                    "description": "balanced with a !C stop",
+                    "hcp": [
+                      10,
+                      15
+                    ]
+                  },
+                  "variants": [],
+                  "continuations": {
+                    "type": "tbd"
+                  },
+                  "competitive": []
+                }
+              ]
+            },
+            "competitive": []
+          },
+          {
+            "id": "e31c24c5-e94e-42ea-a178-1ac2c582ded5",
+            "call": {
+              "type": "double"
+            },
+            "meaning": {
+              "description": "Takeout"
+            },
+            "variants": [],
+            "continuations": {
+              "type": "nodes",
+              "nodes": [
+                {
+                  "id": "8d8ebb2b-6f35-4003-8bae-7de0f0edac63",
+                  "call": {
+                    "type": "pass"
+                  },
+                  "meaning": {
+                    "description": "weak hand, nowhere particular to play",
+                    "hcp": [
+                      0,
+                      5
+                    ]
+                  },
+                  "variants": [],
+                  "continuations": {
+                    "type": "nodes",
+                    "nodes": []
+                  },
+                  "competitive": []
+                },
+                {
+                  "id": "fd7908d5-c56f-4776-ba35-7fc5e2951889",
+                  "call": {
+                    "type": "redouble"
+                  },
+                  "meaning": {
+                    "description": "Game force, forcing passes and doubles for penalty",
+                    "hcp": [
+                      15,
+                      null
+                    ]
+                  },
+                  "variants": [],
+                  "continuations": {
+                    "type": "nodes",
+                    "nodes": []
+                  },
+                  "competitive": []
+                },
+                {
+                  "id": "b8d9e804-d7df-4465-83f1-3e79edf1e3b4",
+                  "call": {
+                    "type": "bid",
+                    "level": 1,
+                    "strain": "D"
+                  },
+                  "meaning": {
+                    "description": "6-9 any shape",
+                    "hcp": [
+                      6,
+                      9
+                    ]
+                  },
+                  "variants": [],
+                  "continuations": {
+                    "type": "tbd"
+                  },
+                  "competitive": []
+                },
+                {
+                  "id": "9efa83ef-5b79-4788-9d8f-9362aeba9b21",
+                  "call": {
+                    "type": "bid",
+                    "level": 1,
+                    "strain": "H"
+                  },
+                  "meaning": {
+                    "description": "Natural",
+                    "hcp": [
+                      10,
+                      14
+                    ]
+                  },
+                  "variants": [],
+                  "continuations": {
+                    "type": "tbd"
+                  },
+                  "competitive": []
+                },
+                {
+                  "id": "7b47ffc0-2445-41a8-884a-dbe0ff23d888",
+                  "call": {
+                    "type": "bid",
+                    "level": 1,
+                    "strain": "N"
+                  },
+                  "meaning": {
+                    "description": "balanced",
+                    "hcp": [
+                      10,
+                      15
+                    ]
+                  },
+                  "variants": [],
+                  "continuations": {
+                    "type": "nodes",
+                    "nodes": []
+                  },
+                  "competitive": []
+                },
+                {
+                  "id": "9e6619c8-8569-4a7c-a525-c05340d94c08",
+                  "call": {
+                    "type": "bid",
+                    "level": 2,
+                    "strain": "C"
+                  },
+                  "meaning": {
+                    "description": "Natural",
+                    "hcp": [
+                      10,
+                      14
+                    ]
+                  },
+                  "variants": [],
+                  "continuations": {
+                    "type": "tbd"
+                  },
+                  "competitive": []
+                },
+                {
+                  "id": "50133b23-8018-422c-aee6-fd587699c167",
+                  "call": {
+                    "type": "bid",
+                    "level": 2,
+                    "strain": "D"
+                  },
+                  "meaning": {
+                    "description": "Natural",
+                    "hcp": [
+                      10,
+                      14
+                    ]
+                  },
+                  "variants": [],
+                  "continuations": {
+                    "type": "tbd"
+                  },
+                  "competitive": []
+                },
+                {
+                  "id": "7b42e1f2-7015-49ac-b8a2-24563fc3888d",
+                  "call": {
+                    "type": "bid",
+                    "level": 1,
+                    "strain": "S"
+                  },
+                  "meaning": {
+                    "description": "Natural",
+                    "hcp": [
+                      10,
+                      14
+                    ]
+                  },
+                  "variants": [],
+                  "continuations": {
+                    "type": "tbd"
+                  },
+                  "competitive": []
+                }
+              ]
+            },
+            "competitive": []
+          }
+        ]
       }
     },
     {
@@ -176,7 +606,192 @@
           }
         ],
         "type": "nodes",
-        "nodes": []
+        "nodes": [
+          {
+            "id": "4a87c3f7-df5b-4c5a-95a9-428530829742",
+            "call": {
+              "type": "double"
+            },
+            "meaning": null,
+            "variants": [],
+            "continuations": {
+              "type": "nodes",
+              "nodes": [
+                {
+                  "id": "7bbf4cd2-7497-47e7-80ac-2d746fa9d670",
+                  "call": {
+                    "type": "redouble"
+                  },
+                  "meaning": {
+                    "description": "Any 8+ Game forcing. Forcing passes, suction rebids on",
+                    "hcp": [
+                      8,
+                      24
+                    ],
+                    "forcing": "gf",
+                    "alert": true
+                  },
+                  "variants": [],
+                  "continuations": {
+                    "type": "nodes",
+                    "nodes": []
+                  },
+                  "competitive": []
+                },
+                {
+                  "id": "f4fb5d64-d1d7-4dda-b034-d9dbc84295f2",
+                  "call": {
+                    "type": "pass"
+                  },
+                  "meaning": {
+                    "description": "0-7 Any, no 6 card suit",
+                    "hcp": [
+                      0,
+                      7
+                    ]
+                  },
+                  "variants": [],
+                  "continuations": {
+                    "type": "nodes",
+                    "nodes": []
+                  },
+                  "competitive": []
+                },
+                {
+                  "id": "2669592e-40c9-4479-bfb8-7395f5acb251",
+                  "call": {
+                    "type": "bid",
+                    "level": 1,
+                    "strain": "H"
+                  },
+                  "meaning": {
+                    "description": "6+!H",
+                    "hcp": [
+                      0,
+                      7
+                    ]
+                  },
+                  "variants": [],
+                  "continuations": {
+                    "type": "tbd"
+                  },
+                  "competitive": []
+                },
+                {
+                  "id": "07e3e49c-669c-4d49-aa39-b651a84ff185",
+                  "call": {
+                    "type": "bid",
+                    "level": 1,
+                    "strain": "S"
+                  },
+                  "meaning": {
+                    "description": "6+!S",
+                    "hcp": [
+                      0,
+                      7
+                    ]
+                  },
+                  "variants": [],
+                  "continuations": {
+                    "type": "tbd"
+                  },
+                  "competitive": []
+                },
+                {
+                  "id": "42f74588-f879-4328-babe-02c0aaa90ae4",
+                  "call": {
+                    "type": "bid",
+                    "level": 2,
+                    "strain": "C"
+                  },
+                  "meaning": {
+                    "description": "6+!C",
+                    "hcp": [
+                      0,
+                      7
+                    ]
+                  },
+                  "variants": [],
+                  "continuations": {
+                    "type": "tbd"
+                  },
+                  "competitive": []
+                },
+                {
+                  "id": "b6cd1423-4aaf-42de-b33e-938a6f63723d",
+                  "call": {
+                    "type": "bid",
+                    "level": 2,
+                    "strain": "D"
+                  },
+                  "meaning": {
+                    "description": "6+!D",
+                    "hcp": [
+                      0,
+                      7
+                    ]
+                  },
+                  "variants": [],
+                  "continuations": {
+                    "type": "tbd"
+                  },
+                  "competitive": []
+                }
+              ]
+            },
+            "competitive": []
+          },
+          {
+            "id": "43e884e6-ece5-4c24-bd58-f5d6bbe1d3c3",
+            "call": {
+              "type": "bid",
+              "level": 1,
+              "strain": "S"
+            },
+            "meaning": {
+              "description": "Spade for a laugh"
+            },
+            "variants": [],
+            "continuations": {
+              "type": "nodes",
+              "nodes": [
+                {
+                  "id": "22ce2e51-f522-48c1-8799-8adbaea23749",
+                  "call": {
+                    "type": "double"
+                  },
+                  "meaning": {
+                    "description": "Penalties",
+                    "alert": true
+                  },
+                  "variants": [],
+                  "continuations": {
+                    "type": "nodes",
+                    "nodes": []
+                  },
+                  "competitive": []
+                },
+                {
+                  "id": "21cd8f29-7e62-4b4e-97e2-d590673d7055",
+                  "call": {
+                    "type": "pass"
+                  },
+                  "meaning": {
+                    "description": "Forcing",
+                    "alert": true
+                  },
+                  "variants": [],
+                  "continuations": {
+                    "type": "nodes",
+                    "nodes": []
+                  },
+                  "competitive": []
+                }
+              ]
+            },
+            "competitive": []
+          }
+        ]
       }
     },
     {
@@ -417,7 +1032,66 @@
           }
         ],
         "type": "nodes",
-        "nodes": []
+        "nodes": [
+          {
+            "id": "4869af5e-447a-4838-8587-241ccecb0997",
+            "call": {
+              "type": "double"
+            },
+            "meaning": null,
+            "variants": [],
+            "continuations": {
+              "type": "nodes",
+              "nodes": [
+                {
+                  "id": "34a6bec9-a611-4a44-ad3b-37c318de964a",
+                  "call": {
+                    "type": "redouble"
+                  },
+                  "meaning": {
+                    "description": "Forcing enquiry, starts penalty auction"
+                  },
+                  "variants": [],
+                  "continuations": {
+                    "type": "tbd"
+                  },
+                  "competitive": []
+                },
+                {
+                  "id": "de691c1c-7b9f-46e9-98b7-699a018bf695",
+                  "call": {
+                    "type": "pass"
+                  },
+                  "meaning": {
+                    "description": "No desire to play opposite a weak hand"
+                  },
+                  "variants": [],
+                  "continuations": {
+                    "type": "tbd"
+                  },
+                  "competitive": []
+                },
+                {
+                  "id": "6628e412-e2f8-4a6f-84e0-dcb53873f198",
+                  "call": {
+                    "type": "bid",
+                    "level": 2,
+                    "strain": "D"
+                  },
+                  "meaning": {
+                    "description": "Tolerence for weak options"
+                  },
+                  "variants": [],
+                  "continuations": {
+                    "type": "tbd"
+                  },
+                  "competitive": []
+                }
+              ]
+            },
+            "competitive": []
+          }
+        ]
       }
     },
     {
@@ -440,7 +1114,66 @@
           }
         ],
         "type": "nodes",
-        "nodes": []
+        "nodes": [
+          {
+            "id": "b8121f96-916b-4860-8f20-80fa2d4c5c4e",
+            "call": {
+              "type": "double"
+            },
+            "meaning": null,
+            "variants": [],
+            "continuations": {
+              "type": "nodes",
+              "nodes": [
+                {
+                  "id": "3abd18e8-d0e5-4912-b994-fb6235e6b92e",
+                  "call": {
+                    "type": "redouble"
+                  },
+                  "meaning": {
+                    "description": "Forcing enquiry, starts penalty auction"
+                  },
+                  "variants": [],
+                  "continuations": {
+                    "type": "tbd"
+                  },
+                  "competitive": []
+                },
+                {
+                  "id": "f42fcc7f-33b8-4eb8-9817-f433d9a165a6",
+                  "call": {
+                    "type": "pass"
+                  },
+                  "meaning": {
+                    "description": "No desire to play opposite a weak hand"
+                  },
+                  "variants": [],
+                  "continuations": {
+                    "type": "tbd"
+                  },
+                  "competitive": []
+                },
+                {
+                  "id": "79a2c962-b5bc-400d-bca0-77a3c62e0fcb",
+                  "call": {
+                    "type": "bid",
+                    "level": 2,
+                    "strain": "H"
+                  },
+                  "meaning": {
+                    "description": "Tolerence for weak options"
+                  },
+                  "variants": [],
+                  "continuations": {
+                    "type": "tbd"
+                  },
+                  "competitive": []
+                }
+              ]
+            },
+            "competitive": []
+          }
+        ]
       }
     },
     {
@@ -463,7 +1196,66 @@
           }
         ],
         "type": "nodes",
-        "nodes": []
+        "nodes": [
+          {
+            "id": "e5377491-4cc1-412a-a93c-7efcbf748a04",
+            "call": {
+              "type": "double"
+            },
+            "meaning": null,
+            "variants": [],
+            "continuations": {
+              "type": "nodes",
+              "nodes": [
+                {
+                  "id": "47f30595-386e-49b5-a7b3-18f35570d8fa",
+                  "call": {
+                    "type": "redouble"
+                  },
+                  "meaning": {
+                    "description": "Forcing enquiry, starts penalty auction"
+                  },
+                  "variants": [],
+                  "continuations": {
+                    "type": "tbd"
+                  },
+                  "competitive": []
+                },
+                {
+                  "id": "420b22ab-a7bb-4d80-9c2f-9d9ba5140198",
+                  "call": {
+                    "type": "pass"
+                  },
+                  "meaning": {
+                    "description": "No desire to play opposite a weak hand"
+                  },
+                  "variants": [],
+                  "continuations": {
+                    "type": "tbd"
+                  },
+                  "competitive": []
+                },
+                {
+                  "id": "a79859f2-4e83-4ecc-9083-415764e747d0",
+                  "call": {
+                    "type": "bid",
+                    "level": 2,
+                    "strain": "S"
+                  },
+                  "meaning": {
+                    "description": "Tolerence for weak options"
+                  },
+                  "variants": [],
+                  "continuations": {
+                    "type": "tbd"
+                  },
+                  "competitive": []
+                }
+              ]
+            },
+            "competitive": []
+          }
+        ]
       }
     },
     {
@@ -486,7 +1278,50 @@
           }
         ],
         "type": "nodes",
-        "nodes": []
+        "nodes": [
+          {
+            "id": "014f97d3-3aa8-44ef-8fb3-bbaea6da05b1",
+            "call": {
+              "type": "double"
+            },
+            "meaning": null,
+            "variants": [],
+            "continuations": {
+              "type": "nodes",
+              "nodes": [
+                {
+                  "id": "9e0864cb-fcc2-4f0d-b84d-dd6d1454c809",
+                  "call": {
+                    "type": "redouble"
+                  },
+                  "meaning": {
+                    "description": "Forcing enquiry, starts penalty auction"
+                  },
+                  "variants": [],
+                  "continuations": {
+                    "type": "tbd"
+                  },
+                  "competitive": []
+                },
+                {
+                  "id": "954562ec-3fcf-4698-9eeb-7b49869e9e31",
+                  "call": {
+                    "type": "pass"
+                  },
+                  "meaning": {
+                    "description": "No desire to play opposite a weak hand"
+                  },
+                  "variants": [],
+                  "continuations": {
+                    "type": "tbd"
+                  },
+                  "competitive": []
+                }
+              ]
+            },
+            "competitive": []
+          }
+        ]
       }
     },
     {
@@ -509,7 +1344,51 @@
           }
         ],
         "type": "nodes",
-        "nodes": []
+        "nodes": [
+          {
+            "id": "fd1d44bf-9362-47aa-883a-1f7bfea444ed",
+            "call": {
+              "type": "double"
+            },
+            "meaning": null,
+            "variants": [],
+            "continuations": {
+              "type": "nodes",
+              "nodes": [
+                {
+                  "id": "455d8834-ab65-430a-9264-b2dbdc294af2",
+                  "call": {
+                    "type": "pass"
+                  },
+                  "meaning": {
+                    "description": "No preference, weak"
+                  },
+                  "variants": [],
+                  "continuations": {
+                    "type": "nodes",
+                    "nodes": []
+                  },
+                  "competitive": []
+                },
+                {
+                  "id": "c08a2d4f-3f10-4631-bb80-0e2668bec745",
+                  "call": {
+                    "type": "redouble"
+                  },
+                  "meaning": {
+                    "description": "No preference, strong"
+                  },
+                  "variants": [],
+                  "continuations": {
+                    "type": "tbd"
+                  },
+                  "competitive": []
+                }
+              ]
+            },
+            "competitive": []
+          }
+        ]
       }
     },
     {
@@ -2814,11 +3693,11 @@
                   "strain": "N"
                 },
                 "meaning": {
+                  "description": "balanced",
                   "hcp": [
                     12,
                     15
-                  ],
-                  "description": "12-13(vul)/12-15(nv) balanced"
+                  ]
                 },
                 "variants": [
                   {
@@ -2841,6 +3720,8 @@
                 ],
                 "competitive": [],
                 "continuations": {
+                  "type": "nodes",
+                  "nodes": [],
                   "refs": [
                     {
                       "conventionId": "1nt-resp"
@@ -2848,9 +3729,7 @@
                     {
                       "conventionId": "keri"
                     }
-                  ],
-                  "type": "nodes",
-                  "nodes": []
+                  ]
                 }
               },
               {
@@ -3374,11 +4253,11 @@
                   "strain": "N"
                 },
                 "meaning": {
+                  "description": "balanced",
                   "hcp": [
                     16,
                     19
-                  ],
-                  "description": "17-19(vul)/16-19(nv) balanced"
+                  ]
                 },
                 "variants": [
                   {
@@ -3401,6 +4280,8 @@
                 ],
                 "competitive": [],
                 "continuations": {
+                  "type": "nodes",
+                  "nodes": [],
                   "refs": [
                     {
                       "conventionId": "keri"
@@ -3408,9 +4289,7 @@
                     {
                       "conventionId": "1nt-resp"
                     }
-                  ],
-                  "type": "nodes",
-                  "nodes": []
+                  ]
                 }
               },
               {
@@ -5069,6 +5948,123 @@
                 "continuations": {
                   "type": "tbd"
                 }
+              },
+              {
+                "id": "84cb95ec-3aed-4720-92da-91b212ed570b",
+                "call": {
+                  "type": "double"
+                },
+                "meaning": null,
+                "variants": [],
+                "continuations": {
+                  "type": "nodes",
+                  "nodes": [
+                    {
+                      "id": "bbe52738-a4a1-44be-9af2-a3afae053457",
+                      "call": {
+                        "type": "pass"
+                      },
+                      "meaning": {
+                        "description": "Weak  !D"
+                      },
+                      "variants": [],
+                      "continuations": {
+                        "type": "nodes",
+                        "nodes": []
+                      },
+                      "competitive": []
+                    },
+                    {
+                      "id": "b621d57f-7e7d-496d-96e1-b929977851c2",
+                      "call": {
+                        "type": "bid",
+                        "level": 2,
+                        "strain": "H"
+                      },
+                      "meaning": {
+                        "description": "weak !H+!S, better !H"
+                      },
+                      "variants": [],
+                      "continuations": {
+                        "type": "tbd"
+                      },
+                      "competitive": []
+                    },
+                    {
+                      "id": "f7645601-2b65-453b-b5d7-7d3e02cc9e82",
+                      "call": {
+                        "type": "redouble"
+                      },
+                      "meaning": {
+                        "description": "weak !H+!S, better !S"
+                      },
+                      "variants": [],
+                      "continuations": {
+                        "type": "tbd"
+                      },
+                      "competitive": []
+                    },
+                    {
+                      "id": "82f4eeb9-f20d-4989-95e9-46be0d1737e0",
+                      "call": {
+                        "type": "bid",
+                        "level": 2,
+                        "strain": "N"
+                      },
+                      "meaning": {
+                        "description": "balanced",
+                        "hcp": [
+                          20,
+                          23
+                        ]
+                      },
+                      "variants": [],
+                      "continuations": {
+                        "type": "nodes",
+                        "nodes": [],
+                        "refs": [
+                          {
+                            "conventionId": "2nt-resp"
+                          }
+                        ]
+                      },
+                      "competitive": []
+                    },
+                    {
+                      "id": "0e5d7483-f1d9-4fef-ab89-a0033d55f6bd",
+                      "call": {
+                        "type": "bid",
+                        "level": 2,
+                        "strain": "S"
+                      },
+                      "meaning": {
+                        "description": "GF !H+!S prefer !S"
+                      },
+                      "variants": [],
+                      "continuations": {
+                        "type": "tbd"
+                      },
+                      "competitive": []
+                    },
+                    {
+                      "id": "f8a3af19-251a-46af-ac98-fe585ded2901",
+                      "call": {
+                        "type": "bid",
+                        "level": 3,
+                        "strain": "H"
+                      },
+                      "meaning": {
+                        "description": "GF !H+!S prefer !H"
+                      },
+                      "variants": [],
+                      "continuations": {
+                        "type": "tbd"
+                      },
+                      "competitive": []
+                    }
+                  ]
+                },
+                "competitive": []
               }
             ]
           }
@@ -5514,6 +6510,22 @@
               }
             ]
           }
+        },
+        {
+          "id": "3da54f5f-89f9-42a3-b086-74fcae8e90a3",
+          "call": {
+            "type": "bid",
+            "level": 2,
+            "strain": "S"
+          },
+          "meaning": {
+            "description": "GF !H+!S prefer !S"
+          },
+          "variants": [],
+          "continuations": {
+            "type": "tbd"
+          },
+          "competitive": []
         }
       ],
       "params": [],
@@ -5665,6 +6677,101 @@
                 "continuations": {
                   "type": "tbd"
                 }
+              },
+              {
+                "id": "391ea6e3-21db-4360-b4ba-046eba582eed",
+                "call": {
+                  "type": "double"
+                },
+                "meaning": null,
+                "variants": [],
+                "continuations": {
+                  "type": "nodes",
+                  "nodes": [
+                    {
+                      "id": "90b740b2-30ea-4acf-b85d-69f5f1d4af39",
+                      "call": {
+                        "type": "pass"
+                      },
+                      "meaning": {
+                        "description": "Weak !H"
+                      },
+                      "variants": [],
+                      "continuations": {
+                        "type": "nodes",
+                        "nodes": []
+                      },
+                      "competitive": []
+                    },
+                    {
+                      "id": "6ca03ccc-8e5b-4ef9-85d9-134b3832793c",
+                      "call": {
+                        "type": "redouble"
+                      },
+                      "meaning": {
+                        "description": "Weak !S+!C, better !C"
+                      },
+                      "variants": [],
+                      "continuations": {
+                        "type": "nodes",
+                        "nodes": []
+                      },
+                      "competitive": []
+                    },
+                    {
+                      "id": "f0293d71-3763-484d-9057-ad26b37dcae8",
+                      "call": {
+                        "type": "bid",
+                        "level": 2,
+                        "strain": "N"
+                      },
+                      "meaning": {
+                        "description": "GF !S+!C, better !S"
+                      },
+                      "variants": [],
+                      "continuations": {
+                        "type": "nodes",
+                        "nodes": []
+                      },
+                      "competitive": []
+                    },
+                    {
+                      "id": "5b43532b-a1f6-4496-bb81-abc8703161df",
+                      "call": {
+                        "type": "bid",
+                        "level": 3,
+                        "strain": "C"
+                      },
+                      "meaning": {
+                        "description": "GF !S+!C, better !C"
+                      },
+                      "variants": [],
+                      "continuations": {
+                        "type": "nodes",
+                        "nodes": []
+                      },
+                      "competitive": []
+                    },
+                    {
+                      "id": "b1700bee-184b-48bb-8da0-42a3315a9798",
+                      "call": {
+                        "type": "bid",
+                        "level": 2,
+                        "strain": "S"
+                      },
+                      "meaning": {
+                        "description": "Weak !S+!C better !S"
+                      },
+                      "variants": [],
+                      "continuations": {
+                        "type": "nodes",
+                        "nodes": []
+                      },
+                      "competitive": []
+                    }
+                  ]
+                },
+                "competitive": []
               }
             ]
           }
@@ -6188,6 +7295,101 @@
                 "continuations": {
                   "type": "tbd"
                 }
+              },
+              {
+                "id": "30b9c9df-90a7-4064-97bc-5b99d1469e87",
+                "call": {
+                  "type": "double"
+                },
+                "meaning": null,
+                "variants": [],
+                "continuations": {
+                  "type": "nodes",
+                  "nodes": [
+                    {
+                      "id": "4d44a006-2653-45bc-8ab5-eda6aa7dce63",
+                      "call": {
+                        "type": "pass"
+                      },
+                      "meaning": {
+                        "description": "Weak !S"
+                      },
+                      "variants": [],
+                      "continuations": {
+                        "type": "nodes",
+                        "nodes": []
+                      },
+                      "competitive": []
+                    },
+                    {
+                      "id": "710110c7-1aae-4cdd-b986-3481befc3bad",
+                      "call": {
+                        "type": "redouble"
+                      },
+                      "meaning": {
+                        "description": "weak !C+!D, better !D"
+                      },
+                      "variants": [],
+                      "continuations": {
+                        "type": "nodes",
+                        "nodes": []
+                      },
+                      "competitive": []
+                    },
+                    {
+                      "id": "bf0d011b-f1df-44fd-a150-6a449d388014",
+                      "call": {
+                        "type": "bid",
+                        "level": 2,
+                        "strain": "N"
+                      },
+                      "meaning": {
+                        "description": "GF !C+!D better !C"
+                      },
+                      "variants": [],
+                      "continuations": {
+                        "type": "nodes",
+                        "nodes": []
+                      },
+                      "competitive": []
+                    },
+                    {
+                      "id": "1fd73be0-2350-41c4-83e0-25cb26867a41",
+                      "call": {
+                        "type": "bid",
+                        "level": 3,
+                        "strain": "C"
+                      },
+                      "meaning": {
+                        "description": "Weak !C+!D better !C"
+                      },
+                      "variants": [],
+                      "continuations": {
+                        "type": "nodes",
+                        "nodes": []
+                      },
+                      "competitive": []
+                    },
+                    {
+                      "id": "07c7563b-80d0-48f7-9553-3430fcdc3fef",
+                      "call": {
+                        "type": "bid",
+                        "level": 3,
+                        "strain": "D"
+                      },
+                      "meaning": {
+                        "description": "GF !C+!D better !D"
+                      },
+                      "variants": [],
+                      "continuations": {
+                        "type": "nodes",
+                        "nodes": []
+                      },
+                      "competitive": []
+                    }
+                  ]
+                },
+                "competitive": []
               }
             ]
           }
