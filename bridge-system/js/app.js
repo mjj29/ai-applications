@@ -17,13 +17,14 @@ import { renderLookup }   from './lookup.js';
 import { renderPrint }    from './print.js';
 import { renderChat }    from './chat.js';
 import { renderAuction } from './auction.js';
+import { renderHelp }    from './help.js';
 import { flash } from './ui.js';
 import { SITE_URL } from './config.js';
 
 // ─── Navigation ───────────────────────────────────────────────────────────────
 
 const VIEWS   = ['view-editor', 'view-systems'];
-const SUBTABS = ['subtab-edit', 'subtab-position', 'subtab-lookup', 'subtab-print', 'subtab-chat', 'subtab-auction'];
+const SUBTABS = ['subtab-edit', 'subtab-position', 'subtab-lookup', 'subtab-print', 'subtab-chat', 'subtab-auction', 'subtab-help'];
 
 function setSubtab(id) {
   SUBTABS.forEach(t => document.getElementById(t).classList.toggle('active', t === id));
@@ -39,6 +40,7 @@ function renderSubtab(id) {
   if (id === 'subtab-print')    renderPrint(document.getElementById('subtab-print'));
   if (id === 'subtab-chat')     renderChat(document.getElementById('subtab-chat'));
   if (id === 'subtab-auction')  renderAuction(document.getElementById('subtab-auction'));
+  if (id === 'subtab-help')     renderHelp(document.getElementById('subtab-help'));
 }
 
 function activeSubtab() {
