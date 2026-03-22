@@ -850,7 +850,8 @@
           15
         ],
         "alert": true,
-        "description": "10-15 points, unbalanced, 4+ !h. May have a longer minor (canape). Alert."
+        "description": "10-15 points, unbalanced, 4+ !h. May have a longer minor (canape). Alert.",
+        "shape": "5+h or 4/4 majors"
       },
       "variants": [],
       "competitive": [],
@@ -877,7 +878,8 @@
           15
         ],
         "alert": true,
-        "description": "10-15 points, unbalanced, 5+ !s. May have a longer minor (canape). Alert."
+        "description": "10-15 points, unbalanced, 5+ !s. May have a longer minor (canape). Alert.",
+        "shape": "5+s"
       },
       "variants": [],
       "competitive": [],
@@ -904,7 +906,8 @@
           15
         ],
         "announce": "12 to 15",
-        "description": "Balanced (4333/4432/5332). Range varies by seat and vulnerability — announced with the range."
+        "description": "Balanced (4333/4432/5332). Range varies by seat and vulnerability — announced with the range.",
+        "shape": "4333/4432/5332"
       },
       "variants": [
         {
@@ -2272,7 +2275,8 @@
                                     "strain": "S"
                                   },
                                   "meaning": {
-                                    "description": "4!H, GF, forces swiss"
+                                    "description": "4!H, GF, forces swiss",
+                                    "forcing": "game"
                                   },
                                   "variants": [],
                                   "competitive": [],
@@ -2297,7 +2301,8 @@
                                     "strain": "H"
                                   },
                                   "meaning": {
-                                    "description": "4 !h game forcing — to play"
+                                    "description": "4 !h game forcing — to play",
+                                    "forcing": "game"
                                   },
                                   "variants": [],
                                   "competitive": [],
@@ -2611,7 +2616,8 @@
                         "strain": "N"
                       },
                       "meaning": {
-                        "description": "3-3 in the majors — game forcing"
+                        "description": "3-3 in the majors — game forcing",
+                        "forcing": "game"
                       },
                       "variants": [],
                       "competitive": [],
@@ -3301,7 +3307,11 @@
           "meaning": {
             "alert": true,
             "forcing": "1round",
-            "description": "0-8 points, no 6-card suit; artificial relay"
+            "description": "0-8 points, no 6-card suit; artificial relay",
+            "hcp": [
+              0,
+              8
+            ]
           },
           "variants": [],
           "competitive": [],
@@ -3482,7 +3492,8 @@
                     10,
                     15
                   ],
-                  "description": "unbalanced, denies 4-card major, 5+!c"
+                  "description": "unbalanced, denies 4-card major, 5+!c",
+                  "shape": "5+c"
                 },
                 "variants": [],
                 "competitive": [],
@@ -3503,7 +3514,8 @@
                     10,
                     15
                   ],
-                  "description": "unbalanced, denies 4-card major, 5+!d"
+                  "description": "unbalanced, denies 4-card major, 5+!d",
+                  "shape": "5+d"
                 },
                 "variants": [],
                 "competitive": [],
@@ -3952,7 +3964,8 @@
                   "strain": "C"
                 },
                 "meaning": {
-                  "description": "Natural, denies 4-card major, 5+!c"
+                  "description": "Natural, denies 4-card major, 5+!c",
+                  "shape": "5+c"
                 },
                 "variants": [],
                 "competitive": [],
@@ -3968,7 +3981,8 @@
                   "strain": "D"
                 },
                 "meaning": {
-                  "description": "Natural, denies 4-card major, 5+!d"
+                  "description": "Natural, denies 4-card major, 5+!d",
+                  "shape": "5+d"
                 },
                 "variants": [],
                 "competitive": [],
@@ -4021,7 +4035,12 @@
           "meaning": {
             "alert": true,
             "forcing": "1round",
-            "description": "Transfer to !c — 6+ !c, 0-8 or slam try"
+            "description": "Transfer to !c — 6+ !c, 0-8 or slam try",
+            "hcp": [
+              0,
+              8
+            ],
+            "shape": "6+c"
           },
           "variants": [],
           "competitive": [],
@@ -4089,7 +4108,12 @@
           "meaning": {
             "alert": true,
             "forcing": "1round",
-            "description": "Transfer to !d — 6+ !d, 0-8 or slam try"
+            "description": "Transfer to !d — 6+ !d, 0-8 or slam try",
+            "hcp": [
+              0,
+              8
+            ],
+            "shape": "6+d"
           },
           "variants": [],
           "competitive": [],
@@ -4157,7 +4181,12 @@
           "meaning": {
             "alert": true,
             "forcing": "1round",
-            "description": "Transfer to !h — 6+ !h, 0-8 or slam try"
+            "description": "Transfer to !h — 6+ !h, 0-8 or slam try",
+            "hcp": [
+              0,
+              8
+            ],
+            "shape": "6+h"
           },
           "variants": [],
           "competitive": [],
@@ -4225,7 +4254,12 @@
           "meaning": {
             "alert": true,
             "forcing": "1round",
-            "description": "Transfer to !s — 6+ !s, 0-8 or slam try"
+            "description": "Transfer to !s — 6+ !s, 0-8 or slam try",
+            "hcp": [
+              0,
+              8
+            ],
+            "shape": "6+s"
           },
           "variants": [],
           "competitive": [],
@@ -4578,7 +4612,11 @@
                 "meaning": {
                   "alert": true,
                   "forcing": "game",
-                  "description": "Suction: !d single-suiter OR !h+!s two-suiter OR !d+!h+!s three-suiter (16-21)"
+                  "description": "Suction: !d single-suiter OR !h+!s two-suiter OR !d+!h+!s three-suiter (16-21)",
+                  "hcp": [
+                    16,
+                    21
+                  ]
                 },
                 "variants": [],
                 "competitive": [],
@@ -4798,7 +4836,11 @@
                 "meaning": {
                   "alert": true,
                   "forcing": "game",
-                  "description": "Suction: !h single-suiter OR !s+!c two-suiter OR !h+!s+!c three-suiter (16-21)"
+                  "description": "Suction: !h single-suiter OR !s+!c two-suiter OR !h+!s+!c three-suiter (16-21)",
+                  "hcp": [
+                    16,
+                    21
+                  ]
                 },
                 "variants": [],
                 "competitive": [],
@@ -5016,7 +5058,11 @@
                 "meaning": {
                   "alert": true,
                   "forcing": "game",
-                  "description": "Suction: !s single-suiter OR !c+!d two-suiter OR !s+!c+!d three-suiter (16-21)"
+                  "description": "Suction: !s single-suiter OR !c+!d two-suiter OR !s+!c+!d three-suiter (16-21)",
+                  "hcp": [
+                    16,
+                    21
+                  ]
                 },
                 "variants": [],
                 "competitive": [],
@@ -5234,7 +5280,11 @@
                 "meaning": {
                   "alert": true,
                   "forcing": "game",
-                  "description": "Suction: !c single-suiter OR !h+!d two-suiter OR !c+!h+!d three-suiter (16-21)"
+                  "description": "Suction: !c single-suiter OR !h+!d two-suiter OR !c+!h+!d three-suiter (16-21)",
+                  "hcp": [
+                    16,
+                    21
+                  ]
                 },
                 "variants": [],
                 "competitive": [],
@@ -5574,7 +5624,12 @@
           "meaning": {
             "alert": true,
             "forcing": "1round",
-            "description": "Transfer to !c — 6+ !c, 0-7 or slam try"
+            "description": "Transfer to !c — 6+ !c, 0-7 or slam try",
+            "hcp": [
+              0,
+              7
+            ],
+            "shape": "6+c"
           },
           "variants": [],
           "competitive": [],
@@ -5642,7 +5697,12 @@
           "meaning": {
             "alert": true,
             "forcing": "1round",
-            "description": "Transfer to !d — 6+ !d, 0-7 or slam try"
+            "description": "Transfer to !d — 6+ !d, 0-7 or slam try",
+            "hcp": [
+              0,
+              7
+            ],
+            "shape": "6+d"
           },
           "variants": [],
           "competitive": [],
@@ -5710,7 +5770,12 @@
           "meaning": {
             "alert": true,
             "forcing": "1round",
-            "description": "Transfer to !h — 6+ !h, 0-7 or slam try"
+            "description": "Transfer to !h — 6+ !h, 0-7 or slam try",
+            "hcp": [
+              0,
+              7
+            ],
+            "shape": "6+h"
           },
           "variants": [],
           "competitive": [],
@@ -5778,7 +5843,12 @@
           "meaning": {
             "alert": true,
             "forcing": "1round",
-            "description": "Transfer to !s — 6+ !s, 0-7 or slam try"
+            "description": "Transfer to !s — 6+ !s, 0-7 or slam try",
+            "hcp": [
+              0,
+              7
+            ],
+            "shape": "6+s"
           },
           "variants": [],
           "competitive": [],
@@ -5882,7 +5952,11 @@
                   "strain": "N"
                 },
                 "meaning": {
-                  "description": "20-23 balanced"
+                  "description": "20-23 balanced",
+                  "hcp": [
+                    20,
+                    23
+                  ]
                 },
                 "variants": [],
                 "competitive": [],
@@ -5992,7 +6066,8 @@
                   "strain": "S"
                 },
                 "meaning": {
-                  "description": "GF — !h+!s better !s"
+                  "description": "GF — !h+!s better !s",
+                  "forcing": "game"
                 },
                 "variants": [],
                 "competitive": [],
@@ -6008,7 +6083,8 @@
                   "strain": "C"
                 },
                 "meaning": {
-                  "description": "GF — !h+!s better !h"
+                  "description": "GF — !h+!s better !h",
+                  "forcing": "game"
                 },
                 "variants": [],
                 "competitive": [],
@@ -6105,7 +6181,8 @@
                         "strain": "S"
                       },
                       "meaning": {
-                        "description": "GF !H+!S prefer !S"
+                        "description": "GF !H+!S prefer !S",
+                        "forcing": "game"
                       },
                       "variants": [],
                       "continuations": {
@@ -6121,7 +6198,8 @@
                         "strain": "H"
                       },
                       "meaning": {
-                        "description": "GF !H+!S prefer !H"
+                        "description": "GF !H+!S prefer !H",
+                        "forcing": "game"
                       },
                       "variants": [],
                       "continuations": {
@@ -6175,7 +6253,11 @@
                   "strain": "N"
                 },
                 "meaning": {
-                  "description": "20-23 balanced"
+                  "description": "20-23 balanced",
+                  "hcp": [
+                    20,
+                    23
+                  ]
                 },
                 "variants": [],
                 "competitive": [],
@@ -6203,7 +6285,8 @@
                   "strain": "C"
                 },
                 "meaning": {
-                  "description": "GF two-suiter"
+                  "description": "GF two-suiter",
+                  "forcing": "game"
                 },
                 "variants": [],
                 "competitive": [],
@@ -6271,7 +6354,8 @@
           },
           "meaning": {
             "alert": true,
-            "description": "Non-forcing — major focused; pass if min weak majors (!s preference)"
+            "description": "Non-forcing — major focused; pass if min weak majors (!s preference)",
+            "forcing": "game"
           },
           "variants": [],
           "competitive": [],
@@ -6301,7 +6385,11 @@
                   "strain": "N"
                 },
                 "meaning": {
-                  "description": "20-23 balanced"
+                  "description": "20-23 balanced",
+                  "hcp": [
+                    20,
+                    23
+                  ]
                 },
                 "variants": [],
                 "competitive": [],
@@ -6329,7 +6417,8 @@
                   "strain": "C"
                 },
                 "meaning": {
-                  "description": "GF two-suiter"
+                  "description": "GF two-suiter",
+                  "forcing": "game"
                 },
                 "variants": [],
                 "competitive": [],
@@ -6413,7 +6502,8 @@
                   "strain": "C"
                 },
                 "meaning": {
-                  "description": "GF opening (!h+!s)"
+                  "description": "GF opening (!h+!s)",
+                  "forcing": "game"
                 },
                 "variants": [],
                 "competitive": [],
@@ -6477,7 +6567,11 @@
                   "strain": "N"
                 },
                 "meaning": {
-                  "description": "20-23 balanced"
+                  "description": "20-23 balanced",
+                  "hcp": [
+                    20,
+                    23
+                  ]
                 },
                 "variants": [],
                 "competitive": [],
@@ -6721,7 +6815,8 @@
                   "strain": "N"
                 },
                 "meaning": {
-                  "description": "GF !s+!c — better !s"
+                  "description": "GF !s+!c — better !s",
+                  "forcing": "game"
                 },
                 "variants": [],
                 "competitive": [],
@@ -6737,7 +6832,8 @@
                   "strain": "C"
                 },
                 "meaning": {
-                  "description": "GF !s+!c — better !c"
+                  "description": "GF !s+!c — better !c",
+                  "forcing": "game"
                 },
                 "variants": [],
                 "competitive": [],
@@ -6793,7 +6889,8 @@
                         "strain": "N"
                       },
                       "meaning": {
-                        "description": "GF !S+!C, better !S"
+                        "description": "GF !S+!C, better !S",
+                        "forcing": "game"
                       },
                       "variants": [],
                       "continuations": {
@@ -6810,7 +6907,8 @@
                         "strain": "C"
                       },
                       "meaning": {
-                        "description": "GF !S+!C, better !C"
+                        "description": "GF !S+!C, better !C",
+                        "forcing": "game"
                       },
                       "variants": [],
                       "continuations": {
@@ -6881,7 +6979,8 @@
                   "strain": "D"
                 },
                 "meaning": {
-                  "description": "GF !S+!C"
+                  "description": "GF !S+!C",
+                  "forcing": "game"
                 },
                 "variants": [],
                 "competitive": [],
@@ -6981,7 +7080,8 @@
                   "strain": "D"
                 },
                 "meaning": {
-                  "description": "GF !S+!C"
+                  "description": "GF !S+!C",
+                  "forcing": "game"
                 },
                 "variants": [],
                 "competitive": [],
@@ -7084,7 +7184,8 @@
                   "strain": "D"
                 },
                 "meaning": {
-                  "description": "GF two-suiter"
+                  "description": "GF two-suiter",
+                  "forcing": "game"
                 },
                 "variants": [],
                 "competitive": [],
@@ -7273,7 +7374,8 @@
                   "strain": "N"
                 },
                 "meaning": {
-                  "description": "GF — better !c"
+                  "description": "GF — better !c",
+                  "forcing": "game"
                 },
                 "variants": [],
                 "competitive": [],
@@ -7355,7 +7457,8 @@
                   "strain": "D"
                 },
                 "meaning": {
-                  "description": "GF — better !d"
+                  "description": "GF — better !d",
+                  "forcing": "game"
                 },
                 "variants": [],
                 "competitive": [],
@@ -7411,7 +7514,8 @@
                         "strain": "N"
                       },
                       "meaning": {
-                        "description": "GF !C+!D better !C"
+                        "description": "GF !C+!D better !C",
+                        "forcing": "game"
                       },
                       "variants": [],
                       "continuations": {
@@ -7445,7 +7549,8 @@
                         "strain": "D"
                       },
                       "meaning": {
-                        "description": "GF !C+!D better !D"
+                        "description": "GF !C+!D better !D",
+                        "forcing": "game"
                       },
                       "variants": [],
                       "continuations": {
@@ -7499,7 +7604,8 @@
                   "strain": "H"
                 },
                 "meaning": {
-                  "description": "GF !C+!D"
+                  "description": "GF !C+!D",
+                  "forcing": "game"
                 },
                 "variants": [],
                 "competitive": [],
@@ -7599,7 +7705,8 @@
                   "strain": "H"
                 },
                 "meaning": {
-                  "description": "GF !C+!D"
+                  "description": "GF !C+!D",
+                  "forcing": "game"
                 },
                 "variants": [],
                 "competitive": [],
@@ -7746,7 +7853,8 @@
                   "strain": "H"
                 },
                 "meaning": {
-                  "description": "GF two-suiter !c+!d"
+                  "description": "GF two-suiter !c+!d",
+                  "forcing": "game"
                 },
                 "variants": [],
                 "competitive": [],
@@ -7954,7 +8062,8 @@
                   "strain": "S"
                 },
                 "meaning": {
-                  "description": "GF !h+!c"
+                  "description": "GF !h+!c",
+                  "forcing": "game"
                 },
                 "variants": [],
                 "competitive": [],
@@ -8005,7 +8114,8 @@
                   "strain": "N"
                 },
                 "meaning": {
-                  "description": "GF !h+!d"
+                  "description": "GF !h+!d",
+                  "forcing": "game"
                 },
                 "variants": [],
                 "competitive": [],
@@ -8105,7 +8215,8 @@
                   "strain": "H"
                 },
                 "meaning": {
-                  "description": "GF !h+!c"
+                  "description": "GF !h+!c",
+                  "forcing": "game"
                 },
                 "variants": [],
                 "competitive": [],
@@ -8121,7 +8232,8 @@
                   "strain": "S"
                 },
                 "meaning": {
-                  "description": "GF !h+!d"
+                  "description": "GF !h+!d",
+                  "forcing": "game"
                 },
                 "variants": [],
                 "competitive": [],
@@ -8183,7 +8295,8 @@
             "strain": "N"
           },
           "meaning": {
-            "description": "Stops in 3 suits (GF !s investigation)"
+            "description": "Stops in 3 suits (GF !s investigation)",
+            "forcing": "game"
           },
           "variants": [],
           "competitive": [],
@@ -8622,7 +8735,8 @@
                         "strain": "D"
                       },
                       "meaning": {
-                        "description": "GF clubs + side suit (!d feature)"
+                        "description": "GF clubs + side suit (!d feature)",
+                        "forcing": "game"
                       },
                       "variants": [],
                       "competitive": [],
@@ -8638,7 +8752,8 @@
                         "strain": "H"
                       },
                       "meaning": {
-                        "description": "GF clubs + side suit (!h feature)"
+                        "description": "GF clubs + side suit (!h feature)",
+                        "forcing": "game"
                       },
                       "variants": [],
                       "competitive": [],
@@ -8654,7 +8769,8 @@
                         "strain": "S"
                       },
                       "meaning": {
-                        "description": "GF clubs + side suit (!s feature)"
+                        "description": "GF clubs + side suit (!s feature)",
+                        "forcing": "game"
                       },
                       "variants": [],
                       "competitive": [],
@@ -8725,7 +8841,8 @@
                   "strain": "C"
                 },
                 "meaning": {
-                  "description": "Super-accept — 4+ !d or Kxx/Axx support"
+                  "description": "Super-accept — 4+ !d or Kxx/Axx support",
+                  "shape": "4+d"
                 },
                 "variants": [],
                 "competitive": [],
@@ -12318,7 +12435,8 @@
                   "strain": "H"
                 },
                 "meaning": {
-                  "description": "GF better !D"
+                  "description": "GF better !D",
+                  "forcing": "game"
                 },
                 "variants": [],
                 "competitive": [],
@@ -12335,7 +12453,11 @@
                   "strain": "N"
                 },
                 "meaning": {
-                  "description": "24+ balanced"
+                  "description": "24+ balanced",
+                  "hcp": [
+                    24,
+                    null
+                  ]
                 },
                 "variants": [],
                 "competitive": [],
@@ -12374,7 +12496,8 @@
                   "strain": "S"
                 },
                 "meaning": {
-                  "description": "GF better !s"
+                  "description": "GF better !s",
+                  "forcing": "game"
                 },
                 "variants": [],
                 "competitive": [],
@@ -12476,7 +12599,11 @@
                   "strain": "N"
                 },
                 "meaning": {
-                  "description": "24+ balanced"
+                  "description": "24+ balanced",
+                  "hcp": [
+                    24,
+                    null
+                  ]
                 },
                 "variants": [],
                 "competitive": [],
@@ -12493,7 +12620,8 @@
                   "strain": "C"
                 },
                 "meaning": {
-                  "description": "GF better !S"
+                  "description": "GF better !S",
+                  "forcing": "game"
                 },
                 "variants": [],
                 "competitive": [],
@@ -12509,7 +12637,8 @@
                   "strain": "D"
                 },
                 "meaning": {
-                  "description": "GF better !D"
+                  "description": "GF better !D",
+                  "forcing": "game"
                 },
                 "variants": [],
                 "competitive": [],
@@ -12945,7 +13074,11 @@
             "strain": "D"
           },
           "meaning": {
-            "description": "0-5, no 6-card suit; artificial relay"
+            "description": "0-5, no 6-card suit; artificial relay",
+            "hcp": [
+              0,
+              5
+            ]
           },
           "variants": [],
           "competitive": [],
@@ -12961,7 +13094,11 @@
             "strain": "H"
           },
           "meaning": {
-            "description": "6-8, no 6-card suit"
+            "description": "6-8, no 6-card suit",
+            "hcp": [
+              6,
+              8
+            ]
           },
           "variants": [],
           "competitive": [],
@@ -12977,7 +13114,8 @@
             "strain": "S"
           },
           "meaning": {
-            "description": "Two-under transfer: 6+ !s, weak"
+            "description": "Two-under transfer: 6+ !s, weak",
+            "shape": "6+s"
           },
           "variants": [],
           "competitive": [],
@@ -12993,7 +13131,8 @@
             "strain": "N"
           },
           "meaning": {
-            "description": "Two-under transfer: 6+ !c, weak"
+            "description": "Two-under transfer: 6+ !c, weak",
+            "shape": "6+c"
           },
           "variants": [],
           "competitive": [],
@@ -13009,7 +13148,8 @@
             "strain": "C"
           },
           "meaning": {
-            "description": "Two-under transfer: 6+ !d, weak"
+            "description": "Two-under transfer: 6+ !d, weak",
+            "shape": "6+d"
           },
           "variants": [],
           "competitive": [],
@@ -13025,7 +13165,8 @@
             "strain": "D"
           },
           "meaning": {
-            "description": "Two-under transfer: 6+ !h, weak"
+            "description": "Two-under transfer: 6+ !h, weak",
+            "shape": "6+h"
           },
           "variants": [],
           "competitive": [],
@@ -13049,7 +13190,11 @@
             "strain": "D"
           },
           "meaning": {
-            "description": "0-8, no 6-card suit; artificial relay"
+            "description": "0-8, no 6-card suit; artificial relay",
+            "hcp": [
+              0,
+              8
+            ]
           },
           "variants": [],
           "competitive": [],
@@ -13065,7 +13210,11 @@
             "strain": "H"
           },
           "meaning": {
-            "description": "9-11"
+            "description": "9-11",
+            "hcp": [
+              9,
+              11
+            ]
           },
           "variants": [],
           "competitive": [],
@@ -13081,7 +13230,8 @@
             "strain": "S"
           },
           "meaning": {
-            "description": "Two-under transfer: 6+ !s, weak"
+            "description": "Two-under transfer: 6+ !s, weak",
+            "shape": "6+s"
           },
           "variants": [],
           "competitive": [],
@@ -13097,7 +13247,8 @@
             "strain": "N"
           },
           "meaning": {
-            "description": "Two-under transfer: 6+ !c, weak"
+            "description": "Two-under transfer: 6+ !c, weak",
+            "shape": "6+c"
           },
           "variants": [],
           "competitive": [],
@@ -13113,7 +13264,8 @@
             "strain": "C"
           },
           "meaning": {
-            "description": "Two-under transfer: 6+ !d, weak"
+            "description": "Two-under transfer: 6+ !d, weak",
+            "shape": "6+d"
           },
           "variants": [],
           "competitive": [],
@@ -13129,7 +13281,8 @@
             "strain": "D"
           },
           "meaning": {
-            "description": "Two-under transfer: 6+ !h, weak"
+            "description": "Two-under transfer: 6+ !h, weak",
+            "shape": "6+h"
           },
           "variants": [],
           "competitive": [],
