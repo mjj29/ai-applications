@@ -228,12 +228,10 @@ export function renderAuction(container) {
         <span style="font-weight:600;font-size:0.9rem">🃏 Auction Simulator</span>
 
         <div style="display:flex;align-items:center;gap:0.4rem;font-size:0.83rem;margin-left:0.5rem">
-          <label>Opener seat
+          <label>North seat
             <select id="auc-seat" style="margin-left:0.3rem">
               <option value="1">1st</option>
               <option value="2">2nd</option>
-              <option value="3">3rd</option>
-              <option value="4">4th</option>
             </select>
           </label>
           <label style="margin-left:0.5rem">Vulnerability
@@ -311,109 +309,212 @@ async function runAuction(container, sys, hands, seat, vul, settings) {
 
   renderDeal(container, hands, seat);
 
-  const dealPanel    = container.querySelector('#auc-deal-panel');
   const auctionPanel = container.querySelector('#auc-auction-panel');
   const spinner      = container.querySelector('#auc-spinner');
   const dealBtn      = container.querySelector('#btn-auc-deal');
   const redealBtn    = container.querySelector('#btn-auc-redeal');
 
-  auctionPanel.innerHTML = '<div style="color:var(--text-muted);font-size:0.85rem">Running auction…</div>';
   spinner.style.display = '';
-  dealBtn.disabled  = true;
+  dealBtn.disabled   = true;
   redealBtn.disabled = true;
 
-  // hand[0] = opener/south (seat N), hand[1] = responder/north (seat N+2)
-  // Seats: opener = seat, responder = (seat % 4) + 2 equivalent  (we just track whose turn)
-  const openerHand    = hands[0];
-  const responderHand = hands[1];
-
-  // auction steps: { call, isOpponent:false, meaning, node } (we only bid our pair)
-  // Opponents always pass silently for simplicity
-  const auctionSteps = []; // our pair's calls only, for sequence lookup
-  const displayLog   = []; // all 4 seats in order: { seat, call, callStr, meaning, isOpp }
-
-  const SEATS = ['N','E','S','W'];
-  // Map: opener is at index (seat-1), responder is (seat+1)%4
+  const openerHand       = hands[0];
+  const responderHand    = hands[1];
+  const SEATS            = ['N','E','S','W'];
   const openerSeatIdx    = (seat - 1) % 4;
   const responderSeatIdx = (openerSeatIdx + 2) % 4;
+  const SEAT_COLORS      = { N: 'var(--accent)', E: '#e67e22', S: '#27ae60', W: '#9b59b6' };
 
-  let currentSeatIdx = openerSeatIdx; // first to speak is the opener
-  let passCount = 0;
+  const displayLog       = [];
+  const ourSequenceSteps = [];  // full log of our bids (display / termination)
+  let resolverSteps      = [];  // sequence passed to resolver; restarts if responder opens
+  let openerHasBid       = false; // true once N makes a non-pass call
+  let responderHasOpened = false; // true once S makes their first non-pass call (opener-passed case)
+  let passCount  = 0;
   let anyRealBid = false;
-  const MAX_ROUNDS = 20; // safety cap
-
-  // Sequence context: both our calls interleaved. Opponent passes are invisible to resolver.
-  // We track "our sequence" = the calls our pair have made (not the opponent passes).
-  const ourSequenceSteps = []; // { call, isOpponent:false } for sequence lookup
-
+  const MAX_ROUNDS = 20;
   let error = null;
 
+  // ── Build the live skeleton ──────────────────────────────────────────────
+  const firstSeatIdx = openerSeatIdx;
+  const headerCols = [0,1,2,3].map(i => {
+    const idx   = (firstSeatIdx + i) % 4;
+    const label = SEATS[idx];
+    return `<th style="text-align:center;padding:0.3rem 0.6rem;color:${SEAT_COLORS[label]};
+                        font-size:0.8rem;font-weight:700;min-width:52px">${label}</th>`;
+  }).join('');
+
+  auctionPanel.innerHTML = `
+    <div style="margin-bottom:1.25rem">
+      <div style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;
+                  color:var(--text-muted);margin-bottom:0.5rem">Auction</div>
+      <table id="auc-bid-table" style="border-collapse:collapse">
+        <thead><tr>${headerCols}</tr></thead>
+        <tbody id="auc-bid-tbody"></tbody>
+      </table>
+      <div id="auc-thinking-row" style="font-size:0.78rem;color:var(--text-muted);
+           margin-top:0.35rem;min-height:1.2em"></div>
+    </div>
+    <div id="auc-meanings-section" style="margin-bottom:1.25rem;display:none">
+      <div style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;
+                  color:var(--text-muted);margin-bottom:0.5rem">Bid meanings</div>
+      <table class="resolved-table">
+        <thead><tr><th>Bid</th><th>Meaning</th><th>HCP</th><th>Shape</th><th>Forcing</th></tr></thead>
+        <tbody id="auc-meanings-tbody"></tbody>
+      </table>
+    </div>
+    <div id="auc-reasoning-section" style="display:none">
+      <div style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;
+                  color:var(--text-muted);margin-bottom:0.5rem">AI reasoning</div>
+      <div id="auc-reasoning-list"></div>
+    </div>
+    <div id="auc-error-div" style="display:none;color:#f99;padding:0.5rem 0.75rem;
+         background:rgba(255,100,100,0.08);border-radius:4px;font-size:0.88rem;
+         margin-top:0.75rem"></div>`;
+
+  // Live-update helpers
+  const bidTbody      = auctionPanel.querySelector('#auc-bid-tbody');
+  const thinkingRow   = auctionPanel.querySelector('#auc-thinking-row');
+  const meaningsTbody = auctionPanel.querySelector('#auc-meanings-tbody');
+  const meaningsSection  = auctionPanel.querySelector('#auc-meanings-section');
+  const reasoningSection = auctionPanel.querySelector('#auc-reasoning-section');
+  const reasoningList    = auctionPanel.querySelector('#auc-reasoning-list');
+  const errorDiv         = auctionPanel.querySelector('#auc-error-div');
+
+  // Current TR being filled (4 cells per row)
+  let currentTr = null;
+  let cellsInRow = 0;
+
+  function appendBidCell(entry) {
+    if (!currentTr || cellsInRow === 4) {
+      currentTr = document.createElement('tr');
+      bidTbody.appendChild(currentTr);
+      cellsInRow = 0;
+    }
+    const td = document.createElement('td');
+    td.style.cssText = 'text-align:center;padding:0.28rem 0.4rem';
+    if (entry.isOpp) td.style.opacity = '0.45';
+    const { call } = entry;
+    if (call.type === 'pass') {
+      td.innerHTML = `<span class="call-pass" style="font-size:0.9rem">P</span>`;
+    } else if (call.type === 'double') {
+      td.innerHTML = `<span class="call-double" style="font-size:0.9rem">X</span>`;
+    } else if (call.type === 'redouble') {
+      td.innerHTML = `<span class="call-redouble" style="font-size:0.9rem">XX</span>`;
+    } else {
+      const sc = getSuitClass(call.strain);
+      const ss = getSuitSym(call.strain);
+      td.innerHTML = `<span class="call-bid"><span class="call-level">${call.level}</span><span class="${sc}">${ss}</span></span>`;
+    }
+    currentTr.appendChild(td);
+    cellsInRow++;
+  }
+
+  function appendMeaningRow(entry) {
+    const m = entry.resolvedMeaning ?? entry.meaning ?? {};
+    const callHtml = (() => {
+      const c = entry.call;
+      if (c.type === 'pass')     return '<span class="call-pass">P</span>';
+      if (c.type === 'double')   return '<span class="call-double">X</span>';
+      if (c.type === 'redouble') return '<span class="call-redouble">XX</span>';
+      const sc = getSuitClass(c.strain); const ss = getSuitSym(c.strain);
+      return `<span class="call-bid"><span class="call-level">${c.level}</span><span class="${sc}">${ss}</span></span>`;
+    })();
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="white-space:nowrap">${callHtml}</td>
+      <td>${m?.description ? renderText(m.description) : '<span style="color:var(--text-muted)">—</span>'}
+          ${m?.announce ? `<span style="color:var(--accent);font-size:0.78rem;margin-left:0.3rem">"${m.announce}"</span>` : ''}
+          ${m?.alert    ? '<span class="tag tag-alert" style="margin-left:0.25rem">Alert</span>' : ''}
+          ${m?.notes    ? `<div style="color:var(--text-muted);font-size:0.78rem;margin-top:0.15rem">${escHtml(m.notes)}</div>` : ''}
+      </td>
+      <td style="font-family:monospace;font-size:0.82rem;white-space:nowrap">
+        ${m?.hcp ? `${m.hcp[0] ?? ''}–${m.hcp[1] ?? ''}` : ''}
+      </td>
+      <td style="font-size:0.82rem">${m?.shape ?? ''}</td>
+      <td>${m?.forcing ? `<span class="tag tag-forcing">${m.forcing}</span>` : ''}</td>`;
+    meaningsTbody.appendChild(tr);
+    meaningsSection.style.display = '';
+    auctionPanel.scrollTop = auctionPanel.scrollHeight;
+  }
+
+  function appendReasoningEntry(entry) {
+    if (!entry.aiReasoning) return;
+    const seatLabel = SEATS[entry.seatIdx];
+    const color = SEAT_COLORS[seatLabel] ?? 'var(--text)';
+    const details = document.createElement('details');
+    details.style.cssText = 'margin-bottom:0.5rem;border:1px solid var(--border);border-radius:4px';
+    details.innerHTML = `
+      <summary style="cursor:pointer;padding:0.3rem 0.6rem;font-size:0.82rem;
+                      display:flex;align-items:center;gap:0.5rem;list-style:none">
+        <span style="color:${color};font-weight:700">${seatLabel}</span>
+        <span style="font-size:0.9rem">${entry.callStr}</span>
+        <span style="color:var(--text-muted);font-size:0.75rem;margin-left:0.25rem">▾ click to expand</span>
+      </summary>
+      <div style="padding:0.4rem 0.7rem 0.5rem;font-size:0.8rem;color:var(--text-muted);
+                  white-space:pre-wrap;border-top:1px solid var(--border)">${escHtml(entry.aiReasoning)}</div>`;
+    reasoningList.appendChild(details);
+    reasoningSection.style.display = '';
+    auctionPanel.scrollTop = auctionPanel.scrollHeight;
+  }
+
+  // ── Auction loop ─────────────────────────────────────────────────────────
   outer: for (let round = 0; round < MAX_ROUNDS; round++) {
-    // Four seats per round
     for (let turn = 0; turn < 4; turn++) {
-      const idx = (openerSeatIdx + round * 4 + turn) % 4;
-      const isOurs = idx === openerSeatIdx || idx === responderSeatIdx;
+      const idx      = (openerSeatIdx + round * 4 + turn) % 4;
+      const isOurs   = idx === openerSeatIdx || idx === responderSeatIdx;
       const isOpener = idx === openerSeatIdx;
 
       if (!isOurs) {
-        // Opponent passes silently
-        displayLog.push({ seatIdx: idx, call: { type: 'pass' }, callStr: 'P', meaning: null, isOpp: true });
+        const entry = { seatIdx: idx, call: { type: 'pass' }, callStr: 'P', meaning: null, isOpp: true };
+        displayLog.push(entry);
+        appendBidCell(entry);
         passCount++;
-        // Check termination after opponent pass
         if (anyRealBid && passCount >= 3) break outer;
         if (!anyRealBid && passCount >= 4) break outer;
         continue;
       }
 
-      // Our seat — ask AI
+      // Show "thinking…" indicator for this seat
+      thinkingRow.textContent = `${SEATS[idx]} thinking…`;
+
       const hand    = isOpener ? openerHand : responderHand;
       const handHCP = hcp(hand);
-
-      // Get available bids from resolver, resolved for current seat/vul context
-      const ctx = { seat, vul };
+      // When opener (N) has only passed so far, responder (S) is effectively opening
+      // in seat+2 (3rd if N was 1st, 4th if N was 2nd) — use the correct seat for resolver
+      const responderIsOpening = !isOpener && !openerHasBid && !responderHasOpened;
+      const ctxSeat = responderIsOpening ? seat + 2 : seat;
+      const ctx         = { seat: ctxSeat, vul };
       const conventions = sys.conventions ?? {};
+
       let availableNodes = [];
-      let resolvedPath   = [];   // for populating prior-bid meanings
-      if (ourSequenceSteps.length === 0) {
-        // Opening bid — raw openings list (will be resolved per-node below)
+      if (resolverSteps.length === 0 || responderIsOpening) {
+        // Start of auction, or responder opening after N passed — offer the openings list
         availableNodes = sys.openings ?? [];
       } else {
-        const seqResult = resolveSequence(sys, parseSeqSteps(ourSequenceSteps), ctx);
+        const seqResult = resolveSequence(sys, parseSeqSteps(resolverSteps), ctx);
         availableNodes = seqResult.nextNodes ?? [];
-        resolvedPath   = seqResult.path ?? [];
       }
 
-      // Filter out opponent-call nodes (we wouldn't bid them)
-      const ourNodes = availableNodes.filter(n => !n.isOpponentCall);
-
-      // Detect whether the system tree has run out of defined continuations
-      // (empty, or only a TBD/end node with no real bids)
+      const ourNodes     = availableNodes.filter(n => !n.isOpponentCall);
       const nonPassNodes = ourNodes.filter(n => n.call?.type !== 'pass');
       const systemExhausted = nonPassNodes.length === 0;
 
-      // Always include pass as an option
       const passNode = ourNodes.find(n => n.call?.type === 'pass')
         ?? { call: { type: 'pass' }, meaning: { description: 'Pass' }, variants: [], competitive: [], continuations: { type: 'end' } };
-      const bidOptions = [
-        ...nonPassNodes,
-        passNode,
-      ];
+      const bidOptions = [...nonPassNodes, passNode];
 
-      // Resolve each bid's meaning through seat/vul variants
       const bidOptionsResolved = bidOptions.map(n => ({
         node:    n,
         callStr: callNodeToAIString(n),
         meaning: resolve(n, ctx, conventions).meaning ?? n.meaning ?? {},
       }));
 
-      // Build bid list — include all resolved system information
       const bidListLines = bidOptionsResolved.map(({ callStr, meaning: m }) => {
         const parts = [];
         if (m.description) parts.push(m.description);
         if (m.hcp && (m.hcp[0] != null || m.hcp[1] != null)) {
-          const lo = m.hcp[0] ?? 0;
-          const hi = m.hcp[1] ?? 40;
-          parts.push(`${lo}–${hi} HCP`);
+          parts.push(`${m.hcp[0] ?? 0}–${m.hcp[1] ?? 40} HCP`);
         }
         if (m.shape)    parts.push(`shape: ${m.shape}`);
         if (m.forcing)  parts.push(`${m.forcing} forcing`);
@@ -422,44 +523,24 @@ async function runAuction(container, sys, hands, seat, vul, settings) {
         if (m.notes)    parts.push(m.notes);
         return `  ${callStr}: ${parts.join(' | ') || '—'}`;
       });
-      const bidList = bidListLines.join('\n');
 
-      // Build prior-auction section with resolved meanings
-      let priorAuctionText;
-      if (displayLog.length === 0) {
-        priorAuctionText = '(none — you are opening)';
-      } else {
-        const lines = displayLog.map(entry => {
-          if (entry.isOpp) return `  ${SEATS[entry.seatIdx]}: ${entry.callStr}  (opponent)`;
-          const m = entry.resolvedMeaning ?? entry.meaning ?? {};
-          const mParts = [];
-          if (m.description) mParts.push(m.description);
-          if (m.hcp && (m.hcp[0] != null || m.hcp[1] != null)) {
-            mParts.push(`${m.hcp[0] ?? ''}–${m.hcp[1] ?? ''} HCP`);
-          }
-          if (m.shape)    mParts.push(`shape: ${m.shape}`);
-          if (m.forcing)  mParts.push(`${m.forcing} forcing`);
-          if (m.announce) mParts.push(`announced: "${m.announce}"`);
-          const mStr = mParts.length ? `  [${mParts.join(' | ')}]` : '';
-          return `  ${SEATS[entry.seatIdx]}: ${entry.callStr}${mStr}`;
-        });
-        priorAuctionText = lines.join('\n');
-      }
+      const priorAuctionText = displayLog.length === 0
+        ? '(none — you are opening)'
+        : displayLog.map(e => {
+            if (e.isOpp) return `  ${SEATS[e.seatIdx]}: ${e.callStr}  (opponent)`;
+            const m = e.resolvedMeaning ?? e.meaning ?? {};
+            const mp = [];
+            if (m.description) mp.push(m.description);
+            if (m.hcp && (m.hcp[0] != null || m.hcp[1] != null)) mp.push(`${m.hcp[0] ?? ''}–${m.hcp[1] ?? ''} HCP`);
+            if (m.shape)   mp.push(`shape: ${m.shape}`);
+            if (m.forcing) mp.push(`${m.forcing} forcing`);
+            if (m.announce) mp.push(`announced: "${m.announce}"`);
+            return `  ${SEATS[e.seatIdx]}: ${e.callStr}${mp.length ? `  [${mp.join(' | ')}]` : ''}`;
+          }).join('\n');
 
-      // Build the bid instruction section depending on whether the system tree has continuations
-      let bidInstruction;
-      if (systemExhausted) {
-        bidInstruction =
-`The system notes do not define continuations from this point.
-Use your expert bridge judgment to choose the best natural bid.
-You may bid any legal call (e.g. 4S, 3N, 5C, P, X).`;
-      } else {
-        bidInstruction =
-`SYSTEM BIDS AVAILABLE AT THIS POINT (resolved for seat ${seat}, ${vul.toUpperCase()}):
-${bidList}
-
-Choose the best bid from the system list above. If none fits, bid P.`;
-      }
+      const bidInstruction = systemExhausted
+        ? `The system notes do not define continuations from this point.\nUse your expert bridge judgment to choose the best natural bid.\nYou may bid any legal call (e.g. 4S, 3N, 5C, P, X).`
+        : `SYSTEM BIDS AVAILABLE AT THIS POINT (resolved for seat ${ctxSeat}, ${vul.toUpperCase()}):\n${bidListLines.join('\n')}\n\nChoose the best bid from the system list above. If none fits, bid P.`;
 
       const prompt =
 `You are an expert bridge player using the "${sys.name}" system.
@@ -471,7 +552,7 @@ Summary: ${handSummary(hand)}
 Auction so far (seat: bid [system meaning]):
 ${priorAuctionText}
 
-You are: ${isOpener ? 'Opener' : 'Responder'} (seat ${SEATS[idx]}, vulnerability: ${vul.toUpperCase()})
+You are: ${isOpener ? 'Opener' : (responderIsOpening ? `Opener (partner passed — you are in ${ctxSeat === 3 ? '3rd' : '4th'} seat)` : 'Responder')} (seat ${SEATS[idx]}, vulnerability: ${vul.toUpperCase()})
 
 ${bidInstruction}
 
@@ -485,13 +566,10 @@ End your reply with just the bid code alone on the last line (e.g. 1N, 4S, P, X)
         break outer;
       }
 
-      // Parse the AI's reply — match against available options
       const aiCall = parseAICall(chosenCallStr ?? '');
       let matchedNode = null;
       if (aiCall) {
         matchedNode = bidOptions.find(n => callsMatch(n.call, aiCall));
-        // When system is exhausted the AI may freely choose any legal call —
-        // build a synthetic node for it rather than falling back to pass
         if (!matchedNode && systemExhausted) {
           matchedNode = {
             call: aiCall,
@@ -500,52 +578,78 @@ End your reply with just the bid code alone on the last line (e.g. 1N, 4S, P, X)
           };
         }
       }
-      // Final fallback: pass
       if (!matchedNode) matchedNode = passNode;
 
-      const finalCall = matchedNode.call;
-      const callStr   = callNodeToAIString(matchedNode);
+      const finalCall       = matchedNode.call;
+      const callStr         = callNodeToAIString(matchedNode);
       const resolvedMeaning = resolve(matchedNode, ctx, conventions).meaning ?? matchedNode.meaning ?? null;
 
-      displayLog.push({
-        seatIdx: idx,
-        call:    finalCall,
-        callStr,
-        meaning:         matchedNode.meaning ?? null,
-        resolvedMeaning,
-        isOpp:   false,
-      });
+      const rawResponse  = chosenCallStr ?? '';
+      const respLines    = rawResponse.split('\n');
+      const lastLine     = respLines[respLines.length - 1].trim().toUpperCase();
+      const aiReasoning  = parseCallToken(lastLine)
+        ? respLines.slice(0, -1).join('\n').trim()
+        : rawResponse.trim();
+
+      const entry = {
+        seatIdx: idx, call: finalCall, callStr,
+        meaning: matchedNode.meaning ?? null, resolvedMeaning,
+        aiReasoning: aiReasoning || null, isOpp: false,
+      };
+      displayLog.push(entry);
+
+      // Live DOM updates
+      thinkingRow.textContent = '';
+      appendBidCell(entry);
+      if (!entry.isOpp) appendMeaningRow(entry);
+      appendReasoningEntry(entry);
 
       ourSequenceSteps.push({ call: finalCall, isOpponent: false });
 
-      if (finalCall.type === 'pass') {
-        passCount++;
+      if (responderIsOpening) {
+        // Responder just opened — resolver sequence starts fresh from their opening bid
+        resolverSteps = [{ call: finalCall, isOpponent: false }];
+        if (finalCall.type !== 'pass') responderHasOpened = true;
+      } else if (isOpener && !openerHasBid && finalCall.type === 'pass') {
+        // Opener passed — don't add to resolverSteps; it will restart from responder's opening
       } else {
-        passCount  = 0;
-        anyRealBid = true;
+        resolverSteps.push({ call: finalCall, isOpponent: false });
       }
+      if (isOpener && finalCall.type !== 'pass') openerHasBid = true;
 
-      // Check termination
+      if (finalCall.type === 'pass') { passCount++; }
+      else                           { passCount = 0; anyRealBid = true; }
+
       if (anyRealBid && passCount >= 3) break outer;
       if (!anyRealBid && passCount >= 4) break outer;
     }
   }
 
+  thinkingRow.textContent = '';
   spinner.style.display = 'none';
   dealBtn.disabled   = false;
   redealBtn.disabled = false;
 
-  // Resolve the full sequence for annotation
-  const finalCtx  = { seat, vul };
-  const finalSeq  = parseSeqSteps(ourSequenceSteps);
+  if (error) {
+    errorDiv.textContent = error;
+    errorDiv.style.display = '';
+  }
+
+  // Final sequence lookup for any resolver error notice
+  const finalCtx = { seat, vul };
+  const finalSeq = parseSeqSteps(resolverSteps);
   const finalResolved = finalSeq.length
     ? resolveSequence(sys, finalSeq, finalCtx)
     : { path: [], nextNodes: [], error: null };
+  if (finalResolved.error) {
+    const note = document.createElement('div');
+    note.style.cssText = 'color:var(--text-muted);font-size:0.8rem;margin-top:0.5rem';
+    note.textContent = `(sequence lookup: ${finalResolved.error})`;
+    auctionPanel.appendChild(note);
+  }
 
   const result = { displayLog, ourSequenceSteps, finalResolved, error };
   _auctionState.result = result;
-
-  renderAuctionResult(container, result);
 }
 
 /**
@@ -720,6 +824,33 @@ function renderAuctionResult(container, result) {
   if (finalResolved?.error) {
     html += `<div style="color:var(--text-muted);font-size:0.8rem;margin-top:0.5rem">
       (sequence lookup: ${escHtml(finalResolved.error)})</div>`;
+  }
+
+  // ── AI reasoning log ────────────────────────────────────────────────────
+  const reasoningEntries = displayLog.filter(e => !e.isOpp && e.aiReasoning);
+  if (reasoningEntries.length) {
+    html += `
+      <div style="margin-top:1.25rem">
+        <div style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;
+                    color:var(--text-muted);margin-bottom:0.5rem">AI reasoning</div>`;
+    for (const entry of reasoningEntries) {
+      const SEAT_COLORS = { N: 'var(--accent)', E: '#e67e22', S: '#27ae60', W: '#9b59b6' };
+      const SEATS = ['N','E','S','W'];
+      const seatLabel = SEATS[entry.seatIdx];
+      const color = SEAT_COLORS[seatLabel] ?? 'var(--text)';
+      html += `
+        <details style="margin-bottom:0.5rem;border:1px solid var(--border);border-radius:4px">
+          <summary style="cursor:pointer;padding:0.3rem 0.6rem;font-size:0.82rem;
+                          display:flex;align-items:center;gap:0.5rem;list-style:none">
+            <span style="color:${color};font-weight:700">${seatLabel}</span>
+            <span style="font-size:0.9rem">${entry.callStr}</span>
+            <span style="color:var(--text-muted);font-size:0.75rem;margin-left:0.25rem">▾ click to expand</span>
+          </summary>
+          <div style="padding:0.4rem 0.7rem 0.5rem;font-size:0.8rem;color:var(--text-muted);
+                      white-space:pre-wrap;border-top:1px solid var(--border)">${escHtml(entry.aiReasoning)}</div>
+        </details>`;
+    }
+    html += '</div>';
   }
 
   auctionPanel.innerHTML = html;
