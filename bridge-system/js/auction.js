@@ -131,13 +131,66 @@ function handSummary(hand) {
   return `${h} HCP  shape ${shape} (${bal})  longest: ${longest}  dist pts: ${dp}${specials ? '  [' + specials + ']' : ''}`;
 }
 
-/** Format a hand as HTML for display, with suit lengths. */
+// ─── SVG card renderer ──────────────────────────────────────────────────────
+
+const CARD_W  = 56;   // card width in px
+const CARD_H  = 84;   // card height in px
+const CARD_R  = 5;    // corner radius
+const STACK_X = 18;   // horizontal overlap per card in a fan
+
+const SUIT_COLOR = { S: '#1a1a2e', H: '#c0392b', D: '#c0392b', C: '#1a1a2e' };
+const SUIT_GLYPH = { S: '♠', H: '♥', D: '♦', C: '♣' };
+const FACE_RANKS = new Set(['A','K','Q','J']);
+
+/** Render one playing card as an inline SVG string. */
+function cardSVG(rank, suit) {
+  const col  = SUIT_COLOR[suit];
+  const sym  = SUIT_GLYPH[suit];
+  // pip/face in the centre — larger suit glyph, rank in corners
+  const centerSym  = FACE_RANKS.has(rank) ? rank : sym;
+  const centerSize = FACE_RANKS.has(rank) ? 22 : 26;
+  return `<svg xmlns="http://www.w3.org/2000/svg"
+     width="${CARD_W}" height="${CARD_H}"
+     viewBox="0 0 ${CARD_W} ${CARD_H}"
+     style="display:inline-block;filter:drop-shadow(1px 2px 3px rgba(0,0,0,.35))">
+  <rect x="0.5" y="0.5" width="${CARD_W-1}" height="${CARD_H-1}" rx="${CARD_R}"
+        fill="white" stroke="#ccc" stroke-width="1"/>
+  <!-- top-left corner -->
+  <text x="4" y="15" font-family="serif" font-size="13" font-weight="700"
+        fill="${col}" text-anchor="start">${rank}</text>
+  <text x="4" y="27" font-family="serif" font-size="11"
+        fill="${col}" text-anchor="start">${sym}</text>
+  <!-- centre -->
+  <text x="${CARD_W/2}" y="${CARD_H/2 + centerSize*0.36}"
+        font-family="serif" font-size="${centerSize}" font-weight="700"
+        fill="${col}" text-anchor="middle">${centerSym}</text>
+</svg>`;
+}
+
+/**
+ * Render a hand as four stacked suit rows.
+ * Each row is a horizontal fan of cards (highest card fully visible on left,
+ * lower cards peeking out to the right).
+ */
 function handToHTML(hand) {
-  const len = suitLengths(hand);
-  return SUITS.map(s => {
-    const cards = hand.filter(c => c.suit === s).map(c => c.rank);
-    const cls   = SUIT_CLASS[s];
-    return `<div><span class="${cls}">${SUIT_SYM[s]}</span><sup style="font-size:0.65em;color:var(--text-muted);margin-right:0.15em">${len[s]}</sup> ${cards.join('') || '—'}</div>`;
+  return SUITS.map(suit => {
+    const cards = hand.filter(c => c.suit === suit); // already sorted high→low
+    if (cards.length === 0) {
+      // Empty suit placeholder row
+      return `<div style="margin-bottom:6px;display:flex;align-items:center;gap:6px">
+        <span style="font-family:serif;font-size:1rem;color:${SUIT_COLOR[suit]};width:18px">${SUIT_GLYPH[suit]}</span>
+        <span style="font-size:0.78rem;color:var(--text-muted);font-style:italic">—</span>
+      </div>`;
+    }
+    // Fan: cards stacked left-to-right, each offset STACK_X from previous.
+    // The leftmost card (highest) is fully visible; each subsequent card peeks by STACK_X px.
+    const fanW = CARD_W + (cards.length - 1) * STACK_X;
+    const svgs = cards.map((c, i) =>
+      `<div style="position:absolute;left:${i * STACK_X}px;top:0;z-index:${i};width:${CARD_W}px;height:${CARD_H}px">${cardSVG(c.rank, suit)}</div>`
+    ).join('');
+    return `<div style="margin-bottom:10px">
+      <div style="position:relative;height:${CARD_H}px;width:${fanW}px">${svgs}</div>
+    </div>`;
   }).join('');
 }
 
@@ -254,7 +307,7 @@ export function renderAuction(container) {
 
         <!-- Left: deal -->
         <div id="auc-deal-panel"
-             style="width:320px;min-width:220px;flex-shrink:0;overflow-y:auto;
+             style="width:360px;min-width:260px;flex-shrink:0;overflow-y:auto;
                     padding:1rem;border-right:1px solid var(--border)">
           <div style="color:var(--text-muted);font-size:0.85rem">Deal a hand to start.</div>
         </div>
@@ -690,28 +743,22 @@ function renderDeal(container, hands, seat) {
     <div style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;
                 color:var(--text-muted);margin-bottom:0.75rem">Deal</div>
 
-    <div style="margin-bottom:1rem">
-      <div style="font-weight:600;font-size:0.88rem;margin-bottom:0.15rem">
-        Opener (${SEATS[openerSeatIdx]})
+    <div style="margin-bottom:1.5rem">
+      <div style="font-weight:600;font-size:0.88rem;margin-bottom:0.08rem">
+        ${SEATS[openerSeatIdx]} — Opener
+        <span style="font-weight:400;font-size:0.78rem;color:var(--text-muted);margin-left:0.4rem">${openerHCP} HCP</span>
       </div>
-      <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.3rem">
-        ${handSummary(openerHand)}
-      </div>
-      <div style="font-family:monospace;font-size:0.9rem;line-height:1.7">
-        ${handToHTML(openerHand)}
-      </div>
+      <div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:0.5rem">${handSummary(openerHand)}</div>
+      ${handToHTML(openerHand)}
     </div>
 
     <div>
-      <div style="font-weight:600;font-size:0.88rem;margin-bottom:0.15rem">
-        Responder (${SEATS[responderSeatIdx]})
+      <div style="font-weight:600;font-size:0.88rem;margin-bottom:0.08rem">
+        ${SEATS[responderSeatIdx]} — Responder
+        <span style="font-weight:400;font-size:0.78rem;color:var(--text-muted);margin-left:0.4rem">${responderHCP} HCP</span>
       </div>
-      <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.3rem">
-        ${handSummary(responderHand)}
-      </div>
-      <div style="font-family:monospace;font-size:0.9rem;line-height:1.7">
-        ${handToHTML(responderHand)}
-      </div>
+      <div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:0.5rem">${handSummary(responderHand)}</div>
+      ${handToHTML(responderHand)}
     </div>`;
 }
 
