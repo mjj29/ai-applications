@@ -3,7 +3,7 @@
  */
 'use strict';
 
-import { callToString, sortNodes } from './model.js';
+import { callToString, sortNodes, renderText } from './model.js';
 import { getActiveSystem } from './store.js';
 
 let currentFormat = 'booklet';
@@ -564,449 +564,465 @@ function generateACBL(sys) {
 }
 
 function generateEBU(sys) {
-  // EBU Convention Card 20B — table-based layout matching the official EBU 20B form
+  // EBU Convention Card 20B — 4 × A5 pages, each exactly 148mm × 210mm
   const op = sys.openings ?? [], ov = sys.overcalls ?? [], c = sys.carding ?? {};
-  const f = (lv, st) => findBid(op, lv, st);
-  const hcpStr = nd => { const h = nd?.meaning?.hcp; return h ? `${h[0] ?? ''}–${h[1] ?? ''}` : ''; };
-  const n1 = f(1, 'N');
+  const f  = (lv, st) => findBid(op, lv, st);
+  const hcpStr = nd => { const h = nd?.meaning?.hcp; return h ? `${h[0]??''}–${h[1]??''}` : ''; };
+  const n1   = f(1, 'N');
   const convs = sys.conventions ?? {};
 
-  // ── Overflow note system ──────────────────────────────────────────────────
-  const extraNotes = [];
+  // ── Suit-symbol rendering (!C !D !H !S !N) ───────────────────────────────
+  const rt = t => renderText(t ?? '');   // safe wrapper
+
+  // ── Note system (overflow goes to Supplementary Details on page 3) ────────
+  const suppNotes = [];
   let noteNum = 0;
   const addNote = (label, fullText) => {
     noteNum++;
-    extraNotes.push(`[${noteNum}] ${label}: ${fullText}`);
+    suppNotes.push(`[${noteNum}] ${label}: ${fullText}`);
     return ` [${noteNum}]`;
   };
-  const trunc = (text, label, maxCh = 65) => {
+  // Truncate to maxCh plain-text chars, adding a note reference if truncated
+  const trunc = (text, label, maxCh = 55) => {
     if (!text) return '';
     const s = String(text);
-    return s.length <= maxCh ? s : s.slice(0, maxCh - 3).trimEnd() + '\u2026' + addNote(label, s);
+    if (s.length <= maxCh) return rt(s);
+    return rt(s.slice(0, maxCh - 1).trimEnd()) + '\u2026' + addNote(label, s);
   };
 
-  // ── Helper: find bid in continuation tree ─────────────────────────────────
+  // ── Find a bid in a continuation tree ────────────────────────────────────
   const findInCont = (cont, lv, st) => {
     if (!cont) return null;
     if (cont.type === 'nodes') {
-      const d = (cont.nodes ?? []).find(n => n.call?.type === 'bid' && n.call.level === lv && n.call.strain === st);
+      const d = (cont.nodes ?? []).find(n => n.call?.type==='bid' && n.call.level===lv && n.call.strain===st);
       if (d) return d;
       for (const ref of (cont.refs ?? [])) {
         const cv = convs[ref.conventionId];
-        if (!cv) continue;
-        const found = (cv.nodes ?? []).find(n => n.call?.type === 'bid' && n.call.level === lv && n.call.strain === st);
+        const found = cv && (cv.nodes ?? []).find(n => n.call?.type==='bid' && n.call.level===lv && n.call.strain===st);
         if (found) return found;
       }
     }
     if (cont.type === 'ref') {
       const cv = convs[cont.conventionId];
-      return cv ? (cv.nodes ?? []).find(n => n.call?.type === 'bid' && n.call.level === lv && n.call.strain === st) : null;
+      return cv ? (cv.nodes ?? []).find(n => n.call?.type==='bid' && n.call.level===lv && n.call.strain===st) : null;
     }
     return null;
   };
 
-  // ── 1NT response for a 2-level strain ─────────────────────────────────────
+  // ── 1NT responses ─────────────────────────────────────────────────────────
   const nt1Resp = st => {
     const cont = n1?.continuations;
     if (st === 'C' && cont?.type === 'nodes') {
       for (const ref of (cont.refs ?? [])) {
-        const cv = convs[ref.conventionId];
-        if (!cv) continue;
+        const cv = convs[ref.conventionId]; if (!cv) continue;
         const fn = cv.nodes?.[0];
-        if (fn?.call?.type === 'bid' && fn.call.level === 2 && fn.call.strain === 'C')
+        if (fn?.call?.type==='bid' && fn.call.level===2 && fn.call.strain==='C')
           return cv.name ?? fn.meaning?.description ?? '';
       }
     }
     const nd = findInCont(cont, 2, st);
     return nd?.meaning?.description ?? '';
   };
-
-  // ── 3+ level 1NT responses ─────────────────────────────────────────────────
   const nt1OtherResps = () => {
     const cont = n1?.continuations, results = [];
-    const collect = nodes => { for (const n of nodes ?? []) if (n.call?.type === 'bid' && n.call.level >= 3) results.push(`${pc(n.call)}: ${n.meaning?.description ?? ''}`); };
-    if (cont?.type === 'nodes') { collect(cont.nodes); for (const r of (cont.refs ?? [])) collect(convs[r.conventionId]?.nodes); }
-    if (cont?.type === 'ref') collect(convs[cont.conventionId]?.nodes);
+    const collect = nodes => { for (const n of nodes ?? []) if (n.call?.type==='bid' && n.call.level>=3) results.push(`${n.call.level}${SYM[n.call.strain]??n.call.strain}: ${n.meaning?.description??''}`); };
+    if (cont?.type==='nodes') { collect(cont.nodes); for (const r of (cont.refs??[])) collect(convs[r.conventionId]?.nodes); }
+    if (cont?.type==='ref')   collect(convs[cont.conventionId]?.nodes);
     return results.slice(0, 6).join('; ');
   };
-
-  // ── 1NT after double / after interference ─────────────────────────────────
   const nt1AfterDbl = () => {
     for (const [id, cv] of Object.entries(convs))
-      if (/^1nt.*(doubled?|dbl)/i.test(id) || /1nt.*doubled?/i.test(cv.name ?? '')) return cv.name ?? '';
+      if (/^1nt.*(doubled?|dbl)/i.test(id) || /1nt.*doubled?/i.test(cv.name??'')) return cv.name??'';
     return '';
   };
   const nt1AfterInterf = () => {
     for (const [id, cv] of Object.entries(convs))
-      if (/leb[ae]n/i.test(id + ' ' + (cv.name ?? ''))) return cv.name ?? '';
+      if (/leb[ae]n/i.test(id+' '+(cv.name??''))) return cv.name??'';
     return '';
   };
-
-  // ── 1NT strength ──────────────────────────────────────────────────────────
   const nt1Strength = () => {
     if (!n1) return '';
     const h = n1.meaning?.hcp, base = h ? `${h[0]}\u2013${h[1]} HCP` : '';
-    return n1.variants?.length ? (base ? `${base} (varies)` : 'Varies') : base;
+    // Only say "varies" when variants actually exist
+    return (n1.variants?.length) ? (base ? `${base} (varies)` : 'Varies') : base;
   };
 
   // ── General description ───────────────────────────────────────────────────
   const buildGenDesc = () => {
-    if (sys.metadata?.description) return sys.metadata.description;
-    if (sys.metadata?.notes) return sys.metadata.notes;
+    if (sys.metadata?.description) return rt(sys.metadata.description);
+    if (sys.metadata?.notes)       return rt(sys.metadata.notes);
     const parts = [];
-    const c1 = f(1, 'C'), d1 = f(1, 'D');
+    const c1 = f(1,'C'), d1 = f(1,'D');
     if (c1?.meaning?.description) parts.push(`1${SYM.C}: ${c1.meaning.description.split('.')[0]}`);
     if (d1?.meaning?.description) parts.push(`1${SYM.D}: ${d1.meaning.description.split('.')[0]}`);
     if (n1) {
-      const vars = n1.variants ?? [];
-      if (vars.length) {
-        const ranges = [...new Set(vars.map(v => { const h = v.meaningOverride?.hcp; return h ? `${h[0]}\u2013${h[1]}` : ''; }).filter(Boolean))];
+      if (n1.variants?.length) {
+        const ranges = [...new Set(n1.variants.map(v => { const h=v.meaningOverride?.hcp; return h?`${h[0]}\u2013${h[1]}`:''; }).filter(Boolean))];
         parts.push(ranges.length ? `Variable NT (${ranges.join(', ')})` : 'Variable NT');
       } else parts.push(`NT: ${hcpStr(n1)} HCP`);
     }
-    return parts.join('; ');
+    return rt(parts.join('; '));
   };
 
-  // ── Other aspects (called after all trunc() have executed) ─────────────────
+  // ── Other aspects / overflow notes ───────────────────────────────────────
+  // Called AFTER all trunc() calls so suppNotes is populated
   const buildOtherAspects = () => {
     const lines = [];
-    if (sys.metadata?.otherAspects) lines.push(sys.metadata.otherAspects);
+    if (sys.metadata?.otherAspects) lines.push(rt(sys.metadata.otherAspects));
     if (n1?.variants?.length) {
       lines.push('1NT range varies: ' + n1.variants.map(v => {
-        const mo = v.meaningOverride ?? {}, hcp = mo.hcp ? `${mo.hcp[0]}\u2013${mo.hcp[1]}` : '';
-        return `${condLabel(v.condition)}: ${hcp ? hcp + ' HCP' : ''} ${mo.description || ''}`.trim();
+        const mo=v.meaningOverride??{}, hcp=mo.hcp?`${mo.hcp[0]}\u2013${mo.hcp[1]}`:'';
+        return `${condLabel(v.condition)}: ${hcp?hcp+' HCP':''} ${mo.description||''}`.trim();
       }).join('; '));
     }
-    for (const bid of ['1C', '1D', '1H', '1S', '2C', '2D', '2H', '2S', '2N']) {
+    for (const bid of ['1C','1D','1H','1S','2C','2D','2H','2S','2N']) {
       const n = f(Number(bid[0]), bid[1]); if (!n?.meaning?.alert) continue;
-      lines.push(`${bid}: ${(n.meaning?.description ?? '').split('.')[0]}`);
+      lines.push(`${bid}: ${rt((n.meaning?.description??'').split('.')[0])}`);
     }
-    if (extraNotes.length) lines.push(...extraNotes);
     return lines.join('<br>') || '&nbsp;';
   };
 
+  const buildSuppDetails = () => {
+    if (!suppNotes.length) return '';
+    return suppNotes.map(n => rt(n)).join('<br>');
+  };
+
   // ── Convention filters ────────────────────────────────────────────────────
-  const slamConvRe = /slam|blackwood|gerber|keycard|rkcb|rkqg|viscount|general.?swiss/i;
+  const slamConvRe  = /slam|blackwood|gerber|keycard|rkcb|rkqg|viscount|general.?swiss/i;
   const respTableRe = /-resp(-|$)|\/resp(-|$)|-continuations?(-|$)/i;
-  const isSlamConv = (id, cv) => slamConvRe.test(id) || slamConvRe.test(cv.name ?? '');
-  const slamConvs = Object.entries(convs).filter(([id, cv]) => isSlamConv(id, cv)).map(([, cv]) => cv);
-  const otherConvs = Object.entries(convs).filter(([id, cv]) => !isSlamConv(id, cv) && !respTableRe.test(id)).map(([, cv]) => cv);
+  const isSlamConv  = (id, cv) => slamConvRe.test(id) || slamConvRe.test(cv.name??'');
+  const slamConvs   = Object.entries(convs).filter(([id,cv]) => isSlamConv(id,cv)).map(([,cv]) => cv);
+  const otherConvs  = Object.entries(convs).filter(([id,cv]) => !isSlamConv(id,cv) && !respTableRe.test(id)).map(([,cv]) => cv);
 
-  // ── Opening bid helpers ───────────────────────────────────────────────────
-  const op3 = op.filter(n => n.call?.type === 'bid' && n.call.level === 3);
-  const op4 = op.filter(n => n.call?.type === 'bid' && n.call.level === 4);
-
-  // Response text — bid responses only (no doubles, passes, or opponent actions)
+  // ── Response text — bid nodes only ────────────────────────────────────────
   const respText = nd => {
     if (!nd) return '';
     const cont = nd.continuations;
-    if (!cont || cont.type === 'tbd' || cont.type === 'end') return '';
-    if (cont.type === 'ref') { const cv = convs[cont.conventionId]; return cv ? `\u2192 ${cv.name}` : ''; }
-    if (cont.type === 'nodes') {
-      const bids = sortNodes(cont.nodes).filter(n => n.call?.type === 'bid');
-      return bids.slice(0, 4).map(n => `${pc(n.call)}: ${n.meaning?.description ?? ''}`).join('; ');
+    if (!cont || cont.type==='tbd' || cont.type==='end') return '';
+    if (cont.type==='ref') { const cv=convs[cont.conventionId]; return cv?`\u2192 ${cv.name}`:''; }
+    if (cont.type==='nodes') {
+      const bids = sortNodes(cont.nodes).filter(n => n.call?.type==='bid');
+      return bids.slice(0,4).map(n=>`${n.call.level}${SYM[n.call.strain]??n.call.strain}: ${n.meaning?.description??''}`).join('; ');
     }
     return '';
   };
 
   // ── Carding ───────────────────────────────────────────────────────────────
-  const leadsVsSuit = (c.leads ?? []).filter(r => !r.context || /suit|trump/i.test(r.context));
-  const leadsVsNT   = (c.leads ?? []).filter(r => r.context && /nt|notrump/i.test(r.context));
-  const suitSig  = (c.signals ?? []).find(r => !r.context || /suit/i.test(r.context))?.method ?? '';
-  const ntSig    = (c.signals ?? []).find(r => r.context && /nt/i.test(r.context))?.method ?? suitSig;
-  const suitDisc = (c.discards ?? []).find(r => !r.context || /suit/i.test(r.context))?.method ?? '';
-  const ntDisc   = (c.discards ?? []).find(r => r.context && /nt/i.test(r.context))?.method ?? suitDisc;
+  const leadsVsSuit = (c.leads??[]).filter(r => !r.context||/suit|trump/i.test(r.context));
+  const leadsVsNT   = (c.leads??[]).filter(r =>  r.context&&/nt|notrump/i.test(r.context));
+  const suitSig  = (c.signals??[]).find(r => !r.context||/suit/i.test(r.context));
+  const ntSig    = (c.signals??[]).find(r =>  r.context&&/nt/i.test(r.context)) ?? suitSig;
+  const suitDisc = (c.discards??[]).find(r => !r.context||/suit/i.test(r.context)) ?? (c.discards??[])[0];
+  const ntDisc   = (c.discards??[]).find(r =>  r.context&&/nt/i.test(r.context)) ?? suitDisc;
+  const cardingNotes = () => {
+    const parts = [];
+    for (const r of [...(c.signals??[]), ...(c.discards??[]), ...(c.leads??[])]) {
+      if (r.notes) parts.push(rt(r.notes));
+    }
+    if (c.notes) parts.push(rt(c.notes));
+    return parts.join('<br>');
+  };
 
-  // ── Border constants and table builder ────────────────────────────────────
-  const O = '2.25pt solid #000'; // outer border (thick)
-  const I = '1px solid #000';    // inner border (thin)
-  // Full-width table, no fixed layout — each section is its own table
+  // ── Border / layout constants ─────────────────────────────────────────────
+  const O = '2.25pt solid #000';
+  const I = '1px solid #000';
+
+  // Each page is a fixed-size A5 block. overflow:hidden enforces the boundary.
+  // Content is clipped — nothing can push pages to grow.
+  const PAGE_STYLE = 'width:148mm;height:210mm;overflow:hidden;box-sizing:border-box;padding:4mm;font-family:Arial,sans-serif;font-size:8pt;position:relative;page-break-after:always';
+
+  // Table spanning full width, auto layout
   const tbl = rows => `<table style="width:100%;border-collapse:collapse">${rows}</table>`;
 
-  // Section header row
-  // isFirst=true: this section needs its own border-top (very first section on the page)
-  // isFirst=false: previous section's border-bottom already provides the separator
-  const secHdr = (txt, isFirst = false) =>
-    `<tr><td colspan="99" style="border-top:${isFirst ? O : 'none'};border-left:${O};border-right:${O};border-bottom:${O};padding:3px 5px;text-align:center;font-weight:bold;text-transform:uppercase;font-size:10pt">${txt}</td></tr>`;
-
-  // Sub-section separator (thick top border within a section)
+  // Section header (thick all-around)
+  const secHdr = txt =>
+    `<tr><td colspan="99" style="border:${O};padding:2px 4px;text-align:center;font-weight:bold;text-transform:uppercase;font-size:9pt;line-height:1.3">${txt}</td></tr>`;
+  // Sub-section bar (thick top only, continues to right of a section)
   const subHdr = txt =>
-    `<tr><td colspan="99" style="border-top:${O};border-left:${O};border-right:${O};border-bottom:none;padding:2px 5px;font-weight:bold">${txt}</td></tr>`;
+    `<tr><td colspan="99" style="border-top:${O};border-left:${O};border-right:${O};border-bottom:none;padding:2px 4px;font-weight:bold;font-size:8pt">${txt}</td></tr>`;
 
-  // Lined blank rows (last row has thick bottom border to close section)
-  const blankRows = n => Array(n).fill(0).map((_, i) =>
-    `<tr><td colspan="99" style="border-top:none;border-left:${O};border-right:${O};border-bottom:${i === n - 1 ? O : I};padding:0 5px;height:16px">&nbsp;</td></tr>`
+  // Lined blank rows: n rows, each 14px tall, last row gets thick bottom border
+  const blankRows = n => Array(n).fill(0).map((_,i) =>
+    `<tr><td colspan="99" style="border-top:none;border-left:${O};border-right:${O};border-bottom:${i===n-1?O:I};height:14px;padding:0 3px">&nbsp;</td></tr>`
   ).join('');
+
+  // A text row inside a section (no top border — continues from secHdr's bottom)
+  const noteRow = txt =>
+    `<tr><td colspan="99" style="border-top:none;border-left:${O};border-right:${O};border-bottom:none;padding:1px 4px;font-size:7pt">${txt}</td></tr>`;
+
+  // Close a section with a thick bottom border
+  const closeRow = (txt='&nbsp;', h='auto') =>
+    `<tr><td colspan="99" style="border-top:none;border-left:${O};border-right:${O};border-bottom:${O};padding:1px 4px;height:${h}">${txt}</td></tr>`;
+
+  // 2-column label | value row
+  const fRow = (lbl, val='', lw='36%') =>
+    `<tr>
+      <td style="border-top:${I};border-left:${O};border-right:${I};border-bottom:none;padding:1px 4px;width:${lw};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${lbl}</td>
+      <td style="border-top:${I};border-left:none;border-right:${O};border-bottom:none;padding:1px 4px">${val}</td>
+    </tr>`;
+  const fRowLast = (lbl, val='', lw='36%') =>
+    `<tr>
+      <td style="border-top:${I};border-left:${O};border-right:${I};border-bottom:${O};padding:1px 4px;width:${lw};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${lbl}</td>
+      <td style="border-top:${I};border-left:none;border-right:${O};border-bottom:${O};padding:1px 4px">${val}</td>
+    </tr>`;
 
   // ── PAGE 1 ────────────────────────────────────────────────────────────────
 
-  // Header table (no outer borders — just Name/Partner/EBU No labels)
-  const headerTable = tbl(
-    `<tr>
-      <td style="border:none;padding:3px 5px;font-size:14pt;font-weight:bold;width:15%">Name</td>
-      <td style="border:none;padding:3px 5px">&nbsp;</td>
-      <td style="border:none;padding:3px 5px;font-size:14pt;font-weight:bold;text-align:right;white-space:nowrap">EBU No.</td>
-    </tr>
-    <tr>
-      <td style="border:none;padding:3px 5px;font-size:14pt;font-weight:bold">Partner</td>
-      <td style="border:none;padding:3px 5px">&nbsp;</td>
-      <td style="border:none;padding:3px 5px;font-size:14pt;font-weight:bold;text-align:right;white-space:nowrap">EBU No.</td>
-    </tr>`
-  );
+  const page1 = `<div style="${PAGE_STYLE}">` +
 
-  // General Description section (single-column, 4 ruled blank lines)
-  const genDescTable = tbl(
-    secHdr('GENERAL DESCRIPTION OF BIDDING METHODS', true) +
-    blankRows(4)
-  );
+  // Header row: Name | [blank] | EBU No.
+  `<table style="width:100%;border-collapse:collapse;margin-bottom:2px">
+    <tr>
+      <td style="border:none;padding:1px 4px;font-size:12pt;font-weight:bold;width:20%">Name</td>
+      <td style="border:none;padding:1px 4px">&nbsp;</td>
+      <td style="border:none;padding:1px 4px;font-size:10pt;font-weight:bold;text-align:right;white-space:nowrap;width:22%">EBU No.</td>
+    </tr>
+    <tr>
+      <td style="border:none;padding:1px 4px;font-size:12pt;font-weight:bold">Partner</td>
+      <td style="border:none;padding:1px 4px">&nbsp;</td>
+      <td style="border:none;padding:1px 4px;font-size:10pt;font-weight:bold;text-align:right;white-space:nowrap">EBU No.</td>
+    </tr>
+  </table>` +
 
-  // 1NT section — 2 columns: ~30% label | ~70% value
-  const nt1Table = tbl(
-    secHdr('1NT OPENINGS AND RESPONSES') +
-    `<tr>
-      <td style="border-top:none;border-left:${O};border-right:${I};border-bottom:${I};padding:2px 5px;width:30%;font-weight:bold">Strength</td>
-      <td style="border-top:none;border-left:none;border-right:${O};border-bottom:${I};padding:2px 5px">${nt1Strength()}</td>
-    </tr>
-    <tr>
-      <td style="border-top:none;border-left:${O};border-right:${I};border-bottom:${I};padding:2px 5px;font-weight:bold">Shape constraints</td>
-      <td style="border-top:none;border-left:none;border-right:${O};border-bottom:${I};padding:2px 5px">${n1?.meaning?.shape ?? '(semi-)balanced'}</td>
-    </tr>
-    <tr>
-      <td style="border-top:none;border-left:${O};border-right:${I};border-bottom:none;padding:2px 5px;font-weight:bold">Responses</td>
-      <td style="border-top:none;border-left:none;border-right:${O};border-bottom:none;padding:2px 5px">2${ps('C')}&nbsp;${trunc(nt1Resp('C'), '1NT 2C', 55)}</td>
-    </tr>
-    <tr>
-      <td style="border-top:none;border-left:${O};border-right:${I};border-bottom:none;padding:2px 5px">2${ps('D')}</td>
-      <td style="border-top:none;border-left:none;border-right:${O};border-bottom:none;padding:2px 5px">${trunc(nt1Resp('D'), '1NT 2D', 55)}</td>
-    </tr>
-    <tr>
-      <td style="border-top:none;border-left:${O};border-right:${I};border-bottom:none;padding:2px 5px">2${ps('H')}</td>
-      <td style="border-top:none;border-left:none;border-right:${O};border-bottom:none;padding:2px 5px">${trunc(nt1Resp('H'), '1NT 2H', 55)}</td>
-    </tr>
-    <tr>
-      <td style="border-top:none;border-left:${O};border-right:${I};border-bottom:none;padding:2px 5px">2${ps('S')}</td>
-      <td style="border-top:none;border-left:none;border-right:${O};border-bottom:none;padding:2px 5px">${trunc(nt1Resp('S'), '1NT 2S', 55)}</td>
-    </tr>
-    <tr>
-      <td style="border-top:none;border-left:${O};border-right:${I};border-bottom:none;padding:2px 5px">2NT</td>
-      <td style="border-top:none;border-left:none;border-right:${O};border-bottom:none;padding:2px 5px">${trunc(nt1Resp('N'), '1NT 2NT', 55)}</td>
-    </tr>
-    <tr>
-      <td style="border-top:${I};border-left:${O};border-right:${I};border-bottom:none;padding:2px 5px">Others</td>
-      <td style="border-top:${I};border-left:none;border-right:${O};border-bottom:none;padding:2px 5px">${trunc(nt1OtherResps(), '1NT other resps', 80)}</td>
-    </tr>
-    <tr>
-      <td style="border-top:${I};border-left:${O};border-right:${I};border-bottom:none;padding:2px 5px">Action after opponents double</td>
-      <td style="border-top:${I};border-left:none;border-right:${O};border-bottom:none;padding:2px 5px">${trunc(nt1AfterDbl(), 'After dbl', 65)}</td>
-    </tr>
-    <tr>
-      <td style="border-top:${I};border-left:${O};border-right:${I};border-bottom:${O};padding:2px 5px">Action after other interference</td>
-      <td style="border-top:${I};border-left:none;border-right:${O};border-bottom:${O};padding:2px 5px">${trunc(nt1AfterInterf(), 'After interference', 65)}</td>
-    </tr>`
-  );
+  // General Description — single content row with actual data
+  tbl(secHdr('GENERAL DESCRIPTION OF BIDDING METHODS') +
+    `<tr><td colspan="99" style="border-top:none;border-left:${O};border-right:${O};border-bottom:${O};padding:2px 4px;height:28px;vertical-align:top;overflow:hidden">${buildGenDesc()}</td></tr>`
+  ) +
 
-  // Two-level openings — 4 columns: bid(8%) | meaning(auto) | responses(38%) | notes(8%)
-  const twoLvlTable = tbl(
-    secHdr('TWO-LEVEL OPENINGS AND RESPONSES') +
-    `<tr>
-      <td style="border-top:none;border-left:${O};border-right:${I};border-bottom:${I};padding:2px 5px;width:8%">&nbsp;</td>
-      <td style="border-top:none;border-left:none;border-right:${I};border-bottom:${I};padding:2px 5px;font-weight:bold">Meaning</td>
-      <td style="border-top:none;border-left:none;border-right:${I};border-bottom:${I};padding:2px 5px;font-weight:bold;width:38%">Responses</td>
-      <td style="border-top:none;border-left:none;border-right:${O};border-bottom:${I};padding:2px 5px;width:8%;text-align:center;font-weight:bold">Notes</td>
-    </tr>` +
-    ['C', 'D', 'H', 'S', 'N'].map((st, i) => {
-      const nd = f(2, st), m = nd?.meaning ?? {};
+  // 1NT
+  tbl(secHdr('1NT OPENINGS AND RESPONSES') +
+    fRow('<b>Strength</b>', nt1Strength()) +
+    fRow('<b>Shape constraints</b>', rt(n1?.meaning?.shape ?? '(semi-)balanced')) +
+    fRow('<b>Responses</b> 2'+ps('C'), trunc(nt1Resp('C'),'1NT 2C'), '36%') +
+    fRow('2'+ps('D'), trunc(nt1Resp('D'),'1NT 2D')) +
+    fRow('2'+ps('H'), trunc(nt1Resp('H'),'1NT 2H')) +
+    fRow('2'+ps('S'), trunc(nt1Resp('S'),'1NT 2S')) +
+    fRow('2NT', trunc(nt1Resp('N'),'1NT 2NT')) +
+    fRow('Others', trunc(nt1OtherResps(),'1NT others', 80)) +
+    fRow('After opponents double', trunc(nt1AfterDbl(),'After dbl')) +
+    fRowLast('After other interference', trunc(nt1AfterInterf(),'After interf'))
+  ) +
+
+  // Two-level — 4 cols: bid | meaning | responses | notes
+  `<table style="width:100%;border-collapse:collapse">
+    ${secHdr('TWO-LEVEL OPENINGS AND RESPONSES')}
+    <tr>
+      <td style="border-top:none;border-left:${O};border-right:${I};border-bottom:${I};padding:1px 3px;width:7%">&nbsp;</td>
+      <td style="border-top:none;border-left:none;border-right:${I};border-bottom:${I};padding:1px 3px;font-weight:bold">Meaning</td>
+      <td style="border-top:none;border-left:none;border-right:${I};border-bottom:${I};padding:1px 3px;font-weight:bold;width:35%">Responses</td>
+      <td style="border-top:none;border-left:none;border-right:${O};border-bottom:${I};padding:1px 3px;width:7%;text-align:center;font-weight:bold">Notes</td>
+    </tr>
+    ${['C','D','H','S','N'].map((st,i) => {
+      const nd=f(2,st), m=nd?.meaning??{};
       const vline = nd?.variants?.length ? ` [${variantInline(nd.variants)}]` : '';
-      const meaning = trunc((m.description ?? '') + vline, `2${ps(st)} meaning`, 70);
-      const resp = trunc(respText(nd), `2${ps(st)} resp`, 55);
-      const isLast = i === 4;
+      const isLast = i===4;
       return `<tr>
-        <td style="border-top:none;border-left:${O};border-right:${I};border-bottom:${isLast ? O : 'none'};padding:2px 5px">2${ps(st)}</td>
-        <td style="border-top:none;border-left:none;border-right:${I};border-bottom:${isLast ? O : 'none'};padding:2px 5px">${meaning}</td>
-        <td style="border-top:none;border-left:none;border-right:${I};border-bottom:${isLast ? O : 'none'};padding:2px 5px">${resp}</td>
-        <td style="border-top:none;border-left:none;border-right:${O};border-bottom:${isLast ? O : 'none'};padding:2px 5px">&nbsp;</td>
+        <td style="border-top:none;border-left:${O};border-right:${I};border-bottom:${isLast?O:'none'};padding:1px 3px;overflow:hidden">2${ps(st)}</td>
+        <td style="border-top:none;border-left:none;border-right:${I};border-bottom:${isLast?O:'none'};padding:1px 3px;overflow:hidden">${trunc((m.description??'')+vline,'2'+ps(st)+' meaning',55)}</td>
+        <td style="border-top:none;border-left:none;border-right:${I};border-bottom:${isLast?O:'none'};padding:1px 3px;overflow:hidden">${trunc(respText(nd),'2'+ps(st)+' resp',45)}</td>
+        <td style="border-top:none;border-left:none;border-right:${O};border-bottom:${isLast?O:'none'};padding:1px 3px">&nbsp;</td>
       </tr>`;
-    }).join('')
-  );
+    }).join('')}
+  </table>` +
+
+  // Other aspects
+  tbl(secHdr('OTHER ASPECTS OF SYSTEM WHICH OPPONENTS SHOULD NOTE') +
+    noteRow('(Please include details of any agreements involving bidding on significantly less than traditional values).') +
+    `<tr><td colspan="99" style="border-top:${I};border-left:${O};border-right:${O};border-bottom:${O};padding:2px 4px;height:30px;vertical-align:top;overflow:hidden">${buildOtherAspects()}</td></tr>`
+  ) +
+
+  `</div>`;
 
   // ── PAGE 2 ────────────────────────────────────────────────────────────────
-  // 7-col: bid(12%) | hcp(9%) | note*(3%) | minLen(5%) | meaning(auto) | responses(27%) | notes(7%)
+  // Other opening bids table — 7 cols: bid | hcp | * | minLen | meaning | responses | notes
   const opBidRow = (nd, label) => {
-    const m = nd?.meaning ?? {}, hcp = hcpStr(nd);
-    const art = m.alert || m.announce ? '*' : '';
-    let minLen = ''; if (m.shape) { const nm = m.shape.match(/\d+/); if (nm) minLen = nm[0]; }
-    const vline = nd?.variants?.length ? ` [${variantInline(nd.variants)}]` : '';
-    const meaning = trunc((m.description ?? '') + vline, `${label} meaning`, 65);
-    const resp = trunc(respText(nd), `${label} resp`, 50);
+    const m=nd?.meaning??{}, hcp=hcpStr(nd);
+    const art=m.alert||m.announce?'*':'';
+    let minLen=''; if(m.shape){const nm=m.shape.match(/\d+/);if(nm)minLen=nm[0];}
+    const vline=nd?.variants?.length?` [${variantInline(nd.variants)}]`:'';
     return `<tr>
-      <td style="border-top:${I};border-left:${O};border-right:none;border-bottom:${I};padding:2px 5px">${label}</td>
-      <td style="border:${I};padding:2px 4px;text-align:center">${hcp}</td>
-      <td style="border:${I};padding:2px 2px;text-align:center">${art}</td>
-      <td style="border:${I};padding:2px 4px;text-align:center">${minLen}</td>
-      <td style="border-top:${I};border-left:none;border-right:${I};border-bottom:${I};padding:2px 5px">${meaning}</td>
-      <td style="border-top:${I};border-left:none;border-right:${I};border-bottom:${I};padding:2px 5px">${resp}</td>
-      <td style="border-top:${I};border-left:none;border-right:${O};border-bottom:${I};padding:2px 5px;text-align:center">&nbsp;</td>
+      <td style="border-top:${I};border-left:${O};border-right:none;border-bottom:${I};padding:1px 3px;width:8%;overflow:hidden">${label}</td>
+      <td style="border:${I};padding:1px 2px;text-align:center;width:8%">${hcp}</td>
+      <td style="border:${I};padding:1px 2px;text-align:center;width:3%">${art}</td>
+      <td style="border:${I};padding:1px 2px;text-align:center;width:5%">${minLen}</td>
+      <td style="border-top:${I};border-left:none;border-right:${I};border-bottom:${I};padding:1px 3px;overflow:hidden">${trunc((m.description??'')+vline,label+' meaning',50)}</td>
+      <td style="border-top:${I};border-left:none;border-right:${I};border-bottom:${I};padding:1px 3px;overflow:hidden">${trunc(respText(nd),label+' resp',40)}</td>
+      <td style="border-top:${I};border-left:none;border-right:${O};border-bottom:${I};padding:1px 3px;text-align:center;width:6%">&nbsp;</td>
     </tr>`;
   };
 
-  // Defensive row: label spans cols 1-4, then meaning, responses, notes
-  const defRow = (lbl, val = '') =>
+  // 3-level bids: one summary row (like the template)
+  const op3 = op.filter(n => n.call?.type==='bid' && n.call.level===3);
+  const op4 = op.filter(n => n.call?.type==='bid' && n.call.level===4);
+  const op3desc = op3.map(nd => `${nd.call.level}${SYM[nd.call.strain]??nd.call.strain}: ${nd.meaning?.description??''}`).join('; ') || '';
+  const op4desc = op4.map(nd => `${nd.call.level}${SYM[nd.call.strain]??nd.call.strain}: ${nd.meaning?.description??''}`).join('; ') || '';
+
+  const defRow = (lbl, val='') =>
     `<tr>
-      <td colspan="4" style="border-top:${I};border-left:${O};border-right:${I};border-bottom:${I};padding:2px 5px">${lbl}</td>
-      <td style="border:${I};padding:2px 5px">${val}</td>
-      <td style="border:${I};padding:2px 5px">&nbsp;</td>
-      <td style="border-top:${I};border-left:none;border-right:${O};border-bottom:${I};padding:2px 5px;text-align:center">&nbsp;</td>
+      <td colspan="4" style="border-top:${I};border-left:${O};border-right:${I};border-bottom:${I};padding:1px 3px;overflow:hidden;white-space:nowrap">${lbl}</td>
+      <td style="border:${I};padding:1px 3px;overflow:hidden">${val}</td>
+      <td style="border:${I};padding:1px 3px">&nbsp;</td>
+      <td style="border-top:${I};border-left:none;border-right:${O};border-bottom:${I};padding:1px 3px">&nbsp;</td>
     </tr>`;
 
-  // Defensive row for NT overcalls (with Direct/Protective labels)
-  const defRow2 = (lbl, meaning = '', resp = '') =>
-    `<tr>
-      <td style="border-top:${I};border-left:${O};border-right:none;border-bottom:${I};padding:2px 5px;vertical-align:middle">${lbl}</td>
-      <td colspan="3" style="border-top:${I};border-left:${I};border-right:${I};border-bottom:${I};padding:2px 5px;font-size:8pt">&nbsp;</td>
-      <td style="border:${I};padding:2px 5px;font-size:8pt">${meaning}</td>
-      <td style="border:${I};padding:2px 5px;font-size:8pt">${resp}</td>
-      <td style="border-top:${I};border-right:${O};border-bottom:${I};padding:2px 5px">&nbsp;</td>
-    </tr>`;
+  const page2 = `<div style="${PAGE_STYLE}">` +
 
-  const page2Table = tbl(
-    secHdr('OTHER OPENING BIDS', true) +
-    `<tr>
-      <td style="border-top:none;border-left:${O};border-right:none;border-bottom:none;padding:2px 5px;width:12%">&nbsp;</td>
-      <td style="border:${I};padding:2px 4px;text-align:center;font-size:7.5pt;width:9%">HCP</td>
-      <td style="border:${I};padding:1px 2px;text-align:center;font-size:6pt;width:3%">see<br>Note*</td>
-      <td style="border:${I};padding:2px 4px;text-align:center;font-size:7.5pt;width:5%">Min<br>len</td>
-      <td style="border-top:none;border-left:none;border-right:none;border-bottom:none;padding:2px 5px;text-align:center">CONVENTIONAL MEANING</td>
-      <td style="border-top:none;border-left:none;border-right:none;border-bottom:none;padding:2px 5px;text-align:center;width:27%">SPECIAL RESPONSES</td>
-      <td style="border-top:none;border-left:none;border-right:${O};border-bottom:none;padding:2px 5px;text-align:center;width:7%">Notes</td>
-    </tr>` +
-    opBidRow(f(1, 'C'), `1${ps('C')}`) +
-    opBidRow(f(1, 'D'), `1${ps('D')}`) +
-    opBidRow(f(1, 'H'), `1${ps('H')}`) +
-    opBidRow(f(1, 'S'), `1${ps('S')}`) +
-    (op3.length ? op3 : [null]).map(nd => opBidRow(nd, nd ? pc(nd.call) : '3 bids')).join('') +
-    (op4.length ? op4 : [null]).map(nd => opBidRow(nd, nd ? pc(nd.call) : '4 bids')).join('') +
-    `<tr><td colspan="99" style="border-top:${I};border-left:${O};border-right:${O};border-bottom:${O};padding:2px 5px;font-size:6.5pt">*(Please enter your normal HCP range in the HCP column. Please tick box if you have any special agreements involving different values in particular positions (e.g. light openings in third seat) and include further details under Supplementary Details).</td></tr>`
-  );
+  `<table style="width:100%;border-collapse:collapse">
+    ${secHdr('OTHER OPENING BIDS')}
+    <tr>
+      <td style="border-top:none;border-left:${O};border-right:none;border-bottom:none;padding:1px 3px;width:8%">&nbsp;</td>
+      <td style="border:${I};padding:1px 2px;text-align:center;font-size:7pt;width:8%">HCP</td>
+      <td style="border:${I};padding:1px 1px;text-align:center;font-size:6pt;width:3%">see<br>Note*</td>
+      <td style="border:${I};padding:1px 2px;text-align:center;font-size:7pt;width:5%">Min<br>len</td>
+      <td style="border-top:none;border-left:none;border-right:none;border-bottom:none;padding:1px 3px;text-align:center;font-size:7.5pt">CONVENTIONAL MEANING</td>
+      <td style="border-top:none;border-left:none;border-right:none;border-bottom:none;padding:1px 3px;text-align:center;font-size:7.5pt;width:28%">SPECIAL RESPONSES</td>
+      <td style="border-top:none;border-left:none;border-right:${O};border-bottom:none;padding:1px 3px;text-align:center;font-size:7.5pt;width:6%">Notes</td>
+    </tr>
+    ${opBidRow(f(1,'C'), '1'+ps('C'))}
+    ${opBidRow(f(1,'D'), '1'+ps('D'))}
+    ${opBidRow(f(1,'H'), '1'+ps('H'))}
+    ${opBidRow(f(1,'S'), '1'+ps('S'))}
+    <tr>
+      <td style="border-top:${I};border-left:${O};border-right:none;border-bottom:${I};padding:1px 3px;white-space:nowrap">3 bids</td>
+      <td colspan="3" style="border:${I};padding:1px 2px;text-align:center">&nbsp;</td>
+      <td colspan="2" style="border-top:${I};border-left:none;border-right:${I};border-bottom:${I};padding:1px 3px;overflow:hidden">${trunc(op3desc,'3 level bids',90)}</td>
+      <td style="border-top:${I};border-right:${O};border-bottom:${I};padding:1px 3px">&nbsp;</td>
+    </tr>
+    <tr>
+      <td style="border-top:${I};border-left:${O};border-right:none;border-bottom:${I};padding:1px 3px;white-space:nowrap">4 bids</td>
+      <td colspan="3" style="border:${I};padding:1px 2px;text-align:center">&nbsp;</td>
+      <td colspan="2" style="border-top:${I};border-left:none;border-right:${I};border-bottom:${I};padding:1px 3px;overflow:hidden">${trunc(op4desc,'4 level bids',90)}</td>
+      <td style="border-top:${I};border-right:${O};border-bottom:${I};padding:1px 3px">&nbsp;</td>
+    </tr>
+    <tr><td colspan="99" style="border-top:${I};border-left:${O};border-right:${O};border-bottom:${O};padding:1px 3px;font-size:6pt">*(Please enter your normal HCP range. Please tick box if you have special agreements involving different values in particular positions and include further details under Supplementary Details).</td></tr>
+  </table>` +
 
-  const defensiveTable = tbl(
-    secHdr('DEFENSIVE METHODS AFTER OPPONENTS OPEN') +
-    `<tr>
-      <td colspan="4" style="border-top:none;border-left:${O};border-right:${I};border-bottom:${I};padding:2px 5px;text-align:center">OPPONENTS OPEN A NATURAL ONE OF A SUIT</td>
-      <td style="border-top:none;border-left:none;border-right:${I};border-bottom:${I};padding:2px 5px;text-align:center">CONVENTIONAL MEANING</td>
-      <td style="border-top:none;border-left:none;border-right:${I};border-bottom:${I};padding:2px 5px;text-align:center">SPECIAL RESPONSES</td>
-      <td style="border-top:none;border-left:none;border-right:${O};border-bottom:${I};padding:2px 5px;text-align:center">Notes</td>
-    </tr>` +
-    defRow('Simple overcall', ov.find(n => n.call?.type === 'bid' && n.call?.level === 1 && n.call?.strain !== 'N')?.meaning?.description ?? '') +
-    defRow('Jump overcall') +
-    defRow('Cue bid') +
-    defRow2('1NT', `Direct: ${ov.find(n => n.call?.type === 'bid' && n.call?.level === 1 && n.call?.strain === 'N')?.meaning?.description ?? ''}`) +
-    defRow2('2NT', `Direct: ${ov.find(n => n.call?.type === 'bid' && n.call?.level === 2 && n.call?.strain === 'N')?.meaning?.description ?? ''}`) +
-    `<tr>
-      <td colspan="4" style="border-top:${I};border-left:${O};border-right:${I};border-bottom:${I};padding:2px 5px;text-align:center">OPPONENTS OPEN WITH</td>
-      <td style="border-top:${I};border-left:none;border-right:${I};border-bottom:${I};padding:2px 5px;text-align:center">DEFENSIVE METHODS</td>
-      <td style="border-top:${I};border-left:none;border-right:${I};border-bottom:${I};padding:2px 5px;text-align:center">SPECIAL RESPONSES</td>
-      <td style="border-top:${I};border-left:none;border-right:${O};border-bottom:${I};padding:2px 5px;text-align:center">Notes</td>
-    </tr>` +
-    defRow('Strong 1\u2663') +
-    defRow('Short 1\u2663/1\u2666') +
-    defRow('Weak 1NT') +
-    defRow('Strong 1NT') +
-    defRow('Weak 2') +
-    defRow('Weak 3') +
-    defRow('4 bids') +
-    `<tr>
-      <td colspan="4" style="border-top:${I};border-left:${O};border-right:${I};border-bottom:${O};padding:2px 5px">Multi 2\u2666</td>
-      <td style="border:${I};border-bottom:${O};padding:2px 5px">&nbsp;</td>
-      <td style="border:${I};border-bottom:${O};padding:2px 5px">&nbsp;</td>
-      <td style="border-top:${I};border-right:${O};border-bottom:${O};padding:2px 5px">&nbsp;</td>
-    </tr>`
-  );
+  `<table style="width:100%;border-collapse:collapse">
+    ${secHdr('DEFENSIVE METHODS AFTER OPPONENTS OPEN')}
+    <tr>
+      <td colspan="4" style="border-top:none;border-left:${O};border-right:${I};border-bottom:${I};padding:1px 3px;text-align:center;font-size:7.5pt">OPPONENTS OPEN A NATURAL ONE OF A SUIT</td>
+      <td style="border-top:none;border-left:none;border-right:${I};border-bottom:${I};padding:1px 3px;text-align:center;font-size:7.5pt">CONVENTIONAL MEANING</td>
+      <td style="border-top:none;border-left:none;border-right:${I};border-bottom:${I};padding:1px 3px;text-align:center;font-size:7.5pt">SPECIAL RESPONSES</td>
+      <td style="border-top:none;border-left:none;border-right:${O};border-bottom:${I};padding:1px 3px;text-align:center;font-size:7.5pt">Notes</td>
+    </tr>
+    ${defRow('Simple overcall', rt(ov.find(n=>n.call?.type==='bid'&&n.call?.level===1&&n.call?.strain!=='N')?.meaning?.description??''))}
+    ${defRow('Jump overcall')}
+    ${defRow('Cue bid')}
+    ${defRow('1NT', rt(ov.find(n=>n.call?.type==='bid'&&n.call?.level===1&&n.call?.strain==='N')?.meaning?.description??''))}
+    ${defRow('2NT', rt(ov.find(n=>n.call?.type==='bid'&&n.call?.level===2&&n.call?.strain==='N')?.meaning?.description??''))}
+    <tr>
+      <td colspan="4" style="border-top:${I};border-left:${O};border-right:${I};border-bottom:${I};padding:1px 3px;text-align:center;font-size:7.5pt">OPPONENTS OPEN WITH</td>
+      <td style="border-top:${I};border-left:none;border-right:${I};border-bottom:${I};padding:1px 3px;text-align:center;font-size:7.5pt">DEFENSIVE METHODS</td>
+      <td style="border-top:${I};border-left:none;border-right:${I};border-bottom:${I};padding:1px 3px;text-align:center;font-size:7.5pt">SPECIAL RESPONSES</td>
+      <td style="border-top:${I};border-left:none;border-right:${O};border-bottom:${I};padding:1px 3px;text-align:center;font-size:7.5pt">Notes</td>
+    </tr>
+    ${defRow('Strong 1\u2663')}
+    ${defRow('Short 1\u2663/1\u2666')}
+    ${defRow('Weak 1NT')}
+    ${defRow('Strong 1NT')}
+    ${defRow('Weak 2')}
+    ${defRow('Weak 3')}
+    ${defRow('4 bids')}
+    <tr>
+      <td colspan="4" style="border-top:${I};border-left:${O};border-right:${I};border-bottom:${O};padding:1px 3px">Multi 2\u2666</td>
+      <td style="border:${I};border-bottom:${O};padding:1px 3px">&nbsp;</td>
+      <td style="border:${I};border-bottom:${O};padding:1px 3px">&nbsp;</td>
+      <td style="border-top:${I};border-right:${O};border-bottom:${O};padding:1px 3px">&nbsp;</td>
+    </tr>
+  </table>` +
 
-  const slamTable = tbl(
-    secHdr('SLAM CONVENTIONS') +
-    `<tr>
-      <td colspan="4" style="border-top:none;border-left:${O};border-right:${I};border-bottom:none;padding:2px 5px;font-weight:bold">Name</td>
-      <td colspan="2" style="border-top:none;border-left:none;border-right:${I};border-bottom:none;padding:2px 5px;font-weight:bold">Meaning of Responses</td>
-      <td style="border-top:none;border-left:none;border-right:${O};border-bottom:none;padding:2px 5px;font-weight:bold">Action over interference</td>
-    </tr>` +
-    (slamConvs.length ? slamConvs : [{}]).map(cv => `<tr>
-      <td colspan="4" style="border-top:${I};border-left:${O};border-right:${I};border-bottom:none;padding:2px 5px;height:16px">${cv.name ?? ''}</td>
-      <td colspan="2" style="border-top:${I};border-left:none;border-right:${I};border-bottom:none;padding:2px 5px">${trunc(cv.description ?? '', `${cv.name ?? 'slam'} desc`, 65)}</td>
-      <td style="border-top:${I};border-left:none;border-right:${O};border-bottom:none;padding:2px 5px">&nbsp;</td>
-    </tr>`).join('') +
-    `<tr>
-      <td colspan="4" style="border-top:${I};border-left:${O};border-right:${I};border-bottom:${O};padding:2px 5px;height:16px">&nbsp;</td>
-      <td colspan="2" style="border-top:${I};border-left:none;border-right:${I};border-bottom:${O};padding:2px 5px">&nbsp;</td>
-      <td style="border-top:${I};border-left:none;border-right:${O};border-bottom:${O};padding:2px 5px">&nbsp;</td>
-    </tr>`
-  );
+  `<table style="width:100%;border-collapse:collapse">
+    ${secHdr('SLAM CONVENTIONS')}
+    <tr>
+      <td colspan="4" style="border-top:none;border-left:${O};border-right:${I};border-bottom:none;padding:1px 3px;font-weight:bold;width:36%">Name</td>
+      <td colspan="2" style="border-top:none;border-left:none;border-right:${I};border-bottom:none;padding:1px 3px;font-weight:bold">Meaning of Responses</td>
+      <td style="border-top:none;border-left:none;border-right:${O};border-bottom:none;padding:1px 3px;font-weight:bold;width:18%">Over interference</td>
+    </tr>
+    ${(slamConvs.length?slamConvs:[{}]).map(cv=>`<tr>
+      <td colspan="4" style="border-top:${I};border-left:${O};border-right:${I};border-bottom:none;padding:1px 3px;overflow:hidden">${cv.name??''}</td>
+      <td colspan="2" style="border-top:${I};border-left:none;border-right:${I};border-bottom:none;padding:1px 3px;overflow:hidden">${trunc(cv.description??'',(cv.name??'slam')+' desc',50)}</td>
+      <td style="border-top:${I};border-left:none;border-right:${O};border-bottom:none;padding:1px 3px">&nbsp;</td>
+    </tr>`).join('')}
+    <tr>
+      <td colspan="4" style="border-top:${I};border-left:${O};border-right:${I};border-bottom:${O};padding:1px 3px;height:12px">&nbsp;</td>
+      <td colspan="2" style="border-top:${I};border-left:none;border-right:${I};border-bottom:${O};padding:1px 3px">&nbsp;</td>
+      <td style="border-top:${I};border-left:none;border-right:${O};border-bottom:${O};padding:1px 3px">&nbsp;</td>
+    </tr>
+  </table>` +
+
+  `</div>`;
 
   // ── PAGE 3 ────────────────────────────────────────────────────────────────
-  // 2-column: label(38%) | value(62%)
-  const fRow = (lbl, val = '') =>
+  const fRow3 = (lbl, val='') =>
     `<tr>
-      <td style="border-top:${I};border-left:${O};border-right:${I};border-bottom:none;padding:2px 5px;width:38%">${lbl}</td>
-      <td style="border-top:${I};border-left:none;border-right:${O};border-bottom:none;padding:2px 5px">${val}</td>
+      <td style="border-top:${I};border-left:${O};border-right:${I};border-bottom:none;padding:1px 4px;width:36%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${lbl}</td>
+      <td style="border-top:${I};border-left:none;border-right:${O};border-bottom:none;padding:1px 4px">${val}</td>
+    </tr>`;
+  const fRow3Last = (lbl, val='') =>
+    `<tr>
+      <td style="border-top:${I};border-left:${O};border-right:${I};border-bottom:${O};padding:1px 4px;width:36%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${lbl}</td>
+      <td style="border-top:${I};border-left:none;border-right:${O};border-bottom:${O};padding:1px 4px">${val}</td>
     </tr>`;
 
-  const competitiveTable = tbl(
-    secHdr('COMPETITIVE AUCTIONS', true) +
-    `<tr><td colspan="99" style="border-top:none;border-left:${O};border-right:${O};border-bottom:${I};padding:2px 5px">Agreements after opening of one of a suit and overcall by opponents</td></tr>` +
-    fRow('Level to which negative doubles apply') +
-    fRow('Special meaning of bids') +
-    fRow('Exceptions / other agreements') +
-    subHdr('Agreements after opponents double for takeout') +
-    fRow('Redouble') +
-    fRow('New suit') +
-    fRow('Jump in new suit') +
-    fRow('Jump raise') +
-    fRow('2NT') +
-    `<tr>
-      <td style="border-top:${I};border-left:${O};border-right:${I};border-bottom:${O};padding:2px 5px;width:38%">Other</td>
-      <td style="border-top:${I};border-left:none;border-right:${O};border-bottom:${O};padding:2px 5px">&nbsp;</td>
-    </tr>` +
-    `<tr><td colspan="99" style="border-top:none;border-left:${O};border-right:${O};border-bottom:none;padding:2px 5px">Other agreements concerning doubles and redoubles</td></tr>` +
-    blankRows(3)
-  );
+  const page3 = `<div style="${PAGE_STYLE}">` +
 
-  const otherConvsTable = tbl(
-    secHdr('OTHER CONVENTIONS') +
-    (otherConvs.length
+  tbl(secHdr('COMPETITIVE AUCTIONS') +
+    noteRow('Agreements after opening of one of a suit and overcall by opponents') +
+    fRow3('Level to which negative doubles apply') +
+    fRow3('Special meaning of bids') +
+    fRow3('Exceptions / other agreements') +
+    subHdr('Agreements after opponents double for takeout') +
+    fRow3('Redouble') +
+    fRow3('New suit') +
+    fRow3('Jump in new suit') +
+    fRow3('Jump raise') +
+    fRow3('2NT') +
+    fRow3Last('Other') +
+    noteRow('Other agreements concerning doubles and redoubles') +
+    blankRows(3)
+  ) +
+
+  `<table style="width:100%;border-collapse:collapse">
+    ${secHdr('OTHER CONVENTIONS')}
+    ${otherConvs.length
       ? otherConvs.map(cv =>
           `<tr>
-            <td style="border-top:${I};border-left:${O};border-right:${I};border-bottom:none;padding:2px 5px;width:38%;font-weight:bold">${cv.name ?? ''}</td>
-            <td style="border-top:${I};border-left:none;border-right:${O};border-bottom:none;padding:2px 5px">${trunc(cv.description ?? '', `${cv.name ?? 'conv'} desc`, 80)}</td>
+            <td style="border-top:${I};border-left:${O};border-right:${I};border-bottom:none;padding:1px 4px;width:38%;font-weight:bold;overflow:hidden">${rt(cv.name??'')}</td>
+            <td style="border-top:${I};border-left:none;border-right:${O};border-bottom:none;padding:1px 4px;overflow:hidden">${trunc(cv.description??'',(cv.name??'conv')+' desc',65)}</td>
           </tr>`
         ).join('') +
-        `<tr><td colspan="99" style="border-top:${I};border-left:${O};border-right:${O};border-bottom:${O};padding:2px 5px;height:16px">&nbsp;</td></tr>`
+        `<tr><td colspan="99" style="border-top:${I};border-left:${O};border-right:${O};border-bottom:${O};padding:1px 4px;height:12px">&nbsp;</td></tr>`
       : blankRows(4)
-    )
-  );
+    }
+  </table>` +
 
-  const suppTable = tbl(
-    secHdr('SUPPLEMENTARY DETAILS') +
-    `<tr><td colspan="99" style="border-top:none;border-left:${O};border-right:${O};border-bottom:none;padding:2px 5px;font-size:7pt">(Please cross-reference where appropriate to the relevant part of card, and continue on back if needed).</td></tr>` +
-    blankRows(5)
-  );
+  // Supplementary details — blank for handwriting; notes go to page 4
+  `<table style="width:100%;border-collapse:collapse">
+    ${secHdr('SUPPLEMENTARY DETAILS')}
+    ${noteRow('(Please cross-reference where appropriate to the relevant part of card, and continue on back if needed).')}
+    ${blankRows(4)}
+    <tr><td colspan="99" style="border-top:none;border-left:${O};border-right:${O};border-bottom:${O};height:12px;padding:0 3px">&nbsp;</td></tr>
+  </table>` +
+
+  `</div>`;
 
   // ── PAGE 4 ────────────────────────────────────────────────────────────────
-  const suitCombos = ['A <u>K</u>', '<u>A</u> K x', '<u>K</u> Q 10', '<u>K</u> Q x', 'K <u>J</u> 10', 'K <u>10</u> 9',
-    '<u>Q</u> J 10', '<u>Q</u> J x', '<u>J</u> 10 x', '10 x <u>x</u>', '<u>10</u> 9 x', '9 <u>8</u> 7 x',
-    '10 x x <u>x</u>', 'H x <u>x</u>', 'H x x <u>x</u>', 'H x x <u>x</u> x', 'H x x <u>x</u> x x',
-    '<u>x</u> x', 'x <u>x</u> x', 'x <u>x</u> x x', 'x <u>x</u> x x x'];
-  const ntCombos = ['<u>A</u> K x (<u>x</u>)', 'A <u>J</u> 10 x', '<u>K</u> Q 10', '<u>K</u> Q x', 'K <u>J</u> 10', 'K <u>10</u> 9',
-    '<u>Q</u> J 10', '<u>Q</u> J x', '<u>J</u> 10 x', '10 x <u>x</u>', '<u>10</u> 9 x', '9 <u>8</u> 7 x',
-    '10 x x <u>x</u>', 'H x <u>x</u>', 'H x x <u>x</u>', 'H x x <u>x</u> x', 'H x x <u>x</u> x x',
-    '<u>x</u> x', 'x <u>x</u> x', 'x <u>x</u> x x', 'x <u>x</u> x x x'];
+  const suitCombos = ['A <u>K</u>','<u>A</u> K x','<u>K</u> Q 10','<u>K</u> Q x','K <u>J</u> 10','K <u>10</u> 9',
+    '<u>Q</u> J 10','<u>Q</u> J x','<u>J</u> 10 x','10 x <u>x</u>','<u>10</u> 9 x','9 <u>8</u> 7 x',
+    '10 x x <u>x</u>','H x <u>x</u>','H x x <u>x</u>','H x x <u>x</u> x','H x x <u>x</u> x x',
+    '<u>x</u> x','x <u>x</u> x','x <u>x</u> x x','x <u>x</u> x x x'];
+  const ntCombos = ['<u>A</u> K x (<u>x</u>)','A <u>J</u> 10 x','<u>K</u> Q 10','<u>K</u> Q x','K <u>J</u> 10','K <u>10</u> 9',
+    '<u>Q</u> J 10','<u>Q</u> J x','<u>J</u> 10 x','10 x <u>x</u>','<u>10</u> 9 x','9 <u>8</u> 7 x',
+    '10 x x <u>x</u>','H x <u>x</u>','H x x <u>x</u>','H x x <u>x</u> x','H x x <u>x</u> x x',
+    '<u>x</u> x','x <u>x</u> x','x <u>x</u> x x','x <u>x</u> x x x'];
 
-  // Opening leads inner table: 3 rows of 7 combos + write rows, with label spanning all rows
   const leadsInnerTbl = (combos, label) => {
-    const g = i => combos.slice(i * 7, i * 7 + 7);
-    const cRow = group => group.map(cx => `<td style="padding:1px 3px;font-size:7pt;white-space:nowrap;border:none">${cx}</td>`).join('');
-    const wRow = () => Array(7).fill(`<td style="border-bottom:1px solid #ccc;height:14px;border-top:none;border-left:none;border-right:none;padding:0">&nbsp;</td>`).join('');
+    const g = i => combos.slice(i*7, i*7+7);
+    const cRow = grp => grp.map(cx => `<td style="padding:0 2px;font-size:6.5pt;white-space:nowrap;border:none;line-height:1.3">${cx}</td>`).join('');
+    const wRow = () => Array(7).fill(`<td style="border-bottom:1px solid #ccc;height:11px;padding:0;border-top:none;border-left:none;border-right:none">&nbsp;</td>`).join('');
     return `<table style="width:100%;border-collapse:collapse">
       <tr>
-        <td rowspan="6" style="width:65px;border-right:${I};border-top:none;border-left:none;border-bottom:none;padding:3px 4px;text-align:center;vertical-align:middle;font-size:8pt">${label}</td>
+        <td rowspan="6" style="width:52px;border-right:${I};padding:2px 3px;text-align:center;vertical-align:middle;font-size:7pt">${label}</td>
         ${cRow(g(0))}
       </tr>
       <tr>${wRow()}</tr>
@@ -1017,76 +1033,67 @@ function generateEBU(sys) {
     </table>`;
   };
 
-  const openingLeadsTable = tbl(
-    secHdr('OPENING LEADS', true) +
-    `<tr><td colspan="99" style="border-top:none;border-left:${O};border-right:${O};border-bottom:${I};padding:3px 5px;font-size:7.5pt">For all the card combinations shown, clearly mark the card normally led if different from the underlined card. &emsp;<span style="border:${O};padding:1px 5px;font-size:7.5pt">Hatch over or shade this box if using non-standard leads.</span></td></tr>` +
-    `<tr><td colspan="99" style="border-top:none;border-left:${O};border-right:${O};border-bottom:none;padding:0">${leadsInnerTbl(suitCombos, 'v.&nbsp;suit<br>contracts')}</td></tr>` +
-    `<tr><td colspan="99" style="border-top:${I};border-left:${O};border-right:${O};border-bottom:none;padding:0">${leadsInnerTbl(ntCombos, 'v.&nbsp;NT<br>contracts')}</td></tr>` +
-    `<tr><td colspan="99" style="border-top:${I};border-left:${O};border-right:${O};border-bottom:none;padding:2px 5px">Other agreements in leading, e.g. high level contracts, partnership suits:&ndash;</td></tr>` +
+  const page4 = `<div style="${PAGE_STYLE}">` +
+
+  tbl(secHdr('OPENING LEADS') +
+    noteRow('For all the card combinations shown, clearly mark the card normally led if different from the underlined card.') +
+    `<tr><td colspan="99" style="border-top:none;border-left:${O};border-right:${O};border-bottom:none;padding:0">${leadsInnerTbl(suitCombos,'v.&nbsp;suit<br>contracts')}</td></tr>` +
+    `<tr><td colspan="99" style="border-top:${I};border-left:${O};border-right:${O};border-bottom:none;padding:0">${leadsInnerTbl(ntCombos,'v.&nbsp;NT<br>contracts')}</td></tr>` +
+    noteRow('Other agreements in leading, e.g. high level contracts, partnership suits:&ndash;') +
     blankRows(2)
-  );
+  ) +
 
-  const cardingTable = tbl(
-    secHdr('CARDING METHODS') +
-    `<tr>
-      <td style="border-top:none;border-left:${O};border-right:${I};border-bottom:${I};padding:2px 5px;width:30%">&nbsp;</td>
-      <td style="border-top:none;border-left:none;border-right:${I};border-bottom:none;padding:2px 5px;text-align:center">Primary method v. suit contracts</td>
-      <td style="border-top:none;border-left:none;border-right:${O};border-bottom:none;padding:2px 5px;text-align:center">Primary method v. NT contracts</td>
+  `<table style="width:100%;border-collapse:collapse">
+    ${secHdr('CARDING METHODS')}
+    <tr>
+      <td style="border-top:none;border-left:${O};border-right:${I};border-bottom:${I};padding:1px 4px;width:32%">&nbsp;</td>
+      <td style="border-top:none;border-left:none;border-right:${I};border-bottom:none;padding:1px 4px;text-align:center;font-size:7.5pt">v. suit contracts</td>
+      <td style="border-top:none;border-left:none;border-right:${O};border-bottom:none;padding:1px 4px;text-align:center;font-size:7.5pt">v. NT contracts</td>
     </tr>
     <tr>
-      <td style="border-top:none;border-left:${O};border-right:${I};border-bottom:${I};padding:2px 5px">On Partner&apos;s lead</td>
-      <td style="border-top:${I};border-left:none;border-right:${I};border-bottom:${I};padding:2px 5px;text-align:center">${suitSig}</td>
-      <td style="border-top:${I};border-left:none;border-right:${O};border-bottom:${I};padding:2px 5px;text-align:center">${ntSig}</td>
+      <td style="border-top:none;border-left:${O};border-right:${I};border-bottom:${I};padding:1px 4px">On Partner's lead</td>
+      <td style="border-top:${I};border-left:none;border-right:${I};border-bottom:${I};padding:1px 4px;text-align:center">${rt(suitSig?.method??'')}</td>
+      <td style="border-top:${I};border-left:none;border-right:${O};border-bottom:${I};padding:1px 4px;text-align:center">${rt(ntSig?.method??'')}</td>
     </tr>
     <tr>
-      <td style="border-top:${I};border-left:${O};border-right:${I};border-bottom:${I};padding:2px 5px">On Declarer&apos;s lead</td>
-      <td style="border-top:${I};border-left:none;border-right:${I};border-bottom:${I};padding:2px 5px">&nbsp;</td>
-      <td style="border-top:${I};border-left:none;border-right:${O};border-bottom:${I};padding:2px 5px">&nbsp;</td>
+      <td style="border-top:${I};border-left:${O};border-right:${I};border-bottom:${I};padding:1px 4px">On Declarer's lead</td>
+      <td style="border-top:${I};border-left:none;border-right:${I};border-bottom:${I};padding:1px 4px">&nbsp;</td>
+      <td style="border-top:${I};border-left:none;border-right:${O};border-bottom:${I};padding:1px 4px">&nbsp;</td>
     </tr>
     <tr>
-      <td style="border-top:${I};border-left:${O};border-right:${I};border-bottom:${I};padding:2px 5px">When discarding</td>
-      <td style="border-top:${I};border-left:none;border-right:${I};border-bottom:${I};padding:2px 5px;text-align:center">${suitDisc}</td>
-      <td style="border-top:${I};border-left:none;border-right:${O};border-bottom:${I};padding:2px 5px;text-align:center">${ntDisc}</td>
-    </tr>` +
-    `<tr><td colspan="99" style="border-top:${I};border-left:${O};border-right:${O};border-bottom:none;padding:2px 5px">Other carding agreements, including secondary methods (state when applicable) and exceptions to above</td></tr>` +
-    blankRows(3)
-  );
+      <td style="border-top:${I};border-left:${O};border-right:${I};border-bottom:${I};padding:1px 4px">When discarding</td>
+      <td style="border-top:${I};border-left:none;border-right:${I};border-bottom:${I};padding:1px 4px;text-align:center">${rt(suitDisc?.method??'')}</td>
+      <td style="border-top:${I};border-left:none;border-right:${O};border-bottom:${I};padding:1px 4px;text-align:center">${rt(ntDisc?.method??'')}</td>
+    </tr>
+    <tr><td colspan="99" style="border-top:${I};border-left:${O};border-right:${O};border-bottom:none;padding:1px 4px;font-size:7.5pt">Other carding agreements, secondary methods, and exceptions:</td></tr>
+    <tr><td colspan="99" style="border-top:none;border-left:${O};border-right:${O};border-bottom:none;padding:2px 4px;vertical-align:top;overflow:hidden">${cardingNotes() || '&nbsp;'}</td></tr>
+    <tr><td colspan="99" style="border-top:${I};border-left:${O};border-right:${O};border-bottom:${O};height:12px;padding:0 3px">&nbsp;</td></tr>
+  </table>` +
 
-  const suppContTable = tbl(
-    secHdr('SUPPLEMENTARY DETAILS (continued)') +
-    blankRows(8)
-  );
+  tbl(secHdr('SUPPLEMENTARY DETAILS (continued)') +
+    (suppNotes.length
+      ? `<tr><td colspan="99" style="border-top:none;border-left:${O};border-right:${O};border-bottom:none;padding:2px 4px;vertical-align:top;font-size:7.5pt">${buildSuppDetails()}</td></tr>` +
+        blankRows(3)
+      : blankRows(5)
+    ) +
+    `<tr><td colspan="99" style="border-top:none;border-left:${O};border-right:${O};border-bottom:${O};height:10px;padding:0 3px">&nbsp;</td></tr>`
+  ) +
 
-  // ── Build notes-dependent sections LAST ───────────────────────────────────
-  // All trunc() calls above have now executed, extraNotes is fully populated
-  const otherAspectsTable = tbl(
-    secHdr('OTHER ASPECTS OF SYSTEM WHICH OPPONENTS SHOULD NOTE') +
-    `<tr><td colspan="99" style="border-top:none;border-left:${O};border-right:${O};border-bottom:none;padding:2px 5px;font-size:7pt">(Please include details of any agreements involving bidding on significantly less than traditional values).</td></tr>` +
-    `<tr><td colspan="99" style="border-top:${I};border-left:${O};border-right:${O};border-bottom:${O};padding:4px 5px;min-height:50px">${buildOtherAspects()}</td></tr>`
-  );
+  `</div>`;
 
-  // ── Assemble pages ────────────────────────────────────────────────────────
-  const page1 = `${headerTable}${genDescTable}${nt1Table}${twoLvlTable}${otherAspectsTable}`;
-  const page2 = `${page2Table}${defensiveTable}${slamTable}`;
-  const page3 = `${competitiveTable}${otherConvsTable}${suppTable}`;
-  const page4 = `${openingLeadsTable}${cardingTable}${suppContTable}`;
-
-  const body = `<div style="max-width:720px;margin:0 auto;font-family:Arial,sans-serif;font-size:9pt">
-    <div style="margin-bottom:20px">${page1}</div>
-    <div style="margin-bottom:20px">${page2}</div>
-    <div style="margin-bottom:20px">${page3}</div>
-    <div style="margin-bottom:20px">${page4}</div>
-    <div style="font-size:7pt;color:#444;border-top:1px solid #aaa;padding:4px 0;margin-top:4px">
-      Both players of a partnership must have identically completed convention cards. Cards must be exchanged with opponents for each round.
-      <span style="float:right">Jan 2016 &nbsp; <b>EBU 20B</b></span>
-    </div>
-  </div>`;
+  const body = page1 + page2 + page3 + page4 +
+    `<div style="font-size:7pt;color:#444;text-align:right;padding:2px 0">Both players must have identically completed convention cards. Cards must be exchanged with opponents for each round. &nbsp;<b>EBU 20B</b></div>`;
 
   const extraCss = `
-    @page { size: A4; margin: 10mm 12mm }
-    body { font-family: Arial, sans-serif; font-size: 9pt; background: #fff; }
+    @page { size: A5; margin: 0 }
+    body { font-family: Arial, sans-serif; font-size: 8pt; background: #fff; margin: 0; padding: 0; }
     table { border-collapse: collapse; }
     u { text-decoration: underline; }
+    .suit-club    { color: #111; font-weight: bold; }
+    .suit-diamond { color: #c00; font-weight: bold; }
+    .suit-heart   { color: #c00; font-weight: bold; }
+    .suit-spade   { color: #111; font-weight: bold; }
+    .suit-nt      { color: #111; }
   `;
   return wrap(`${sys.name} — EBU 20B`, extraCss, body);
 }
