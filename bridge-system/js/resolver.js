@@ -237,8 +237,10 @@ function resolveBaseNodes(continuation, conventions) {
       resolveRef(ref.conventionId, conventions, ref.params));
     // Priority: explicit inline (parent) > parameterized convention bid > explicit convention bid.
     // Inline keys are pre-seeded so any matching ref node is silently dropped.
+    // Opponent-call nodes (isOpponentCall) are NOT seeded — they occupy a different role
+    // (showing opponent's intervention) and must never shadow a genuine response from a ref.
     // Within refs, first-ref-wins for the same concrete key.
-    const seen = new Set(inlineNodes.map(n => callKey(n.call)));
+    const seen = new Set(inlineNodes.filter(n => !n.isOpponentCall).map(n => callKey(n.call)));
     const filteredRefs = refNodes.filter(n => {
       const k = callKey(n.call);
       if (seen.has(k)) return false;

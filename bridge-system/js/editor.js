@@ -3,7 +3,7 @@
  */
 'use strict';
 
-import { callToHTML, callToString, parseCall, parseSequence, makeBidNode,
+import { callToHTML, nodeCallToHTML, callToString, parseCall, parseSequence, makeBidNode,
          makeMeaning, makeVariant, makeCondition, makeConvention, PASS,
          sortNodes, variantBadgeText, renderText, openerBidToString } from './model.js';
 import { getActiveSystem, saveSystem } from './store.js';
@@ -434,7 +434,7 @@ function buildNodeElement(node, sys, path, opts = {}, outerParams = []) {
     ${node.meaning?.forcing ? `<span class="tag tag-forcing">${node.meaning.forcing}</span>` : ''}
     ${node.continuations?.type === 'tbd' || (node.continuations?.type === 'nodes' && !node.continuations.nodes?.length && !node.continuations.refs?.length) ? '<span class="tag tag-tbd">TBD</span>' : ''}
     ${cloneBtn}
-    <button class="btn-icon add-child-btn" data-id="${node.id}" title="Add response">＋</button>
+    <button class="btn-icon add-child-btn" data-id="${node.id}" title="Add response / opponent bid (X)">＋</button>
     <button class="btn-icon delete-node-btn" data-id="${node.id}" title="Delete">🗑</button>`;
 
   header.addEventListener('click', (e) => {
@@ -614,10 +614,13 @@ function showEditForm(node, sys) {
     </div>` : '';
 
   formCol.innerHTML = `
-    <h3 style="margin-bottom:0.75rem;font-size:0.95rem">${callToHTML(node.call)} <span style="color:var(--text-muted);font-size:0.8rem">${node.id.slice(0,8)}</span></h3>
+    <h3 style="margin-bottom:0.75rem;font-size:0.95rem">${nodeCallToHTML(node)} <span style="color:var(--text-muted);font-size:0.8rem">${node.id.slice(0,8)}</span></h3>
     <div class="form-group">
       <label>Description</label>
       <textarea id="f-desc">${m.description ?? ''}</textarea>
+    </div>
+    <div class="form-group" style="margin-bottom:0.35rem">
+      <label><input type="checkbox" id="f-is-opponent-call" ${node.isOpponentCall ? 'checked' : ''}> Opponent's bid — shown as <code>(X)</code>, <code>(2H)</code> etc. in the tree</label>
     </div>
     <div style="display:flex;gap:0.5rem">
       <div class="form-group" style="flex:1">
@@ -888,6 +891,9 @@ function saveNode(node) {
   const changes = { meaning, continuations };
   if (openerBid !== undefined) changes.openerBid = openerBid;
   else if (opLevelEl) changes.openerBid = null; // cleared
+
+  const isOpponentCallEl = document.getElementById('f-is-opponent-call');
+  if (isOpponentCallEl) changes.isOpponentCall = isOpponentCallEl.checked ? true : false;
 
   updateNodeInSystem(sys, node.id, changes);
   saveSystem(sys);

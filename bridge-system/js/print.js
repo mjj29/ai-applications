@@ -68,6 +68,10 @@ function pc(call) {
 function ps(st) {
   return `<span style="color:${COL[st]??'#111'};font-weight:bold">${SYM[st]??st}</span>`;
 }
+function pcNode(nd) {
+  const h = pc(nd.call);
+  return nd.isOpponentCall ? `(${h})` : h;
+}
 
 // ─── Variant helpers ──────────────────────────────────────────────────────────
 function condLabel(cond) {
@@ -100,17 +104,35 @@ function variantInline(variants) {
 // ─── Convention-ref expansion ─────────────────────────────────────────────────
 function contsHtml(cont, sys, depth, visited, compact) {
   if (!cont || cont.type==='tbd' || cont.type==='end') return '';
-  if (cont.type==='nodes') return treeHtml(cont.nodes, sys, depth, visited, compact);
+  if (cont.type==='nodes') {
+    const pl = depth * 13;
+    let html = treeHtml(cont.nodes, sys, depth, visited, compact);
+    for (const ref of (cont.refs ?? [])) {
+      const id = ref.conventionId;
+      const cv = (sys.conventions??{})[id];
+      if (!cv) continue;
+      if (visited.has(id)) {
+        html += `<div style="padding-left:${pl}px;color:#069;font-size:7.5pt;font-style:italic">↩ ${renderText(cv.name)} (see above)</div>`;
+        continue;
+      }
+      const sub = new Set(visited); sub.add(id);
+      html += `<div style="padding-left:${pl}px;margin:3px 0;border-left:2px solid #9bd">
+        <div style="padding-left:5px;font-size:7.5pt;color:#069;font-weight:600;margin-bottom:1px">▶ ${renderText(cv.name)}</div>
+        <div style="padding-left:5px">${treeHtml(cv.nodes??[], sys, depth, sub, compact)||'<span style="color:#aaa;font-style:italic">Empty</span>'}</div>
+      </div>`;
+    }
+    return html;
+  }
   if (cont.type==='ref') {
     const id = cont.conventionId;
     const cv = (sys.conventions??{})[id];
     if (!cv) return '';
     const pl = depth * 13;
     if (visited.has(id))
-      return `<div style="padding-left:${pl}px;color:#069;font-size:7.5pt;font-style:italic">↩ ${cv.name} (see above)</div>`;
+      return `<div style="padding-left:${pl}px;color:#069;font-size:7.5pt;font-style:italic">↩ ${renderText(cv.name)} (see above)</div>`;
     const sub = new Set(visited); sub.add(id);
     return `<div style="padding-left:${pl}px;margin:3px 0;border-left:2px solid #9bd">
-      <div style="padding-left:5px;font-size:7.5pt;color:#069;font-weight:600;margin-bottom:1px">▶ ${cv.name}</div>
+      <div style="padding-left:5px;font-size:7.5pt;color:#069;font-weight:600;margin-bottom:1px">▶ ${renderText(cv.name)}</div>
       <div style="padding-left:5px">${treeHtml(cv.nodes??[], sys, depth, sub, compact)||'<span style="color:#aaa;font-style:italic">Empty</span>'}</div>
     </div>`;
   }
@@ -131,7 +153,7 @@ function treeHtml(nodes, sys, depth=0, visited=new Set(), compact=false) {
 
     const mainRow =
       `<div style="padding-left:${pl}px;line-height:1.5;page-break-inside:avoid">` +
-      `<span class="bc">${pc(nd.call)}</span> ` +
+      `<span class="bc">${pcNode(nd)}</span> ` +
       `<span class="bd">${m.description??''}</span>` +
       (ex ? ` <span class="be">${ex}</span>` : '') +
       `</div>`;
@@ -204,16 +226,24 @@ function bidRow(node, label, sys) {
 function respTable(node, sys) {
   if (!node) return '<p class="none">—</p>';
   let kids = [];
+  let refLabels = [];
   if (node.continuations?.type==='nodes') {
     kids = sortNodes(node.continuations.nodes);
+    for (const ref of (node.continuations.refs ?? [])) {
+      const cv = (sys.conventions??{})[ref.conventionId];
+      if (cv) {
+        kids = kids.concat(sortNodes(cv.nodes??[]));
+        refLabels.push(cv.name);
+      }
+    }
   } else if (node.continuations?.type==='ref') {
     const cv = (sys.conventions??{})[node.continuations.conventionId];
     kids = cv ? sortNodes(cv.nodes??[]) : [];
+    if (cv) refLabels.push(cv.name);
   }
   if (!kids.length) {
-    if (node.continuations?.type==='ref') {
-      const cv = (sys.conventions??{})[node.continuations.conventionId];
-      return `<p class="none" style="font-style:italic;color:#069">→ ${cv?.name??'Convention reference'}</p>`;
+    if (refLabels.length) {
+      return `<p class="none" style="font-style:italic;color:#069">→ ${refLabels.join(', ')}</p>`;
     }
     return '<p class="none">—</p>';
   }
@@ -222,7 +252,7 @@ function respTable(node, sys) {
     const hcp = nm.hcp?`${nm.hcp[0]??''}–${nm.hcp[1]??''}`:' ';
     const vline = n.variants?.length ? variantInline(n.variants) : '';
     return `<tr>
-      <td class="bc" style="white-space:nowrap">${pc(n.call)}</td>
+      <td class="bc" style="white-space:nowrap">${pcNode(n)}</td>
       <td class="bd">${nm.description??''}${vline?`<div style="font-size:6.5pt;color:#777;font-style:italic">${vline}</div>`:''}</td>
       <td class="mu">${[hcp,nm.shape,nm.forcing].filter(Boolean).join(' · ')}</td>
     </tr>`;
@@ -637,7 +667,7 @@ function generateEBU(sys) {
   };
   const nt1OtherResps = () => {
     const cont = n1?.continuations, results = [];
-    const collect = nodes => { for (const n of nodes ?? []) if (n.call?.type==='bid' && n.call.level>=3) results.push(`${n.call.level}${SYM[n.call.strain]??n.call.strain}: ${n.meaning?.description??''}`); };
+    const collect = nodes => { for (const n of nodes ?? []) if (n.call?.type==='bid' && n.call.level>=3 && !n.isOpponentCall) results.push(`${n.call.level}${SYM[n.call.strain]??n.call.strain}: ${n.meaning?.description??''}`); };
     if (cont?.type==='nodes') { collect(cont.nodes); for (const r of (cont.refs??[])) collect(convs[r.conventionId]?.nodes); }
     if (cont?.type==='ref')   collect(convs[cont.conventionId]?.nodes);
     return results.slice(0, 6).join('; ');
@@ -716,13 +746,19 @@ function generateEBU(sys) {
     if (!nd) return '';
     const cont = nd.continuations;
     if (!cont || cont.type==='tbd' || cont.type==='end') return '';
-    if (cont.type==='ref') { const cv=convs[cont.conventionId]; return cv?`\u2192 ${cv.name}`:''; }
+    if (cont.type==='ref') {
+      const cv = convs[cont.conventionId];
+      if (!cv) return '';
+      const bids = sortNodes(cv.nodes ?? []).filter(n => n.call?.type==='bid' && !n.isOpponentCall);
+      if (bids.length) return bids.slice(0,4).map(n=>`${n.call.level}${SYM[n.call.strain]??n.call.strain}: ${n.meaning?.description??''}`).join('; ');
+      return `→ ${cv.name}`;
+    }
     if (cont.type==='nodes') {
       const allBids = [];
-      for (const n of sortNodes(cont.nodes ?? [])) if (n.call?.type==='bid') allBids.push(n);
+      for (const n of sortNodes(cont.nodes ?? [])) if (n.call?.type==='bid' && !n.isOpponentCall) allBids.push(n);
       for (const ref of (cont.refs ?? [])) {
         const cv = convs[ref.conventionId];
-        for (const n of sortNodes(cv?.nodes ?? [])) if (n.call?.type==='bid') allBids.push(n);
+        for (const n of sortNodes(cv?.nodes ?? [])) if (n.call?.type==='bid' && !n.isOpponentCall) allBids.push(n);
       }
       return allBids.slice(0,4).map(n=>`${n.call.level}${SYM[n.call.strain]??n.call.strain}: ${n.meaning?.description??''}`).join('; ');
     }
@@ -1207,13 +1243,19 @@ function generateWBF(sys) {
     if (!nd) return '';
     const cont = nd.continuations;
     if (!cont || cont.type==='tbd' || cont.type==='end') return '';
-    if (cont.type==='ref') { const cv=convs[cont.conventionId]; return cv?`\u2192 ${cv.name}`:''; }
+    if (cont.type==='ref') {
+      const cv = convs[cont.conventionId];
+      if (!cv) return '';
+      const bids = sortNodes(cv.nodes ?? []).filter(n => n.call?.type==='bid' && !n.isOpponentCall);
+      if (bids.length) return bids.slice(0,6).map(n=>`${n.call.level}${SYM[n.call.strain]??n.call.strain}: ${n.meaning?.description??''}`).join('; ');
+      return `\u2192 ${cv.name}`;
+    }
     if (cont.type==='nodes') {
       const allBids = [];
-      for (const n of sortNodes(cont.nodes ?? [])) if (n.call?.type==='bid') allBids.push(n);
+      for (const n of sortNodes(cont.nodes ?? [])) if (n.call?.type==='bid' && !n.isOpponentCall) allBids.push(n);
       for (const ref of (cont.refs ?? [])) {
         const cv = convs[ref.conventionId];
-        for (const n of sortNodes(cv?.nodes ?? [])) if (n.call?.type==='bid') allBids.push(n);
+        for (const n of sortNodes(cv?.nodes ?? [])) if (n.call?.type==='bid' && !n.isOpponentCall) allBids.push(n);
       }
       return allBids.slice(0,6).map(n=>`${n.call.level}${SYM[n.call.strain]??n.call.strain}: ${n.meaning?.description??''}`).join('; ');
     }
