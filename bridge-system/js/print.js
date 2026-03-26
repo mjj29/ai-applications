@@ -577,18 +577,30 @@ function generateEBU(sys) {
   // ── Note system (overflow goes to Supplementary Details on page 3) ────────
   const suppNotes = [];
   let noteNum = 0;
+  // Strip HTML tags so note labels don't contain raw span markup
   const addNote = (label, fullText) => {
     noteNum++;
-    suppNotes.push(`[${noteNum}] ${label}: ${fullText}`);
-    return ` [${noteNum}]`;
+    suppNotes.push(`[${noteNum}] ${String(label).replace(/<[^>]+>/g, '')}: ${fullText}`);
+    return noteNum;
   };
-  // Truncate to maxCh plain-text chars, adding a note reference if truncated
+  // Inline trunc: …[N] in nobr so ref can't orphan onto next line
   const trunc = (text, label, maxCh = 55) => {
     if (!text) return '';
     const s = String(text);
     if (s.length <= maxCh) return rt(s);
-    return rt(s.slice(0, maxCh - 1).trimEnd()) + '\u2026' + addNote(label, s);
+    const n = addNote(label, s);
+    return rt(s.slice(0, maxCh - 1).trimEnd()) + `<span style="white-space:nowrap">\u2026[${n}]</span>`;
   };
+  // For rows with a dedicated Notes column — returns [displayHtml, noteRefText]
+  const truncCell = (text, label, maxCh = 55) => {
+    if (!text) return ['', '\u00a0'];
+    const s = String(text);
+    if (s.length <= maxCh) return [rt(s), '\u00a0'];
+    const n = addNote(label, s);
+    return [rt(s.slice(0, maxCh - 1).trimEnd()) + '\u2026', `[${n}]`];
+  };
+  // Clamp cell to exactly one line — prevents long descriptions from expanding row height
+  const cl1 = html => `<div style="overflow:hidden;height:1.35em">${html}</div>`;
 
   // ── Find a bid in a continuation tree ────────────────────────────────────
   const findInCont = (cont, lv, st) => {
@@ -643,8 +655,10 @@ function generateEBU(sys) {
   const nt1Strength = () => {
     if (!n1) return '';
     const h = n1.meaning?.hcp, base = h ? `${h[0]}\u2013${h[1]} HCP` : '';
-    // Only say "varies" when variants actually exist
-    return (n1.variants?.length) ? (base ? `${base} (varies)` : 'Varies') : base;
+    if (!n1.variants?.length) return base;
+    const baseKey = h ? `${h[0]}-${h[1]}` : '';
+    const allKeys = new Set([baseKey, ...n1.variants.map(v => { const vh=v.meaningOverride?.hcp; return vh?`${vh[0]}-${vh[1]}`:baseKey; })]);
+    return allKeys.size > 1 ? (base ? `${base} (varies)` : 'Varies') : base;
   };
 
   // ── General description ───────────────────────────────────────────────────
@@ -656,8 +670,11 @@ function generateEBU(sys) {
     if (c1?.meaning?.description) parts.push(`1${SYM.C}: ${c1.meaning.description.split('.')[0]}`);
     if (d1?.meaning?.description) parts.push(`1${SYM.D}: ${d1.meaning.description.split('.')[0]}`);
     if (n1) {
-      if (n1.variants?.length) {
-        const ranges = [...new Set(n1.variants.map(v => { const h=v.meaningOverride?.hcp; return h?`${h[0]}\u2013${h[1]}`:''; }).filter(Boolean))];
+      const baseH = n1.meaning?.hcp;
+      const baseKey = baseH ? `${baseH[0]}-${baseH[1]}` : '';
+      const varKeys = new Set([baseKey, ...(n1.variants??[]).map(v => { const vh=v.meaningOverride?.hcp; return vh?`${vh[0]}-${vh[1]}`:baseKey; })]);
+      if (varKeys.size > 1) {
+        const ranges = [...new Set((n1.variants??[]).map(v => { const h=v.meaningOverride?.hcp; return h?`${h[0]}\u2013${h[1]}`:''; }).filter(Boolean))];
         parts.push(ranges.length ? `Variable NT (${ranges.join(', ')})` : 'Variable NT');
       } else parts.push(`NT: ${hcpStr(n1)} HCP`);
     }
@@ -669,7 +686,7 @@ function generateEBU(sys) {
   const buildOtherAspects = () => {
     const lines = [];
     if (sys.metadata?.otherAspects) lines.push(rt(sys.metadata.otherAspects));
-    if (n1?.variants?.length) {
+    if (n1?.variants?.length && (() => { const bh=n1.meaning?.hcp, bk=bh?`${bh[0]}-${bh[1]}`:''; return new Set([bk,...n1.variants.map(v=>{const vh=v.meaningOverride?.hcp;return vh?`${vh[0]}-${vh[1]}`:bk;})]).size>1; })()) {
       lines.push('1NT range varies: ' + n1.variants.map(v => {
         const mo=v.meaningOverride??{}, hcp=mo.hcp?`${mo.hcp[0]}\u2013${mo.hcp[1]}`:'';
         return `${condLabel(v.condition)}: ${hcp?hcp+' HCP':''} ${mo.description||''}`.trim();
@@ -694,15 +711,20 @@ function generateEBU(sys) {
   const slamConvs   = Object.entries(convs).filter(([id,cv]) => isSlamConv(id,cv)).map(([,cv]) => cv);
   const otherConvs  = Object.entries(convs).filter(([id,cv]) => !isSlamConv(id,cv) && !respTableRe.test(id)).map(([,cv]) => cv);
 
-  // ── Response text — bid nodes only ────────────────────────────────────────
+  // ── Response text — bid nodes from direct nodes + refs ───────────────────
   const respText = nd => {
     if (!nd) return '';
     const cont = nd.continuations;
     if (!cont || cont.type==='tbd' || cont.type==='end') return '';
     if (cont.type==='ref') { const cv=convs[cont.conventionId]; return cv?`\u2192 ${cv.name}`:''; }
     if (cont.type==='nodes') {
-      const bids = sortNodes(cont.nodes).filter(n => n.call?.type==='bid');
-      return bids.slice(0,4).map(n=>`${n.call.level}${SYM[n.call.strain]??n.call.strain}: ${n.meaning?.description??''}`).join('; ');
+      const allBids = [];
+      for (const n of sortNodes(cont.nodes ?? [])) if (n.call?.type==='bid') allBids.push(n);
+      for (const ref of (cont.refs ?? [])) {
+        const cv = convs[ref.conventionId];
+        for (const n of sortNodes(cv?.nodes ?? [])) if (n.call?.type==='bid') allBids.push(n);
+      }
+      return allBids.slice(0,4).map(n=>`${n.call.level}${SYM[n.call.strain]??n.call.strain}: ${n.meaning?.description??''}`).join('; ');
     }
     return '';
   };
@@ -816,11 +838,14 @@ function generateEBU(sys) {
       const nd=f(2,st), m=nd?.meaning??{};
       const vline = nd?.variants?.length ? ` [${variantInline(nd.variants)}]` : '';
       const isLast = i===4;
+      const [mHtml, mNote] = truncCell((m.description??'')+vline, '2'+SYM[st]+' meaning', 55);
+      const [rHtml, rNote] = truncCell(respText(nd), '2'+SYM[st]+' resp', 45);
+      const nc2 = [mNote, rNote].filter(s => s !== '\u00a0').join(' ') || '\u00a0';
       return `<tr>
-        <td style="border-top:none;border-left:${O};border-right:${I};border-bottom:${isLast?O:'none'};padding:1px 3px;overflow:hidden">2${ps(st)}</td>
-        <td style="border-top:none;border-left:none;border-right:${I};border-bottom:${isLast?O:'none'};padding:1px 3px;overflow:hidden">${trunc((m.description??'')+vline,'2'+ps(st)+' meaning',55)}</td>
-        <td style="border-top:none;border-left:none;border-right:${I};border-bottom:${isLast?O:'none'};padding:1px 3px;overflow:hidden">${trunc(respText(nd),'2'+ps(st)+' resp',45)}</td>
-        <td style="border-top:none;border-left:none;border-right:${O};border-bottom:${isLast?O:'none'};padding:1px 3px">&nbsp;</td>
+        <td style="border-top:none;border-left:${O};border-right:${I};border-bottom:${isLast?O:'none'};padding:1px 3px">2${ps(st)}</td>
+        <td style="border-top:none;border-left:none;border-right:${I};border-bottom:${isLast?O:'none'};padding:1px 3px">${cl1(mHtml)}</td>
+        <td style="border-top:none;border-left:none;border-right:${I};border-bottom:${isLast?O:'none'};padding:1px 3px">${cl1(rHtml)}</td>
+        <td style="border-top:none;border-left:none;border-right:${O};border-bottom:${isLast?O:'none'};padding:1px 3px;text-align:center;font-size:7pt">${nc2}</td>
       </tr>`;
     }).join('')}
   </table>` +
@@ -840,14 +865,17 @@ function generateEBU(sys) {
     const art=m.alert||m.announce?'*':'';
     let minLen=''; if(m.shape){const nm=m.shape.match(/\d+/);if(nm)minLen=nm[0];}
     const vline=nd?.variants?.length?` [${variantInline(nd.variants)}]`:'';
+    const [mHtml, mNote] = truncCell((m.description??'')+vline, label+' meaning', 50);
+    const [rHtml, rNote] = truncCell(respText(nd), label+' resp', 40);
+    const nc = [mNote, rNote].filter(s => s !== '\u00a0').join(' ') || '\u00a0';
     return `<tr>
-      <td style="border-top:${I};border-left:${O};border-right:none;border-bottom:${I};padding:1px 3px;width:8%;overflow:hidden">${label}</td>
+      <td style="border-top:${I};border-left:${O};border-right:none;border-bottom:${I};padding:1px 3px;width:8%">${label}</td>
       <td style="border:${I};padding:1px 2px;text-align:center;width:8%">${hcp}</td>
       <td style="border:${I};padding:1px 2px;text-align:center;width:3%">${art}</td>
       <td style="border:${I};padding:1px 2px;text-align:center;width:5%">${minLen}</td>
-      <td style="border-top:${I};border-left:none;border-right:${I};border-bottom:${I};padding:1px 3px;overflow:hidden">${trunc((m.description??'')+vline,label+' meaning',50)}</td>
-      <td style="border-top:${I};border-left:none;border-right:${I};border-bottom:${I};padding:1px 3px;overflow:hidden">${trunc(respText(nd),label+' resp',40)}</td>
-      <td style="border-top:${I};border-left:none;border-right:${O};border-bottom:${I};padding:1px 3px;text-align:center;width:6%">&nbsp;</td>
+      <td style="border-top:${I};border-left:none;border-right:${I};border-bottom:${I};padding:1px 3px">${cl1(mHtml)}</td>
+      <td style="border-top:${I};border-left:none;border-right:${I};border-bottom:${I};padding:1px 3px">${cl1(rHtml)}</td>
+      <td style="border-top:${I};border-left:none;border-right:${O};border-bottom:${I};padding:1px 3px;text-align:center;width:6%;font-size:7pt">${nc}</td>
     </tr>`;
   };
 
@@ -856,11 +884,13 @@ function generateEBU(sys) {
   const op4 = op.filter(n => n.call?.type==='bid' && n.call.level===4);
   const op3desc = op3.map(nd => `${nd.call.level}${SYM[nd.call.strain]??nd.call.strain}: ${nd.meaning?.description??''}`).join('; ') || '';
   const op4desc = op4.map(nd => `${nd.call.level}${SYM[nd.call.strain]??nd.call.strain}: ${nd.meaning?.description??''}`).join('; ') || '';
+  const [op3Html, op3Note] = truncCell(op3desc, '3 level bids', 90);
+  const [op4Html, op4Note] = truncCell(op4desc, '4 level bids', 90);
 
   const defRow = (lbl, val='') =>
     `<tr>
       <td colspan="4" style="border-top:${I};border-left:${O};border-right:${I};border-bottom:${I};padding:1px 3px;overflow:hidden;white-space:nowrap">${lbl}</td>
-      <td style="border:${I};padding:1px 3px;overflow:hidden">${val}</td>
+      <td style="border:${I};padding:1px 3px">${val ? cl1(val) : '\u00a0'}</td>
       <td style="border:${I};padding:1px 3px">&nbsp;</td>
       <td style="border-top:${I};border-left:none;border-right:${O};border-bottom:${I};padding:1px 3px">&nbsp;</td>
     </tr>`;
@@ -883,16 +913,16 @@ function generateEBU(sys) {
     ${opBidRow(f(1,'H'), '1'+ps('H'))}
     ${opBidRow(f(1,'S'), '1'+ps('S'))}
     <tr>
-      <td style="border-top:${I};border-left:${O};border-right:none;border-bottom:${I};padding:1px 3px;white-space:nowrap">3 bids</td>
+      <td style="border-top:${I};border-left:${O};border-right:none;border-bottom:${I};padding:1px 3px">3 bids</td>
       <td colspan="3" style="border:${I};padding:1px 2px;text-align:center">&nbsp;</td>
-      <td colspan="2" style="border-top:${I};border-left:none;border-right:${I};border-bottom:${I};padding:1px 3px;overflow:hidden">${trunc(op3desc,'3 level bids',90)}</td>
-      <td style="border-top:${I};border-right:${O};border-bottom:${I};padding:1px 3px">&nbsp;</td>
+      <td colspan="2" style="border-top:${I};border-left:none;border-right:${I};border-bottom:${I};padding:1px 3px">${cl1(op3Html)}</td>
+      <td style="border-top:${I};border-right:${O};border-bottom:${I};padding:1px 3px;text-align:center;font-size:7pt">${op3Note}</td>
     </tr>
     <tr>
-      <td style="border-top:${I};border-left:${O};border-right:none;border-bottom:${I};padding:1px 3px;white-space:nowrap">4 bids</td>
+      <td style="border-top:${I};border-left:${O};border-right:none;border-bottom:${I};padding:1px 3px">4 bids</td>
       <td colspan="3" style="border:${I};padding:1px 2px;text-align:center">&nbsp;</td>
-      <td colspan="2" style="border-top:${I};border-left:none;border-right:${I};border-bottom:${I};padding:1px 3px;overflow:hidden">${trunc(op4desc,'4 level bids',90)}</td>
-      <td style="border-top:${I};border-right:${O};border-bottom:${I};padding:1px 3px">&nbsp;</td>
+      <td colspan="2" style="border-top:${I};border-left:none;border-right:${I};border-bottom:${I};padding:1px 3px">${cl1(op4Html)}</td>
+      <td style="border-top:${I};border-right:${O};border-bottom:${I};padding:1px 3px;text-align:center;font-size:7pt">${op4Note}</td>
     </tr>
     <tr><td colspan="99" style="border-top:${I};border-left:${O};border-right:${O};border-bottom:${O};padding:1px 3px;font-size:6pt">*(Please enter your normal HCP range. Please tick box if you have special agreements involving different values in particular positions and include further details under Supplementary Details).</td></tr>
   </table>` +
@@ -939,8 +969,8 @@ function generateEBU(sys) {
       <td style="border-top:none;border-left:none;border-right:${O};border-bottom:none;padding:1px 3px;font-weight:bold;width:18%">Over interference</td>
     </tr>
     ${(slamConvs.length?slamConvs:[{}]).map(cv=>`<tr>
-      <td colspan="4" style="border-top:${I};border-left:${O};border-right:${I};border-bottom:none;padding:1px 3px;overflow:hidden">${cv.name??''}</td>
-      <td colspan="2" style="border-top:${I};border-left:none;border-right:${I};border-bottom:none;padding:1px 3px;overflow:hidden">${trunc(cv.description??'',(cv.name??'slam')+' desc',50)}</td>
+      <td colspan="4" style="border-top:${I};border-left:${O};border-right:${I};border-bottom:none;padding:1px 3px">${cl1(rt(cv.name??''))}</td>
+      <td colspan="2" style="border-top:${I};border-left:none;border-right:${I};border-bottom:none;padding:1px 3px">${cl1(rt(cv.description??''))}</td>
       <td style="border-top:${I};border-left:none;border-right:${O};border-bottom:none;padding:1px 3px">&nbsp;</td>
     </tr>`).join('')}
     <tr>
@@ -988,7 +1018,7 @@ function generateEBU(sys) {
       ? otherConvs.map(cv =>
           `<tr>
             <td style="border-top:${I};border-left:${O};border-right:${I};border-bottom:none;padding:1px 4px;width:38%;font-weight:bold;overflow:hidden">${rt(cv.name??'')}</td>
-            <td style="border-top:${I};border-left:none;border-right:${O};border-bottom:none;padding:1px 4px;overflow:hidden">${trunc(cv.description??'',(cv.name??'conv')+' desc',65)}</td>
+            <td style="border-top:${I};border-left:none;border-right:${O};border-bottom:none;padding:1px 4px">${rt(cv.description??'')}</td>
           </tr>`
         ).join('') +
         `<tr><td colspan="99" style="border-top:${I};border-left:${O};border-right:${O};border-bottom:${O};padding:1px 4px;height:12px">&nbsp;</td></tr>`
@@ -996,12 +1026,15 @@ function generateEBU(sys) {
     }
   </table>` +
 
-  // Supplementary details — blank for handwriting; notes go to page 4
+  // Supplementary details — notes first, then blank writing lines; continues on page 4
   `<table style="width:100%;border-collapse:collapse">
     ${secHdr('SUPPLEMENTARY DETAILS')}
     ${noteRow('(Please cross-reference where appropriate to the relevant part of card, and continue on back if needed).')}
-    ${blankRows(4)}
-    <tr><td colspan="99" style="border-top:none;border-left:${O};border-right:${O};border-bottom:${O};height:12px;padding:0 3px">&nbsp;</td></tr>
+    ${suppNotes.length
+      ? `<tr><td colspan="99" style="border-top:${I};border-left:${O};border-right:${O};border-bottom:none;padding:2px 4px;vertical-align:top;font-size:7.5pt">${buildSuppDetails()}</td></tr>`
+      : blankRows(4)
+    }
+    <tr><td colspan="99" style="border-top:${I};border-left:${O};border-right:${O};border-bottom:${O};height:12px;padding:0 3px">&nbsp;</td></tr>
   </table>` +
 
   `</div>`;
@@ -1087,7 +1120,8 @@ function generateEBU(sys) {
   const extraCss = `
     @page { size: A5; margin: 0 }
     body { font-family: Arial, sans-serif; font-size: 8pt; background: #fff; margin: 0; padding: 0; }
-    table { border-collapse: collapse; }
+    table { border-collapse: collapse; margin: 0; }
+    th, td { border: none; padding: 0; }
     u { text-decoration: underline; }
     .suit-club    { color: #111; font-weight: bold; }
     .suit-diamond { color: #c00; font-weight: bold; }
