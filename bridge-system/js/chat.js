@@ -1,6 +1,7 @@
 /**
- * chat.js — AI chat tab (Anthropic Claude, BYOK).
- * Sends the full system JSON as context; Claude can call update_system to apply changes.
+ * chat.js — AI chat tab.
+ * Default: shared Gemini AI via Supabase Edge Function proxy (sign-in required).
+ * Override: user can provide their own Anthropic or Gemini API key in Settings.
  * Layout: chat pane (left) + live read-only system tree (right).
  */
 'use strict';
@@ -8,17 +9,49 @@
 import { getActiveSystem, saveSystem } from './store.js';
 import { callToHTML, sortNodes, renderText } from './model.js';
 import { flash } from './ui.js';
+import { supabase, onAuthChange } from './supabase.js';
+import { SUPABASE_URL } from './config.js';
 
-const SETTINGS_KEY  = 'bridge_ai_settings';
-const DEFAULT_MODEL = 'claude-3-5-sonnet-20241022';
+const SETTINGS_KEY         = 'bridge_ai_settings';
+const DEFAULT_PROXY_MODEL  = 'gemini-2.5-flash';          // fixed model for the shared server key
+const DEFAULT_MODEL        = 'claude-3-5-sonnet-20241022'; // BYOK Anthropic default
+const DEFAULT_GEMINI_MODEL = 'gemini-2.0-flash';           // BYOK Gemini default
 
-let chatMessages  = [];   // Anthropic messages array (in-memory, per session)
-let _chatSystemId = null; // system ID for which the chat DOM was last built
+let chatMessages   = [];   // Anthropic messages array (in-memory, per session)
+let _chatSystemId  = null; // system ID for which the chat DOM was last built
+let _chatAuthUnsub = null; // cleanup fn for the auth-state listener
 
 function getSettings() {
-  try { return JSON.parse(localStorage.getItem(SETTINGS_KEY)) ?? {}; } catch { return {}; }
+  try {
+    const s = JSON.parse(localStorage.getItem(SETTINGS_KEY)) ?? {};
+    // Backwards-compat: old saves only had 'apiKey' (Anthropic)
+    if (!s.provider && s.apiKey) { s.provider = 'anthropic'; s.anthropicKey = s.apiKey; }
+    return s;
+  } catch { return {}; }
 }
 function saveSettings(s) { localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); }
+
+/**
+ * Determine which provider and key to use.
+ * Anthropic BYOK takes highest precedence, then Gemini BYOK, then shared proxy (Gemini).
+ * Returns { provider, key, isProxy }.
+ */
+function resolveProvider(s) {
+  if (s.anthropicKey) return { provider: 'anthropic', key: s.anthropicKey, isProxy: false };
+  if (s.geminiKey)    return { provider: 'gemini',    key: s.geminiKey,    isProxy: false };
+  return                     { provider: 'gemini',    key: null,           isProxy: true  };
+}
+
+/**
+ * Model to use for this call.
+ * Proxy calls always use DEFAULT_PROXY_MODEL (cannot be overridden).
+ * BYOK calls use the user's saved model, falling back to the provider default.
+ */
+function resolveModel(s, provider) {
+  if (!s.anthropicKey && !s.geminiKey) return DEFAULT_PROXY_MODEL;
+  if (s.model) return s.model;
+  return provider === 'gemini' ? DEFAULT_GEMINI_MODEL : DEFAULT_MODEL;
+}
 
 function countNodes(sys) {
   let n = 0;
@@ -50,6 +83,7 @@ export function renderChat(container) {
   }
 
   // New system (or first render) — reset history and rebuild DOM.
+  if (_chatAuthUnsub) { _chatAuthUnsub(); _chatAuthUnsub = null; }
   chatMessages  = [];
   _chatSystemId = sys?.id ?? null;
 
@@ -79,7 +113,7 @@ export function renderChat(container) {
         <div style="flex-shrink:0;padding:0.5rem 0.8rem;border-top:1px solid var(--border);
                     display:flex;gap:0.5rem;align-items:flex-end">
           <textarea id="chat-input" rows="2"
-            placeholder="${sys ? 'Ask Claude… (Enter to send, Shift+Enter for newline)' : 'Open a system first'}"
+            placeholder="${sys ? 'Ask the AI… (Enter to send, Shift+Enter for newline)' : 'Open a system first'}"
             ${!sys ? 'disabled' : ''}
             style="flex:1;resize:none;font-size:0.85rem;font-family:var(--font);
                    background:var(--surface);border:1px solid var(--border);color:var(--text);
@@ -98,17 +132,27 @@ export function renderChat(container) {
     <div id="chat-settings-panel"
          style="display:none;position:absolute;top:3rem;right:1rem;z-index:50;
                 background:var(--bg2);border:1px solid var(--border);border-radius:8px;
-                padding:1rem;width:340px;box-shadow:0 4px 20px rgba(0,0,0,0.5)">
+                padding:1rem;width:360px;box-shadow:0 4px 20px rgba(0,0,0,0.5)">
       <div style="font-weight:600;margin-bottom:0.75rem;font-size:0.9rem">API Settings</div>
       <div class="form-group">
-        <label>Anthropic API Key</label>
-        <input type="password" id="chat-apikey" value="${escAttr(s.apiKey ?? '')}" placeholder="sk-ant-…">
+        <label>Anthropic API Key <small style="color:var(--text-muted);font-weight:400">optional</small></label>
+        <input type="password" id="chat-anthropic-key" value="${escAttr(s.anthropicKey??'')}" placeholder="sk-ant-…">
       </div>
       <div class="form-group">
-        <label>Model</label>
-        <input type="text" id="chat-model" value="${escAttr(s.model ?? DEFAULT_MODEL)}" placeholder="${DEFAULT_MODEL}">
+        <label>Gemini API Key <small style="color:var(--text-muted);font-weight:400">optional</small></label>
+        <input type="password" id="chat-gemini-key" value="${escAttr(s.geminiKey??'')}" placeholder="AIza…">
         <small style="color:var(--text-muted);font-size:0.72rem">
-          e.g. claude-3-5-sonnet-20241022 · claude-3-5-haiku-20241022
+          Leave both blank to use the shared Gemini AI (sign-in required).
+          Anthropic key takes priority if both are set.
+        </small>
+      </div>
+      <div class="form-group" id="chat-model-group" style="${(s.anthropicKey||s.geminiKey)?'':'display:none'}">
+        <label>Model</label>
+        <input type="text" id="chat-model" value="${escAttr(s.model??'')}" placeholder="(default for selected provider)">
+        <small id="chat-model-hint" style="color:var(--text-muted);font-size:0.72rem">
+          ${s.anthropicKey
+            ?'e.g. claude-3-5-sonnet-20241022 &middot; claude-3-7-sonnet-20250219 &middot; claude-opus-4-5'
+            :'e.g. gemini-2.0-flash &middot; gemini-1.5-pro &middot; gemini-2.5-pro-exp-03-25'}
         </small>
       </div>
       <div style="display:flex;gap:0.5rem;justify-content:flex-end;margin-top:0.5rem">
@@ -132,10 +176,22 @@ export function renderChat(container) {
   container.querySelector('#chat-settings-cancel').addEventListener('click', () => {
     panel.style.display = 'none';
   });
+  // Show/hide model group and update hint as user types in either key field
+  const updateModelGroup = () => {
+    const anthKey = container.querySelector('#chat-anthropic-key').value.trim();
+    const gemKey  = container.querySelector('#chat-gemini-key').value.trim();
+    container.querySelector('#chat-model-group').style.display = (anthKey || gemKey) ? '' : 'none';
+    container.querySelector('#chat-model-hint').innerHTML = anthKey
+      ? 'e.g. claude-3-5-sonnet-20241022 &middot; claude-3-7-sonnet-20250219 &middot; claude-opus-4-5'
+      : 'e.g. gemini-2.0-flash &middot; gemini-1.5-pro &middot; gemini-2.5-pro-exp-03-25';
+  };
+  container.querySelector('#chat-anthropic-key').addEventListener('input', updateModelGroup);
+  container.querySelector('#chat-gemini-key').addEventListener('input', updateModelGroup);
   container.querySelector('#chat-settings-save').addEventListener('click', () => {
     saveSettings({
-      apiKey: container.querySelector('#chat-apikey').value.trim(),
-      model:  container.querySelector('#chat-model').value.trim() || DEFAULT_MODEL,
+      anthropicKey: container.querySelector('#chat-anthropic-key').value.trim(),
+      geminiKey:    container.querySelector('#chat-gemini-key').value.trim(),
+      model:        container.querySelector('#chat-model').value.trim(),
     });
     panel.style.display = 'none';
     flash('API settings saved', 'ok');
@@ -148,14 +204,34 @@ export function renderChat(container) {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(container); }
   });
 
-  // ── Initial greeting ────────────────────────────────────────────────────────
-  if (!sys) {
-    addBubble('assistant', 'No system is open. Create or open a system first.');
-  } else if (!s.apiKey) {
-    addBubble('assistant', `Loaded <strong>${escHtml(sys.name)}</strong>. Click ⚙&nbsp;Settings to add your Anthropic API key, then ask me to make changes.`);
-  } else {
-    addBubble('assistant', `Loaded <strong>${escHtml(sys.name)}</strong> (${countNodes(sys)} bid nodes). What would you like to change?`);
+  // ── Greeting — shown on load and updated live when auth state changes ───────
+  // showGreeting() is async (needs getSession) but idempotent: it updates the
+  // existing #chat-greeting bubble in-place rather than appending a new one.
+  async function showGreeting() {
+    const { provider, isProxy } = resolveProvider(getSettings());
+    let html;
+    if (!sys) {
+      html = 'No system is open. Create or open a system first.';
+    } else if (isProxy) {
+      const { data: { session } } = await supabase.auth.getSession();
+      html = session
+        ? `Loaded <strong>${escHtml(sys.name)}</strong> (${countNodes(sys)} bid nodes) — using shared Gemini AI. What would you like to change?`
+        : `Loaded <strong>${escHtml(sys.name)}</strong>. Please <strong>sign in</strong> to access the shared AI assistant, or add your own API key in ⚙️ Settings.`;
+    } else {
+      const provLabel = provider === 'gemini' ? 'Gemini' : 'Claude';
+      html = `Loaded <strong>${escHtml(sys.name)}</strong> (${countNodes(sys)} bid nodes) — using ${provLabel} (your key). What would you like to change?`;
+    }
+    const existing = document.getElementById('chat-greeting');
+    if (existing) existing.innerHTML = html;
+    else addBubble('assistant', html, 'chat-greeting');
   }
+  showGreeting();
+
+  // Re-run greeting whenever the user signs in or out (covers the OAuth redirect
+  // case where detectSessionInUrl fires SIGNED_IN after the initial render).
+  _chatAuthUnsub = onAuthChange((event) => {
+    if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') showGreeting();
+  });
 
   // ── Initial tree render ──────────────────────────────────────────────────────
   refreshTree(sys);
@@ -283,9 +359,21 @@ async function sendMessage(container) {
 
   const s   = getSettings();
   const sys = getActiveSystem();
+  if (!sys) { addBubble('assistant', '⚠ No system open.'); return; }
 
-  if (!s.apiKey) { addBubble('assistant', '⚠ No API key set — click ⚙&nbsp;Settings.'); return; }
-  if (!sys)      { addBubble('assistant', '⚠ No system open.'); return; }
+  const { provider, key, isProxy } = resolveProvider(s);
+  const model = resolveModel(s, provider);
+
+  // For proxy calls, verify the user is signed in before doing any work
+  if (isProxy) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      addBubble('assistant',
+        '⚠ Please <strong>sign in</strong> to use the shared AI assistant, ' +
+        'or add your own API key in ⚙️ Settings.');
+      return;
+    }
+  }
 
   input.value      = '';
   input.disabled   = true;
@@ -308,7 +396,8 @@ async function sendMessage(container) {
   let hasText     = false;
 
   try {
-    const result = await callClaudeStream(sys, s, chatMessages, text, {
+    const apiFn = (provider === 'gemini') ? callGeminiStream : callClaudeStream;
+    const result = await apiFn(sys, { ...s, _key: key, _model: model }, chatMessages, text, {
       onThinkingChunk(chunk) {
         if (!hasThinking) {
           hasThinking = true;
@@ -499,7 +588,7 @@ const TOOLS = [{
 // Callbacks: onThinkingChunk(text), onTextChunk(text) — called as SSE deltas arrive.
 async function callClaudeStream(sys, settings, history, userText,
                                 { onThinkingChunk = ()=>{}, onTextChunk = ()=>{} } = {}) {
-  const model = settings.model || DEFAULT_MODEL;
+  const model = settings._model ?? settings.model ?? DEFAULT_MODEL;
 
   // Extended thinking is supported on claude-3-7+ / claude-opus-4 / claude-sonnet-4
   const supportsThinking = /claude-3-7|claude-opus-4|claude-sonnet-4/i.test(model);
@@ -517,7 +606,7 @@ async function callClaudeStream(sys, settings, history, userText,
 
   const reqHeaders = {
     'content-type':                              'application/json',
-    'x-api-key':                                 settings.apiKey,
+    'x-api-key':                                 settings._key,
     'anthropic-version':                         '2023-06-01',
     'anthropic-dangerous-direct-browser-access': 'true',
   };
@@ -533,15 +622,37 @@ async function callClaudeStream(sys, settings, history, userText,
   };
   if (supportsThinking) reqBody.thinking = { type: 'enabled', budget_tokens: 8000 };
 
-  const resp = await fetch('https://api.anthropic.com/v1/messages', {
-    method:  'POST',
-    headers: reqHeaders,
-    body:    JSON.stringify(reqBody),
-  });
+  let resp;
+  if (settings._key) {
+    // BYOK — call Anthropic directly from the browser
+    resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method:  'POST',
+      headers: reqHeaders,
+      body:    JSON.stringify(reqBody),
+    });
+  } else {
+    // No BYOK key — route through Supabase Edge Function proxy
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Please sign in (or add an API key in ⚙️ Settings) to use the AI assistant.');
+    resp = await fetch(`${SUPABASE_URL}/functions/v1/ai-proxy`, {
+      method:  'POST',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ provider: 'anthropic', model, body: reqBody }),
+    });
+  }
 
   if (!resp.ok) {
     const body = await resp.json().catch(() => ({}));
-    throw new Error(body?.error?.message ?? `HTTP ${resp.status}`);
+    const msg  = body?.error?.message ?? `HTTP ${resp.status}`;
+    if (resp.status === 429 || /rate.?limit|quota|resource.?exhaust/i.test(msg)) {
+      throw new Error(settings._key
+        ? 'Rate limit reached on your API key — wait a moment and try again.'
+        : 'Rate limit reached on the shared AI key. Add your own API key in ⚙️ Settings for higher limits.');
+    }
+    throw new Error(msg);
   }
 
   // ── Parse SSE stream ────────────────────────────────────────────────────────
@@ -605,6 +716,131 @@ async function callClaudeStream(sys, settings, history, userText,
       reply = reply ? reply + bl.text : bl.text;
     if (bl.type === 'tool_use' && bl.name === 'update_system') {
       try { system = JSON.parse(bl.inputJson)?.system ?? null; } catch { /* malformed */ }
+    }
+  }
+
+  return { reply, system };
+}
+
+// ─── Google Gemini API call ──────────────────────────────────────────────────────
+
+async function callGeminiStream(sys, settings, history, userText,
+                                { onThinkingChunk = ()=>{}, onTextChunk = ()=>{} } = {}) {
+  const model = settings._model ?? settings.model ?? DEFAULT_GEMINI_MODEL;
+
+  // Convert stored messages (Anthropic format) to Gemini `contents` format.
+  // assistant -> model, content: string -> parts: [{text}]
+  const toGemini = msg => ({
+    role: msg.role === 'assistant' ? 'model' : 'user',
+    parts: [{ text: msg.content }],
+  });
+
+  // Grounding: inject current system state before the live user turn.
+  const groundingText =
+    `<current_system>\n${JSON.stringify(sys, null, 2)}\n</current_system>\n\n` +
+    'The above is the current state of the system. Please use it as context for the request that follows.';
+
+  const priorHistory = history.slice(0, -1);
+  const contents = [
+    ...priorHistory.map(toGemini),
+    { role: 'user',  parts: [{ text: groundingText }] },
+    { role: 'model', parts: [{ text: 'Understood — I have the current system state. What would you like to change?' }] },
+    { role: 'user',  parts: [{ text: userText }] },
+  ];
+
+  const reqBody = {
+    systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+    contents,
+    tools: [{
+      functionDeclarations: [{
+        name: 'update_system',
+        description: 'Apply the requested changes to the bridge system. Provide the complete updated system object.',
+        parameters: {
+          type: 'OBJECT',
+          properties: {
+            system: { type: 'OBJECT', description: 'The complete updated system JSON with all changes applied.' },
+          },
+          required: ['system'],
+        },
+      }],
+    }],
+    generationConfig: { maxOutputTokens: 8192 },
+  };
+
+  let resp;
+  if (settings._key) {
+    // BYOK — call Gemini directly from the browser
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${
+      encodeURIComponent(model)}:streamGenerateContent?alt=sse&key=${encodeURIComponent(settings._key)}`;
+    resp = await fetch(url, {
+      method:  'POST',
+      headers: { 'content-type': 'application/json' },
+      body:    JSON.stringify(reqBody),
+    });
+  } else {
+    // No BYOK key — route through Supabase Edge Function proxy
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Please sign in (or add an API key in ⚙️ Settings) to use the AI assistant.');
+    resp = await fetch(`${SUPABASE_URL}/functions/v1/ai-proxy`, {
+      method:  'POST',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ provider: 'gemini', model, body: reqBody }),
+    });
+  }
+
+  if (!resp.ok) {
+    const body = await resp.json().catch(() => ({}));
+    const msg  = body?.error?.message ?? `HTTP ${resp.status}`;
+    if (resp.status === 429 || /rate.?limit|quota|resource.?exhaust/i.test(msg)) {
+      throw new Error(settings._key
+        ? 'Rate limit reached on your API key — wait a moment and try again.'
+        : 'Rate limit reached on the shared AI key. Add your own API key in ⚙️ Settings for higher limits.');
+    }
+    throw new Error(msg);
+  }
+
+  // ── Parse SSE stream ───────────────────────────────────────────────────────
+  const reader  = resp.body.getReader();
+  const decoder = new TextDecoder();
+  let   buf     = '';
+  let   reply   = null;
+  let   system  = null;
+
+  const handleData = (data) => {
+    for (const cand of (data?.candidates ?? [])) {
+      for (const part of (cand?.content?.parts ?? [])) {
+        if (part.text != null) {
+          if (reply === null) reply = '';
+          reply += part.text;
+          onTextChunk(part.text);
+        }
+        if (part.functionCall?.name === 'update_system') {
+          try {
+            const args = part.functionCall.args;
+            system = (typeof args === 'string' ? JSON.parse(args) : args)?.system ?? null;
+          } catch { /* malformed */ }
+        }
+      }
+    }
+  };
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+    const rawEvents = buf.split('\n\n');
+    buf = rawEvents.pop();
+    for (const raw of rawEvents) {
+      if (!raw.trim()) continue;
+      let dataStr = null;
+      for (const line of raw.split('\n')) {
+        if (line.startsWith('data: ')) dataStr = line.slice(6);
+      }
+      if (!dataStr || dataStr === '[DONE]') continue;
+      try { handleData(JSON.parse(dataStr)); } catch { /* ignore */ }
     }
   }
 

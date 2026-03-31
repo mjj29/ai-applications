@@ -19,11 +19,15 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 
 // ─── Auth helpers ─────────────────────────────────────────────────────────────
 
-/** Kick off GitHub OAuth — browser is redirected to GitHub then back to SITE_URL */
+/** Kick off GitHub OAuth — browser is redirected to GitHub then back to the current page. */
 export async function signInWithGitHub() {
+  // Use the current page URL (without hash/query) so the OAuth callback lands on
+  // whichever origin the user is on — localhost in dev, GitHub Pages in prod.
+  // Both must be in the Supabase redirect URL allowlist (see SETUP.md).
+  const redirectTo = window.location.href.split(/[#?]/)[0];
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'github',
-    options: { redirectTo: SITE_URL },
+    options: { redirectTo },
   });
   if (error) throw error;
 }

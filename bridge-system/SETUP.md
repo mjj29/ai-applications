@@ -120,3 +120,61 @@ on the app with your avatar shown in the top-right corner.
 | `profiles` | Any authenticated user | Own row only |
 | `systems` | Owner + collaborators + public (if visibility='public') | Owner (full) + editor-role collaborators (update only) |
 | `collaborators` | Owner of the system + the collaborator themselves | Owner of the system only |
+
+---
+
+## Deploying the AI proxy Edge Function
+
+The AI chat tab calls Anthropic / Gemini via a Supabase Edge Function so that
+API keys are stored as **Supabase secrets** and never committed to the repo.
+
+### Prerequisites
+
+```bash
+npm install -g supabase    # or: brew install supabase/tap/supabase
+supabase login
+supabase link --project-ref nltiszypgoidzsgsqjdi
+```
+
+### Deploy the function
+
+```bash
+supabase functions deploy ai-proxy
+```
+
+### Set API key secrets
+
+Store whichever keys you have — the proxy handles only the providers you configure:
+
+```bash
+# Anthropic (Claude)
+supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
+
+# Google Gemini
+supabase secrets set GEMINI_API_KEY=AIza...
+```
+
+Verify with:
+
+```bash
+supabase secrets list
+```
+
+### How it works
+
+- Users who are **signed in** and have **no BYOK key** set in ⚙️ Settings will have
+  their requests routed through `supabase/functions/ai-proxy/index.ts`.
+- The Edge Function validates the user's Supabase JWT before forwarding the
+  request to Anthropic / Gemini using the server-side secrets.
+- Users who **do** enter their own API key in Settings bypass the proxy entirely
+  and call the provider directly from the browser (BYOK).
+- The proxy streams SSE responses back so the typing animation works end-to-end.
+
+### Security notes
+
+- The anon key (`SUPABASE_ANON_KEY` in `config.js`) is safe to commit — it can
+  only access data through your Row-Level Security policies.
+- The `ANTHROPIC_API_KEY` / `GEMINI_API_KEY` secrets are **never** sent to the
+  browser; they live only in the Edge Function runtime.
+- The JWT check in the Edge Function ensures only authenticated users of *your*
+  Supabase project can invoke it.

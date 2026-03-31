@@ -9,3 +9,4 @@ export const SUPABASE_ANON_KEY = 'sb_publishable_qiCNCmYaUJkwglGOjB4c8Q_mVCikI6e
 
 /** The GitHub Pages URL this app is served from. Used as the OAuth redirect target. */
 export const SITE_URL = 'https://mjj29.github.io/ai-applications/bridge-system/';
+
