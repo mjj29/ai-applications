@@ -194,6 +194,7 @@ async function renderSystemsList() {
             </div>
             <button class="btn btn-sm" data-action="open"   data-id="${s.id}">Open</button>
             <button class="btn btn-sm" data-action="export" data-id="${s.id}">Export</button>
+            ${canEdit ? `<button class="btn btn-sm" data-action="rename" data-id="${s.id}" title="Rename system">Rename</button>` : ''}
             ${canEdit && s._cloud ? `<button class="btn btn-sm" data-action="share" data-id="${s.id}" title="Share / Publish">Share</button>` : ''}
             ${!s._isOwner && s._cloud ? `<button class="btn btn-sm btn-primary" data-action="clone" data-id="${s.id}" title="Clone to my account">Clone</button>` : ''}
             ${canEdit ? `<button class="btn btn-sm btn-danger" data-action="delete" data-id="${s.id}">Delete</button>` : ''}
@@ -323,6 +324,15 @@ function attachSystemActions(container, user) {
           await deleteSystem(id);
           renderSystemsList();
           flash('Deleted', 'ok');
+        }
+      } else if (action === 'rename' && sys) {
+        const newName = prompt('Rename system:', sys.name)?.trim();
+        if (newName && newName !== sys.name) {
+          sys.name = newName;
+          await saveSystem(sys);
+          document.getElementById('system-name-display').textContent = getActiveSystem()?.name ?? '(no system)';
+          renderSystemsList();
+          flash(`Renamed to "${newName}"`, 'ok');
         }
       } else if (action === 'share' && sys) {
         showShareModal(sys);
