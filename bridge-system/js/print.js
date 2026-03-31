@@ -729,10 +729,12 @@ function generateEBU(sys) {
     return lines.join('<br>') || '&nbsp;';
   };
 
-  const buildSuppDetails = () => {
-    if (!suppNotes.length) return '';
-    return suppNotes.map(n => rt(n)).join('<br>');
+  const buildSuppDetails = (notes) => {
+    if (!notes?.length) return '';
+    return notes.map(n => rt(n)).join('<br>');
   };
+  // Split notes across page 3 / page 4: first PAGE3_NOTES on p3, remainder on p4
+  const PAGE3_NOTES = 8;
 
   // ── Convention filters ────────────────────────────────────────────────────
   const slamConvRe  = /slam|blackwood|gerber|keycard|rkcb|rkqg|viscount|general.?swiss/i;
@@ -1067,7 +1069,7 @@ function generateEBU(sys) {
     ${secHdr('SUPPLEMENTARY DETAILS')}
     ${noteRow('(Please cross-reference where appropriate to the relevant part of card, and continue on back if needed).')}
     ${suppNotes.length
-      ? `<tr><td colspan="99" style="border-top:${I};border-left:${O};border-right:${O};border-bottom:none;padding:2px 4px;vertical-align:top;font-size:7.5pt">${buildSuppDetails()}</td></tr>`
+      ? `<tr><td colspan="99" style="border-top:${I};border-left:${O};border-right:${O};border-bottom:none;padding:2px 4px;vertical-align:top;font-size:7.5pt">${buildSuppDetails(suppNotes.slice(0, PAGE3_NOTES))}</td></tr>`
       : blankRows(4)
     }
     <tr><td colspan="99" style="border-top:${I};border-left:${O};border-right:${O};border-bottom:${O};height:12px;padding:0 3px">&nbsp;</td></tr>
@@ -1140,8 +1142,8 @@ function generateEBU(sys) {
   </table>` +
 
   tbl(secHdr('SUPPLEMENTARY DETAILS (continued)') +
-    (suppNotes.length
-      ? `<tr><td colspan="99" style="border-top:none;border-left:${O};border-right:${O};border-bottom:none;padding:2px 4px;vertical-align:top;font-size:7.5pt">${buildSuppDetails()}</td></tr>` +
+    (suppNotes.length > PAGE3_NOTES
+      ? `<tr><td colspan="99" style="border-top:none;border-left:${O};border-right:${O};border-bottom:none;padding:2px 4px;vertical-align:top;font-size:7.5pt">${buildSuppDetails(suppNotes.slice(PAGE3_NOTES))}</td></tr>` +
         blankRows(3)
       : blankRows(5)
     ) +
