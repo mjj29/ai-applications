@@ -482,6 +482,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   onAuthChange(async (event) => {
     await renderAuthBar();
     if (event === 'SIGNED_IN') {
+      // If there's a public slug in the URL, re-show the preview (now with clone
+      // option enabled) rather than blowing it away with clearPreviewSystem().
+      const slug = new URLSearchParams(window.location.search).get('s');
+      if (slug) {
+        flash('Signed in', 'ok');
+        await handlePublicSlug();  // re-runs showPublicPreview with the now-logged-in user
+        return;
+      }
       clearPreviewSystem();
       flash('Signed in', 'ok');
       renderSystemsList();
