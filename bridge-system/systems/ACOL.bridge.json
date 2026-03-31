@@ -1,0 +1,903 @@
+{
+  "id": "b0000000-0000-0000-0000-000000000001",
+  "name": "ACOL (Weak NT, 4-card Majors)",
+  "metadata": {
+    "authors": ["Standard"],
+    "notes": "Standard ACOL: weak 1NT (12-14), 4-card majors, Acol 2s, weak 2s in the majors, Stayman, Jacoby transfers, standard Blackwood, 2nd/4th leads, standard attitude signals.",
+    "modified": "2026-03-31T00:00:00.000Z",
+    "format": "v1"
+  },
+  "carding": {
+    "leads": [
+      {
+        "id": "acol-lead-suit",
+        "method": "Top of sequence (A from AK), 4th highest from honour suits, top of doubleton",
+        "context": "vs suit contract"
+      },
+      {
+        "id": "acol-lead-nt",
+        "method": "4th highest from longest and strongest; top of internal sequence (e.g., J from KJ10x)",
+        "context": "vs NT contract"
+      },
+      {
+        "id": "acol-lead-spot",
+        "method": "2nd highest from bad suits (no honour), 4th highest from any suit headed by an honour",
+        "context": "Spot card leads"
+      }
+    ],
+    "signals": [
+      {
+        "id": "acol-signal-attitude",
+        "method": "Standard attitude: high card encourages, low card discourages",
+        "context": "On partner's lead (suit and NT)"
+      },
+      {
+        "id": "acol-signal-count",
+        "method": "Standard count: high-low shows even, low-high shows odd",
+        "context": "Count signal when attitude is known or declarer leads"
+      },
+      {
+        "id": "acol-signal-suit-pref",
+        "method": "High card = preference for higher suit, low card = lower suit",
+        "context": "Suit preference when giving ruff or in obvious situations"
+      }
+    ],
+    "discards": [
+      {
+        "id": "acol-discard-attitude",
+        "method": "Standard attitude: high card in a suit encourages that suit",
+        "context": "First discard"
+      },
+      {
+        "id": "acol-discard-count",
+        "method": "Standard count when attitude already shown",
+        "context": "Subsequent discards"
+      }
+    ]
+  },
+  "conventions": {
+    "nt-responses": {
+      "id": "nt-responses",
+      "name": "1NT Responses",
+      "description": "Responses to 1NT opening (12-14 HCP): Stayman, Jacoby transfers, invitational and game bids",
+      "tags": ["notrump", "stayman", "transfers"],
+      "nodes": [
+        {
+          "id": "nt-r-2c",
+          "call": {"type":"bid","level":2,"strain":"C"},
+          "meaning": {"description":"Stayman — asks for 4-card major, 8+ HCP or weak with both majors","alert":true},
+          "variants": [], "competitive": [],
+          "continuations": {"type":"nodes","nodes":[
+            {
+              "id":"nt-r-2c-2d",
+              "call":{"type":"bid","level":2,"strain":"D"},
+              "meaning":{"description":"No 4-card major"},
+              "variants":[],"competitive":[],
+              "continuations":{"type":"nodes","nodes":[
+                {"id":"nt-r-2c-2d-2h","call":{"type":"bid","level":2,"strain":"H"},
+                  "meaning":{"description":"5 hearts, 4 spades, invitational 8-9 HCP"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+                {"id":"nt-r-2c-2d-2s","call":{"type":"bid","level":2,"strain":"S"},
+                  "meaning":{"description":"5 spades, invitational 8-9 HCP"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+                {"id":"nt-r-2c-2d-2n","call":{"type":"bid","level":2,"strain":"N"},
+                  "meaning":{"description":"Invitational, no 4-card major, balanced 8-9 HCP"},"variants":[],"competitive":[],
+                  "continuations":{"type":"nodes","nodes":[
+                    {"id":"nt-r-2c-2d-2n-p","call":{"type":"pass"},"meaning":{"description":"Minimum (12), declines"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+                    {"id":"nt-r-2c-2d-2n-3n","call":{"type":"bid","level":3,"strain":"N"},"meaning":{"description":"Maximum (13-14), accepts"},"variants":[],"competitive":[],"continuations":{"type":"end"}}
+                  ]}},
+                {"id":"nt-r-2c-2d-3n","call":{"type":"bid","level":3,"strain":"N"},
+                  "meaning":{"description":"To play, 10+ HCP"},"variants":[],"competitive":[],"continuations":{"type":"end"}}
+              ]}
+            },
+            {
+              "id":"nt-r-2c-2h",
+              "call":{"type":"bid","level":2,"strain":"H"},
+              "meaning":{"description":"4+ hearts (may also have 4 spades)"},
+              "variants":[],"competitive":[],
+              "continuations":{"type":"nodes","nodes":[
+                {"id":"nt-r-2c-2h-2s","call":{"type":"bid","level":2,"strain":"S"},
+                  "meaning":{"description":"4 spades, 4 hearts — pick a major, game forcing"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+                {"id":"nt-r-2c-2h-3h","call":{"type":"bid","level":3,"strain":"H"},
+                  "meaning":{"description":"Invitational raise, 4+ hearts, 8-9 HCP"},"variants":[],"competitive":[],
+                  "continuations":{"type":"nodes","nodes":[
+                    {"id":"nt-r-2c-2h-3h-p","call":{"type":"pass"},"meaning":{"description":"Minimum, declines"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+                    {"id":"nt-r-2c-2h-3h-4h","call":{"type":"bid","level":4,"strain":"H"},"meaning":{"description":"Maximum, accepts"},"variants":[],"competitive":[],"continuations":{"type":"end"}}
+                  ]}},
+                {"id":"nt-r-2c-2h-4h","call":{"type":"bid","level":4,"strain":"H"},
+                  "meaning":{"description":"To play, 4+ hearts, 10+ HCP"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+                {"id":"nt-r-2c-2h-3n","call":{"type":"bid","level":3,"strain":"N"},
+                  "meaning":{"description":"Game values, no heart fit — to play 3NT"},"variants":[],"competitive":[],"continuations":{"type":"end"}}
+              ]}
+            },
+            {
+              "id":"nt-r-2c-2s",
+              "call":{"type":"bid","level":2,"strain":"S"},
+              "meaning":{"description":"4+ spades, denies 4 hearts"},
+              "variants":[],"competitive":[],
+              "continuations":{"type":"nodes","nodes":[
+                {"id":"nt-r-2c-2s-3s","call":{"type":"bid","level":3,"strain":"S"},
+                  "meaning":{"description":"Invitational raise, 4+ spades, 8-9 HCP"},"variants":[],"competitive":[],
+                  "continuations":{"type":"nodes","nodes":[
+                    {"id":"nt-r-2c-2s-3s-p","call":{"type":"pass"},"meaning":{"description":"Minimum, declines"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+                    {"id":"nt-r-2c-2s-3s-4s","call":{"type":"bid","level":4,"strain":"S"},"meaning":{"description":"Maximum, accepts"},"variants":[],"competitive":[],"continuations":{"type":"end"}}
+                  ]}},
+                {"id":"nt-r-2c-2s-4s","call":{"type":"bid","level":4,"strain":"S"},
+                  "meaning":{"description":"To play, 4+ spades, 10+ HCP"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+                {"id":"nt-r-2c-2s-3n","call":{"type":"bid","level":3,"strain":"N"},
+                  "meaning":{"description":"Game values, no spade fit — to play 3NT"},"variants":[],"competitive":[],"continuations":{"type":"end"}}
+              ]}
+            }
+          ]}
+        },
+        {
+          "id": "nt-r-2d",
+          "call": {"type":"bid","level":2,"strain":"D"},
+          "meaning": {"description":"Jacoby transfer to hearts — 5+ hearts, any strength","alert":true,"announce":"Transfer"},
+          "variants": [], "competitive": [],
+          "continuations": {"type":"nodes","nodes":[
+            {
+              "id":"nt-r-2d-2h",
+              "call":{"type":"bid","level":2,"strain":"H"},
+              "meaning":{"description":"Completing transfer (always)"},
+              "variants":[],"competitive":[],
+              "continuations":{"type":"nodes","nodes":[
+                {"id":"nt-r-2d-2h-p","call":{"type":"pass"},
+                  "meaning":{"description":"Weak, 5 hearts — to play"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+                {"id":"nt-r-2d-2h-2n","call":{"type":"bid","level":2,"strain":"N"},
+                  "meaning":{"description":"Invitational, exactly 5 hearts, 8-9 HCP"},"variants":[],"competitive":[],
+                  "continuations":{"type":"nodes","nodes":[
+                    {"id":"nt-r-2d-2h-2n-p","call":{"type":"pass"},"meaning":{"description":"Minimum, prefers NT"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+                    {"id":"nt-r-2d-2h-2n-3h","call":{"type":"bid","level":3,"strain":"H"},"meaning":{"description":"Minimum, prefers hearts"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+                    {"id":"nt-r-2d-2h-2n-3n","call":{"type":"bid","level":3,"strain":"N"},"meaning":{"description":"Maximum, prefers NT"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+                    {"id":"nt-r-2d-2h-2n-4h","call":{"type":"bid","level":4,"strain":"H"},"meaning":{"description":"Maximum, prefers hearts"},"variants":[],"competitive":[],"continuations":{"type":"end"}}
+                  ]}},
+                {"id":"nt-r-2d-2h-3h","call":{"type":"bid","level":3,"strain":"H"},
+                  "meaning":{"description":"Invitational, 6+ hearts, 8-9 HCP"},"variants":[],"competitive":[],
+                  "continuations":{"type":"nodes","nodes":[
+                    {"id":"nt-r-2d-2h-3h-p","call":{"type":"pass"},"meaning":{"description":"Minimum, declines"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+                    {"id":"nt-r-2d-2h-3h-4h","call":{"type":"bid","level":4,"strain":"H"},"meaning":{"description":"Maximum, accepts"},"variants":[],"competitive":[],"continuations":{"type":"end"}}
+                  ]}},
+                {"id":"nt-r-2d-2h-4h","call":{"type":"bid","level":4,"strain":"H"},
+                  "meaning":{"description":"To play, 6+ hearts, game values"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+                {"id":"nt-r-2d-2h-3n","call":{"type":"bid","level":3,"strain":"N"},
+                  "meaning":{"description":"Exactly 5 hearts, offers choice of game, 10+ HCP"},"variants":[],"competitive":[],
+                  "continuations":{"type":"nodes","nodes":[
+                    {"id":"nt-r-2d-2h-3n-p","call":{"type":"pass"},"meaning":{"description":"Prefers NT"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+                    {"id":"nt-r-2d-2h-3n-4h","call":{"type":"bid","level":4,"strain":"H"},"meaning":{"description":"Prefers hearts"},"variants":[],"competitive":[],"continuations":{"type":"end"}}
+                  ]}},
+                {"id":"nt-r-2d-2h-4n","call":{"type":"bid","level":4,"strain":"N"},
+                  "meaning":{"description":"Blackwood — slam interest, 5+ hearts"},"variants":[],"competitive":[],"continuations":{"type":"ref","conventionId":"blackwood"}}
+              ]}
+            }
+          ]}
+        },
+        {
+          "id": "nt-r-2h",
+          "call": {"type":"bid","level":2,"strain":"H"},
+          "meaning": {"description":"Jacoby transfer to spades — 5+ spades, any strength","alert":true,"announce":"Transfer"},
+          "variants": [], "competitive": [],
+          "continuations": {"type":"nodes","nodes":[
+            {
+              "id":"nt-r-2h-2s",
+              "call":{"type":"bid","level":2,"strain":"S"},
+              "meaning":{"description":"Completing transfer (always)"},
+              "variants":[],"competitive":[],
+              "continuations":{"type":"nodes","nodes":[
+                {"id":"nt-r-2h-2s-p","call":{"type":"pass"},
+                  "meaning":{"description":"Weak, 5 spades — to play"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+                {"id":"nt-r-2h-2s-2n","call":{"type":"bid","level":2,"strain":"N"},
+                  "meaning":{"description":"Invitational, exactly 5 spades, 8-9 HCP"},"variants":[],"competitive":[],
+                  "continuations":{"type":"nodes","nodes":[
+                    {"id":"nt-r-2h-2s-2n-p","call":{"type":"pass"},"meaning":{"description":"Minimum, prefers NT"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+                    {"id":"nt-r-2h-2s-2n-3s","call":{"type":"bid","level":3,"strain":"S"},"meaning":{"description":"Minimum, prefers spades"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+                    {"id":"nt-r-2h-2s-2n-3n","call":{"type":"bid","level":3,"strain":"N"},"meaning":{"description":"Maximum, prefers NT"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+                    {"id":"nt-r-2h-2s-2n-4s","call":{"type":"bid","level":4,"strain":"S"},"meaning":{"description":"Maximum, prefers spades"},"variants":[],"competitive":[],"continuations":{"type":"end"}}
+                  ]}},
+                {"id":"nt-r-2h-2s-3s","call":{"type":"bid","level":3,"strain":"S"},
+                  "meaning":{"description":"Invitational, 6+ spades, 8-9 HCP"},"variants":[],"competitive":[],
+                  "continuations":{"type":"nodes","nodes":[
+                    {"id":"nt-r-2h-2s-3s-p","call":{"type":"pass"},"meaning":{"description":"Minimum, declines"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+                    {"id":"nt-r-2h-2s-3s-4s","call":{"type":"bid","level":4,"strain":"S"},"meaning":{"description":"Maximum, accepts"},"variants":[],"competitive":[],"continuations":{"type":"end"}}
+                  ]}},
+                {"id":"nt-r-2h-2s-4s","call":{"type":"bid","level":4,"strain":"S"},
+                  "meaning":{"description":"To play, 6+ spades, game values"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+                {"id":"nt-r-2h-2s-3n","call":{"type":"bid","level":3,"strain":"N"},
+                  "meaning":{"description":"Exactly 5 spades, offers choice of game, 10+ HCP"},"variants":[],"competitive":[],
+                  "continuations":{"type":"nodes","nodes":[
+                    {"id":"nt-r-2h-2s-3n-p","call":{"type":"pass"},"meaning":{"description":"Prefers NT"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+                    {"id":"nt-r-2h-2s-3n-4s","call":{"type":"bid","level":4,"strain":"S"},"meaning":{"description":"Prefers spades"},"variants":[],"competitive":[],"continuations":{"type":"end"}}
+                  ]}},
+                {"id":"nt-r-2h-2s-4n","call":{"type":"bid","level":4,"strain":"N"},
+                  "meaning":{"description":"Blackwood — slam interest, 5+ spades"},"variants":[],"competitive":[],"continuations":{"type":"ref","conventionId":"blackwood"}}
+              ]}
+            }
+          ]}
+        },
+        {
+          "id": "nt-r-2n",
+          "call": {"type":"bid","level":2,"strain":"N"},
+          "meaning": {"description":"Invitational, balanced, 11-12 HCP"},
+          "variants": [], "competitive": [],
+          "continuations": {"type":"nodes","nodes":[
+            {"id":"nt-r-2n-p","call":{"type":"pass"},"meaning":{"description":"Minimum (12), declines"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+            {"id":"nt-r-2n-3n","call":{"type":"bid","level":3,"strain":"N"},"meaning":{"description":"Maximum (13-14), accepts"},"variants":[],"competitive":[],"continuations":{"type":"end"}}
+          ]}
+        },
+        {
+          "id": "nt-r-3c",
+          "call": {"type":"bid","level":3,"strain":"C"},
+          "meaning": {"description":"Game forcing, 5+ clubs, slam interest or hand unsuitable for NT","alert":true},
+          "variants": [], "competitive": [],
+          "continuations": {"type":"nodes","nodes":[
+            {"id":"nt-r-3c-3d","call":{"type":"bid","level":3,"strain":"D"},"meaning":{"description":"No major stopper, minimum, club fit query"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"nt-r-3c-3n","call":{"type":"bid","level":3,"strain":"N"},"meaning":{"description":"Stoppers in all suits, no particular club fit"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+            {"id":"nt-r-3c-5c","call":{"type":"bid","level":5,"strain":"C"},"meaning":{"description":"Club fit, inviting 6C"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}}
+          ]}
+        },
+        {
+          "id": "nt-r-3d",
+          "call": {"type":"bid","level":3,"strain":"D"},
+          "meaning": {"description":"Game forcing, 5+ diamonds, slam interest","alert":true},
+          "variants": [], "competitive": [],
+          "continuations": {"type":"nodes","nodes":[
+            {"id":"nt-r-3d-3n","call":{"type":"bid","level":3,"strain":"N"},"meaning":{"description":"Stoppers in all suits"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+            {"id":"nt-r-3d-5d","call":{"type":"bid","level":5,"strain":"D"},"meaning":{"description":"Diamond fit, inviting 6D"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}}
+          ]}
+        },
+        {
+          "id": "nt-r-3h",
+          "call": {"type":"bid","level":3,"strain":"H"},
+          "meaning": {"description":"Game forcing, 6+ hearts, slam interest"},
+          "variants": [], "competitive": [],
+          "continuations": {"type":"nodes","nodes":[
+            {"id":"nt-r-3h-4h","call":{"type":"bid","level":4,"strain":"H"},"meaning":{"description":"To play, heart fit"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+            {"id":"nt-r-3h-4n","call":{"type":"bid","level":4,"strain":"N"},"meaning":{"description":"Blackwood, good heart fit"},"variants":[],"competitive":[],"continuations":{"type":"ref","conventionId":"blackwood"}}
+          ]}
+        },
+        {
+          "id": "nt-r-3s",
+          "call": {"type":"bid","level":3,"strain":"S"},
+          "meaning": {"description":"Game forcing, 6+ spades, slam interest"},
+          "variants": [], "competitive": [],
+          "continuations": {"type":"nodes","nodes":[
+            {"id":"nt-r-3s-4s","call":{"type":"bid","level":4,"strain":"S"},"meaning":{"description":"To play, spade fit"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+            {"id":"nt-r-3s-4n","call":{"type":"bid","level":4,"strain":"N"},"meaning":{"description":"Blackwood, good spade fit"},"variants":[],"competitive":[],"continuations":{"type":"ref","conventionId":"blackwood"}}
+          ]}
+        },
+        {
+          "id": "nt-r-3n",
+          "call": {"type":"bid","level":3,"strain":"N"},
+          "meaning": {"description":"To play, 13+ HCP, no 4-card major"},
+          "variants": [], "competitive": [],
+          "continuations": {"type":"end"}
+        },
+        {
+          "id": "nt-r-4n",
+          "call": {"type":"bid","level":4,"strain":"N"},
+          "meaning": {"description":"Quantitative — invites 6NT, balanced 15-16 HCP"},
+          "variants": [], "competitive": [],
+          "continuations": {"type":"nodes","nodes":[
+            {"id":"nt-r-4n-p","call":{"type":"pass"},"meaning":{"description":"Minimum (12), declines"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+            {"id":"nt-r-4n-6n","call":{"type":"bid","level":6,"strain":"N"},"meaning":{"description":"Maximum (13-14), accepts"},"variants":[],"competitive":[],"continuations":{"type":"end"}}
+          ]}
+        }
+      ]
+    },
+    "blackwood": {
+      "id": "blackwood",
+      "name": "Standard Blackwood",
+      "description": "4NT asks for aces. 5C=0/4, 5D=1, 5H=2, 5S=3. Follow-up 5NT asks for kings.",
+      "tags": ["slam", "blackwood"],
+      "nodes": [
+        {
+          "id": "bw-4n",
+          "call": {"type":"bid","level":4,"strain":"N"},
+          "meaning": {"description":"Blackwood — asks for aces","alert":true},
+          "variants": [], "competitive": [],
+          "continuations": {"type":"nodes","nodes":[
+            {"id":"bw-5c","call":{"type":"bid","level":5,"strain":"C"},
+              "meaning":{"description":"0 or 4 aces"},"variants":[],"competitive":[],
+              "continuations":{"type":"nodes","nodes":[
+                {"id":"bw-5c-5n","call":{"type":"bid","level":5,"strain":"N"},"meaning":{"description":"Asks for kings"},"variants":[],"competitive":[],
+                  "continuations":{"type":"nodes","nodes":[
+                    {"id":"bw-5c-5n-6c","call":{"type":"bid","level":6,"strain":"C"},"meaning":{"description":"0 or 4 kings"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+                    {"id":"bw-5c-5n-6d","call":{"type":"bid","level":6,"strain":"D"},"meaning":{"description":"1 king"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+                    {"id":"bw-5c-5n-6h","call":{"type":"bid","level":6,"strain":"H"},"meaning":{"description":"2 kings"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+                    {"id":"bw-5c-5n-6s","call":{"type":"bid","level":6,"strain":"S"},"meaning":{"description":"3 kings"},"variants":[],"competitive":[],"continuations":{"type":"end"}}
+                  ]}}
+              ]}},
+            {"id":"bw-5d","call":{"type":"bid","level":5,"strain":"D"},
+              "meaning":{"description":"1 ace"},"variants":[],"competitive":[],
+              "continuations":{"type":"nodes","nodes":[
+                {"id":"bw-5d-5n","call":{"type":"bid","level":5,"strain":"N"},"meaning":{"description":"Asks for kings"},"variants":[],"competitive":[],
+                  "continuations":{"type":"nodes","nodes":[
+                    {"id":"bw-5d-5n-6c","call":{"type":"bid","level":6,"strain":"C"},"meaning":{"description":"0 or 4 kings"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+                    {"id":"bw-5d-5n-6d","call":{"type":"bid","level":6,"strain":"D"},"meaning":{"description":"1 king"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+                    {"id":"bw-5d-5n-6h","call":{"type":"bid","level":6,"strain":"H"},"meaning":{"description":"2 kings"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+                    {"id":"bw-5d-5n-6s","call":{"type":"bid","level":6,"strain":"S"},"meaning":{"description":"3 kings"},"variants":[],"competitive":[],"continuations":{"type":"end"}}
+                  ]}}
+              ]}},
+            {"id":"bw-5h","call":{"type":"bid","level":5,"strain":"H"},
+              "meaning":{"description":"2 aces"},"variants":[],"competitive":[],
+              "continuations":{"type":"nodes","nodes":[
+                {"id":"bw-5h-5n","call":{"type":"bid","level":5,"strain":"N"},"meaning":{"description":"Asks for kings"},"variants":[],"competitive":[],
+                  "continuations":{"type":"nodes","nodes":[
+                    {"id":"bw-5h-5n-6c","call":{"type":"bid","level":6,"strain":"C"},"meaning":{"description":"0 or 4 kings"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+                    {"id":"bw-5h-5n-6d","call":{"type":"bid","level":6,"strain":"D"},"meaning":{"description":"1 king"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+                    {"id":"bw-5h-5n-6h","call":{"type":"bid","level":6,"strain":"H"},"meaning":{"description":"2 kings"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+                    {"id":"bw-5h-5n-6s","call":{"type":"bid","level":6,"strain":"S"},"meaning":{"description":"3 kings"},"variants":[],"competitive":[],"continuations":{"type":"end"}}
+                  ]}}
+              ]}},
+            {"id":"bw-5s","call":{"type":"bid","level":5,"strain":"S"},
+              "meaning":{"description":"3 aces"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}}
+          ]}
+        }
+      ]
+    },
+    "major-raises": {
+      "id": "major-raises",
+      "name": "Major Suit Raises (ACOL)",
+      "description": "Raises after 1H or 1S opening. 4-card majors. Simple raise = 6-9 HCP 4+ trumps. Limit raise via 2NT or direct 3M = 10-12. Game raise = 13+.",
+      "tags": ["major", "raises"],
+      "nodes": [
+        {"id":"maj-r-2m","call":{"type":"bid","level":2,"strain":"H"},
+          "meaning":{"description":"Simple raise — 4+ trumps, 6-9 HCP"},"variants":[],"competitive":[],
+          "continuations":{"type":"nodes","nodes":[
+            {"id":"maj-r-2m-p","call":{"type":"pass"},"meaning":{"description":"Minimum, no game interest"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+            {"id":"maj-r-2m-3m","call":{"type":"bid","level":3,"strain":"H"},"meaning":{"description":"Invitational — good 15-16 HCP"},"variants":[],"competitive":[],
+              "continuations":{"type":"nodes","nodes":[
+                {"id":"maj-r-2m-3m-p","call":{"type":"pass"},"meaning":{"description":"Minimum, pass"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+                {"id":"maj-r-2m-3m-4m","call":{"type":"bid","level":4,"strain":"H"},"meaning":{"description":"Maximum, game on"},"variants":[],"competitive":[],"continuations":{"type":"end"}}
+              ]}},
+            {"id":"maj-r-2m-4m","call":{"type":"bid","level":4,"strain":"H"},"meaning":{"description":"Good hand, game try accepted or own decision"},"variants":[],"competitive":[],"continuations":{"type":"end"}}
+          ]}},
+        {"id":"maj-r-3m","call":{"type":"bid","level":3,"strain":"H"},
+          "meaning":{"description":"Limit raise — 4+ trumps, 10-12 HCP"},"variants":[],"competitive":[],
+          "continuations":{"type":"nodes","nodes":[
+            {"id":"maj-r-3m-p","call":{"type":"pass"},"meaning":{"description":"Minimum opener (12-13), declines"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+            {"id":"maj-r-3m-4m","call":{"type":"bid","level":4,"strain":"H"},"meaning":{"description":"Accepts game"},"variants":[],"competitive":[],"continuations":{"type":"end"}}
+          ]}},
+        {"id":"maj-r-4m","call":{"type":"bid","level":4,"strain":"H"},
+          "meaning":{"description":"To play — 4+ trumps, 8-10 HCP (pre-emptive), or weaker hand with distributional values"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+        {"id":"maj-r-2n","call":{"type":"bid","level":2,"strain":"N"},
+          "meaning":{"description":"Forcing raise (ACOL) — 4+ trumps, 13+ HCP (game forcing)","alert":true},"variants":[],"competitive":[],
+          "continuations":{"type":"nodes","nodes":[
+            {"id":"maj-r-2n-3m","call":{"type":"bid","level":3,"strain":"H"},"meaning":{"description":"Minimum opener, rebid of major — poor hand"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"maj-r-2n-3o","call":{"type":"bid","level":3,"strain":"D"},"meaning":{"description":"Singleton or second suit below the major"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"maj-r-2n-3n","call":{"type":"bid","level":3,"strain":"N"},"meaning":{"description":"Balanced minimum, no shortness"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"maj-r-2n-4m","call":{"type":"bid","level":4,"strain":"H"},"meaning":{"description":"Good trumps, nothing extra to show"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+            {"id":"maj-r-2n-4n","call":{"type":"bid","level":4,"strain":"N"},"meaning":{"description":"Blackwood"},"variants":[],"competitive":[],"continuations":{"type":"ref","conventionId":"blackwood"}}
+          ]}}
+      ]
+    },
+    "one-nt-rebid": {
+      "id": "one-nt-rebid",
+      "name": "Opener Rebids after 1NT (15-16 balanced)",
+      "description": "When opener rebids 1NT (15-16) after a one-level response",
+      "tags": ["rebids", "notrump"],
+      "nodes": [
+        {"id":"reb-1n-p","call":{"type":"pass"},"meaning":{"description":"To play, minimum values"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+        {"id":"reb-1n-2c","call":{"type":"bid","level":2,"strain":"C"},"meaning":{"description":"Checkback Stayman — asks for 3-card support or 4-card major","alert":true},"variants":[],"competitive":[],
+          "continuations":{"type":"nodes","nodes":[
+            {"id":"reb-1n-2c-2d","call":{"type":"bid","level":2,"strain":"D"},"meaning":{"description":"No 3-card fit, no second major"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"reb-1n-2c-2h","call":{"type":"bid","level":2,"strain":"H"},"meaning":{"description":"3+ card support for hearts (if hearts response) or 4 hearts (if spades response)"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"reb-1n-2c-2s","call":{"type":"bid","level":2,"strain":"S"},"meaning":{"description":"4+ spades"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}}
+          ]}},
+        {"id":"reb-1n-2s","call":{"type":"bid","level":2,"strain":"S"},"meaning":{"description":"To play — sign-off"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+        {"id":"reb-1n-3n","call":{"type":"bid","level":3,"strain":"N"},"meaning":{"description":"Game — to play"},"variants":[],"competitive":[],"continuations":{"type":"end"}}
+      ]
+    }
+  },
+  "openings": [
+    {
+      "id": "op-1c",
+      "call": {"type":"bid","level":1,"strain":"C"},
+      "meaning": {"description":"4+ clubs, or balanced 12-14 (may be short club), 12-19 HCP","hcp":[12,19]},
+      "variants": [],
+      "competitive": [],
+      "continuations": {"type":"nodes","nodes":[
+        {"id":"op-1c-1d","call":{"type":"bid","level":1,"strain":"D"},
+          "meaning":{"description":"4+ diamonds, 6+ HCP — forcing for one round","hcp":[6,null],"forcing":"1r"},
+          "variants":[],"competitive":[],
+          "continuations":{"type":"nodes","nodes":[
+            {"id":"op-1c-1d-1h","call":{"type":"bid","level":1,"strain":"H"},"meaning":{"description":"4+ hearts, 12-15 HCP unbalanced"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1c-1d-1s","call":{"type":"bid","level":1,"strain":"S"},"meaning":{"description":"4+ spades, 12-15 HCP unbalanced, 4+ clubs too"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1c-1d-1n","call":{"type":"bid","level":1,"strain":"N"},"meaning":{"description":"Balanced 15-16 HCP"},"variants":[],"competitive":[],"continuations":{"type":"ref","conventionId":"one-nt-rebid"}},
+            {"id":"op-1c-1d-2c","call":{"type":"bid","level":2,"strain":"C"},"meaning":{"description":"6+ clubs or 5 clubs + 4 diamonds, 12-15 HCP"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1c-1d-2d","call":{"type":"bid","level":2,"strain":"D"},"meaning":{"description":"4+ diamonds, good raise — 12-15 HCP, 4+ diamonds"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1c-1d-2n","call":{"type":"bid","level":2,"strain":"N"},"meaning":{"description":"Balanced 17-18 HCP, invitational"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1c-1d-3c","call":{"type":"bid","level":3,"strain":"C"},"meaning":{"description":"Strong jump rebid — 6+ clubs, 16-18 HCP"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1c-1d-3n","call":{"type":"bid","level":3,"strain":"N"},"meaning":{"description":"19-20 HCP balanced, game in NT"},"variants":[],"competitive":[],"continuations":{"type":"end"}}
+          ]}},
+        {"id":"op-1c-1h","call":{"type":"bid","level":1,"strain":"H"},
+          "meaning":{"description":"4+ hearts, 6+ HCP — forcing for one round","hcp":[6,null],"forcing":"1r"},
+          "variants":[],"competitive":[],
+          "continuations":{"type":"nodes","nodes":[
+            {"id":"op-1c-1h-1s","call":{"type":"bid","level":1,"strain":"S"},"meaning":{"description":"4+ spades, reversing — strong 16+ HCP"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1c-1h-1n","call":{"type":"bid","level":1,"strain":"N"},"meaning":{"description":"Minimum balanced, 15-16 HCP, no heart fit"},"variants":[],"competitive":[],"continuations":{"type":"ref","conventionId":"one-nt-rebid"}},
+            {"id":"op-1c-1h-2c","call":{"type":"bid","level":2,"strain":"C"},"meaning":{"description":"Rebid own suit — 5+ clubs, 12-15 HCP"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1c-1h-2h","call":{"type":"bid","level":2,"strain":"H"},"meaning":{"description":"Simple raise — 4 hearts, 12-15 HCP"},"variants":[],"competitive":[],"continuations":{"type":"ref","conventionId":"major-raises"}},
+            {"id":"op-1c-1h-2n","call":{"type":"bid","level":2,"strain":"N"},"meaning":{"description":"Balanced 17-18 HCP, no heart fit"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1c-1h-3c","call":{"type":"bid","level":3,"strain":"C"},"meaning":{"description":"Strong jump rebid — 6+ clubs, 16-18 HCP"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1c-1h-3h","call":{"type":"bid","level":3,"strain":"H"},"meaning":{"description":"Limit raise — 4 hearts, 16-18 HCP"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1c-1h-4h","call":{"type":"bid","level":4,"strain":"H"},"meaning":{"description":"Game raise — 4 hearts, suitable opener"},"variants":[],"competitive":[],"continuations":{"type":"end"}}
+          ]}},
+        {"id":"op-1c-1s","call":{"type":"bid","level":1,"strain":"S"},
+          "meaning":{"description":"4+ spades, 6+ HCP — forcing for one round","hcp":[6,null],"forcing":"1r"},
+          "variants":[],"competitive":[],
+          "continuations":{"type":"nodes","nodes":[
+            {"id":"op-1c-1s-1n","call":{"type":"bid","level":1,"strain":"N"},"meaning":{"description":"Minimum balanced, 15-16 HCP, no spade fit"},"variants":[],"competitive":[],"continuations":{"type":"ref","conventionId":"one-nt-rebid"}},
+            {"id":"op-1c-1s-2c","call":{"type":"bid","level":2,"strain":"C"},"meaning":{"description":"Rebid own suit — 5+ clubs, 12-15 HCP"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1c-1s-2h","call":{"type":"bid","level":2,"strain":"H"},"meaning":{"description":"Reverse — 4+ hearts, 16+ HCP, forcing"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1c-1s-2s","call":{"type":"bid","level":2,"strain":"S"},"meaning":{"description":"Simple raise — 4 spades, 12-15 HCP"},"variants":[],"competitive":[],"continuations":{"type":"ref","conventionId":"major-raises"}},
+            {"id":"op-1c-1s-2n","call":{"type":"bid","level":2,"strain":"N"},"meaning":{"description":"Balanced 17-18 HCP, no spade fit"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1c-1s-3s","call":{"type":"bid","level":3,"strain":"S"},"meaning":{"description":"Limit raise — 4 spades, 16-18 HCP"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1c-1s-4s","call":{"type":"bid","level":4,"strain":"S"},"meaning":{"description":"Game raise — 4 spades, suitable opener"},"variants":[],"competitive":[],"continuations":{"type":"end"}}
+          ]}},
+        {"id":"op-1c-1n","call":{"type":"bid","level":1,"strain":"N"},
+          "meaning":{"description":"Balanced 8-10 HCP, denies 4-card major (semi-forcing)","hcp":[8,10]},
+          "variants":[],"competitive":[],
+          "continuations":{"type":"nodes","nodes":[
+            {"id":"op-1c-1n-p","call":{"type":"pass"},"meaning":{"description":"Minimum, no interest in game"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+            {"id":"op-1c-1n-2c","call":{"type":"bid","level":2,"strain":"C"},"meaning":{"description":"5+ clubs, minimum"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1c-1n-2n","call":{"type":"bid","level":2,"strain":"N"},"meaning":{"description":"17-18 HCP balanced, invites 3NT"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1c-1n-3n","call":{"type":"bid","level":3,"strain":"N"},"meaning":{"description":"19 HCP balanced, game"},"variants":[],"competitive":[],"continuations":{"type":"end"}}
+          ]}},
+        {"id":"op-1c-2c","call":{"type":"bid","level":2,"strain":"C"},
+          "meaning":{"description":"6-9 HCP, 5+ clubs, non-forcing raise","hcp":[6,9]},
+          "variants":[],"competitive":[],
+          "continuations":{"type":"nodes","nodes":[
+            {"id":"op-1c-2c-p","call":{"type":"pass"},"meaning":{"description":"Minimum, pass"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+            {"id":"op-1c-2c-3c","call":{"type":"bid","level":3,"strain":"C"},"meaning":{"description":"Invitational — better hand"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1c-2c-2n","call":{"type":"bid","level":2,"strain":"N"},"meaning":{"description":"Game try in NT — good 17+ HCP"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}}
+          ]}},
+        {"id":"op-1c-2n","call":{"type":"bid","level":2,"strain":"N"},
+          "meaning":{"description":"Invitational, balanced 11-12 HCP, no 4-card major","hcp":[11,12]},
+          "variants":[],"competitive":[],
+          "continuations":{"type":"nodes","nodes":[
+            {"id":"op-1c-2n-p","call":{"type":"pass"},"meaning":{"description":"Minimum"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+            {"id":"op-1c-2n-3n","call":{"type":"bid","level":3,"strain":"N"},"meaning":{"description":"Maximum, accepts"},"variants":[],"competitive":[],"continuations":{"type":"end"}}
+          ]}},
+        {"id":"op-1c-3c","call":{"type":"bid","level":3,"strain":"C"},
+          "meaning":{"description":"Pre-emptive raise — 5+ clubs, 6-8 HCP, distributional","hcp":[6,8]},
+          "variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+        {"id":"op-1c-3n","call":{"type":"bid","level":3,"strain":"N"},
+          "meaning":{"description":"To play — 13-15 HCP balanced","hcp":[13,15]},
+          "variants":[],"competitive":[],"continuations":{"type":"end"}}
+      ]}
+    },
+    {
+      "id": "op-1d",
+      "call": {"type":"bid","level":1,"strain":"D"},
+      "meaning": {"description":"4+ diamonds, 12-19 HCP","hcp":[12,19]},
+      "variants": [],
+      "competitive": [],
+      "continuations": {"type":"nodes","nodes":[
+        {"id":"op-1d-1h","call":{"type":"bid","level":1,"strain":"H"},
+          "meaning":{"description":"4+ hearts, 6+ HCP — forcing for one round","hcp":[6,null],"forcing":"1r"},
+          "variants":[],"competitive":[],
+          "continuations":{"type":"nodes","nodes":[
+            {"id":"op-1d-1h-1s","call":{"type":"bid","level":1,"strain":"S"},"meaning":{"description":"4+ spades, 12-15 HCP"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1d-1h-1n","call":{"type":"bid","level":1,"strain":"N"},"meaning":{"description":"Minimum balanced, 15-16 HCP, no fit"},"variants":[],"competitive":[],"continuations":{"type":"ref","conventionId":"one-nt-rebid"}},
+            {"id":"op-1d-1h-2d","call":{"type":"bid","level":2,"strain":"D"},"meaning":{"description":"5+ diamonds, 12-15 HCP"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1d-1h-2h","call":{"type":"bid","level":2,"strain":"H"},"meaning":{"description":"Simple raise — 4 hearts, 12-15 HCP"},"variants":[],"competitive":[],"continuations":{"type":"ref","conventionId":"major-raises"}},
+            {"id":"op-1d-1h-2s","call":{"type":"bid","level":2,"strain":"S"},"meaning":{"description":"Reverse — 4+ spades, 16+ HCP, forcing"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1d-1h-2n","call":{"type":"bid","level":2,"strain":"N"},"meaning":{"description":"Balanced 17-18 HCP"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1d-1h-3h","call":{"type":"bid","level":3,"strain":"H"},"meaning":{"description":"Limit raise — 4 hearts, 16-18 HCP"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1d-1h-4h","call":{"type":"bid","level":4,"strain":"H"},"meaning":{"description":"Game raise — 4 hearts"},"variants":[],"competitive":[],"continuations":{"type":"end"}}
+          ]}},
+        {"id":"op-1d-1s","call":{"type":"bid","level":1,"strain":"S"},
+          "meaning":{"description":"4+ spades, 6+ HCP — forcing for one round","hcp":[6,null],"forcing":"1r"},
+          "variants":[],"competitive":[],
+          "continuations":{"type":"nodes","nodes":[
+            {"id":"op-1d-1s-1n","call":{"type":"bid","level":1,"strain":"N"},"meaning":{"description":"Minimum balanced, 15-16 HCP, no fit"},"variants":[],"competitive":[],"continuations":{"type":"ref","conventionId":"one-nt-rebid"}},
+            {"id":"op-1d-1s-2d","call":{"type":"bid","level":2,"strain":"D"},"meaning":{"description":"5+ diamonds, 12-15 HCP"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1d-1s-2h","call":{"type":"bid","level":2,"strain":"H"},"meaning":{"description":"Reverse — 4+ hearts, 16+ HCP, forcing"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1d-1s-2s","call":{"type":"bid","level":2,"strain":"S"},"meaning":{"description":"Simple raise — 4 spades, 12-15 HCP"},"variants":[],"competitive":[],"continuations":{"type":"ref","conventionId":"major-raises"}},
+            {"id":"op-1d-1s-2n","call":{"type":"bid","level":2,"strain":"N"},"meaning":{"description":"Balanced 17-18 HCP"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1d-1s-3s","call":{"type":"bid","level":3,"strain":"S"},"meaning":{"description":"Limit raise — 4 spades, 16-18 HCP"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1d-1s-4s","call":{"type":"bid","level":4,"strain":"S"},"meaning":{"description":"Game raise — 4 spades"},"variants":[],"competitive":[],"continuations":{"type":"end"}}
+          ]}},
+        {"id":"op-1d-1n","call":{"type":"bid","level":1,"strain":"N"},
+          "meaning":{"description":"Balanced 8-10 HCP, denies 4-card major","hcp":[8,10]},
+          "variants":[],"competitive":[],
+          "continuations":{"type":"nodes","nodes":[
+            {"id":"op-1d-1n-p","call":{"type":"pass"},"meaning":{"description":"Minimum"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+            {"id":"op-1d-1n-2d","call":{"type":"bid","level":2,"strain":"D"},"meaning":{"description":"5+ diamonds, minimum"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1d-1n-2n","call":{"type":"bid","level":2,"strain":"N"},"meaning":{"description":"17-18 HCP balanced, invites 3NT"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1d-1n-3n","call":{"type":"bid","level":3,"strain":"N"},"meaning":{"description":"19 HCP balanced, game"},"variants":[],"competitive":[],"continuations":{"type":"end"}}
+          ]}},
+        {"id":"op-1d-2c","call":{"type":"bid","level":2,"strain":"C"},
+          "meaning":{"description":"10+ HCP, 5+ clubs — forcing for one round","hcp":[10,null],"forcing":"1r"},
+          "variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+        {"id":"op-1d-2d","call":{"type":"bid","level":2,"strain":"D"},
+          "meaning":{"description":"Single raise — 4+ diamonds, 6-9 HCP","hcp":[6,9]},
+          "variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+        {"id":"op-1d-2n","call":{"type":"bid","level":2,"strain":"N"},
+          "meaning":{"description":"Invitational, balanced 11-12 HCP","hcp":[11,12]},
+          "variants":[],"competitive":[],
+          "continuations":{"type":"nodes","nodes":[
+            {"id":"op-1d-2n-p","call":{"type":"pass"},"meaning":{"description":"Minimum"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+            {"id":"op-1d-2n-3n","call":{"type":"bid","level":3,"strain":"N"},"meaning":{"description":"Maximum, accepts"},"variants":[],"competitive":[],"continuations":{"type":"end"}}
+          ]}},
+        {"id":"op-1d-3d","call":{"type":"bid","level":3,"strain":"D"},
+          "meaning":{"description":"Pre-emptive raise — 5+ diamonds, 6-9 HCP","hcp":[6,9]},
+          "variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+        {"id":"op-1d-3n","call":{"type":"bid","level":3,"strain":"N"},
+          "meaning":{"description":"To play, 13-15 HCP balanced","hcp":[13,15]},
+          "variants":[],"competitive":[],"continuations":{"type":"end"}}
+      ]}
+    },
+    {
+      "id": "op-1h",
+      "call": {"type":"bid","level":1,"strain":"H"},
+      "meaning": {"description":"4+ hearts, 12-19 HCP","hcp":[12,19]},
+      "variants": [],
+      "competitive": [],
+      "continuations": {"type":"nodes","nodes":[
+        {"id":"op-1h-1s","call":{"type":"bid","level":1,"strain":"S"},
+          "meaning":{"description":"4+ spades, 6+ HCP — forcing","hcp":[6,null],"forcing":"1r"},
+          "variants":[],"competitive":[],
+          "continuations":{"type":"nodes","nodes":[
+            {"id":"op-1h-1s-1n","call":{"type":"bid","level":1,"strain":"N"},"meaning":{"description":"Minimum balanced, 15-16 HCP, no fit"},"variants":[],"competitive":[],"continuations":{"type":"ref","conventionId":"one-nt-rebid"}},
+            {"id":"op-1h-1s-2c","call":{"type":"bid","level":2,"strain":"C"},"meaning":{"description":"4+ clubs, 12-15 HCP (new suit)"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1h-1s-2d","call":{"type":"bid","level":2,"strain":"D"},"meaning":{"description":"4+ diamonds, 12-15 HCP"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1h-1s-2h","call":{"type":"bid","level":2,"strain":"H"},"meaning":{"description":"5+ hearts, minimum rebid"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1h-1s-2s","call":{"type":"bid","level":2,"strain":"S"},"meaning":{"description":"4 spades raise — 12-15 HCP"},"variants":[],"competitive":[],"continuations":{"type":"ref","conventionId":"major-raises"}},
+            {"id":"op-1h-1s-2n","call":{"type":"bid","level":2,"strain":"N"},"meaning":{"description":"Balanced 17-18 HCP"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1h-1s-3s","call":{"type":"bid","level":3,"strain":"S"},"meaning":{"description":"Limit raise — 4 spades, 16-18 HCP"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1h-1s-4s","call":{"type":"bid","level":4,"strain":"S"},"meaning":{"description":"Game raise — 4 spades"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+            {"id":"op-1h-1s-3h","call":{"type":"bid","level":3,"strain":"H"},"meaning":{"description":"Strong jump rebid — 6+ hearts, 16-18 HCP"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}}
+          ]}},
+        {"id":"op-1h-1n","call":{"type":"bid","level":1,"strain":"N"},
+          "meaning":{"description":"6-9 HCP, denies 4+ spades (not forcing in ACOL)","hcp":[6,9]},
+          "variants":[],"competitive":[],
+          "continuations":{"type":"nodes","nodes":[
+            {"id":"op-1h-1n-p","call":{"type":"pass"},"meaning":{"description":"Minimum, prefers 1NT"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+            {"id":"op-1h-1n-2h","call":{"type":"bid","level":2,"strain":"H"},"meaning":{"description":"5+ hearts, minimum rebid"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1h-1n-2c","call":{"type":"bid","level":2,"strain":"C"},"meaning":{"description":"4+ clubs, 12-15 HCP"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1h-1n-2d","call":{"type":"bid","level":2,"strain":"D"},"meaning":{"description":"4+ diamonds, 12-15 HCP"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1h-1n-2n","call":{"type":"bid","level":2,"strain":"N"},"meaning":{"description":"17-18 HCP balanced, invites 3NT"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1h-1n-3h","call":{"type":"bid","level":3,"strain":"H"},"meaning":{"description":"Strong 6+ hearts, 16-18 HCP, invitational"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}}
+          ]}},
+        {"id":"op-1h-2c","call":{"type":"bid","level":2,"strain":"C"},
+          "meaning":{"description":"10+ HCP, 4+ clubs, forcing for one round","hcp":[10,null],"forcing":"1r"},
+          "variants":[],"competitive":[],
+          "continuations":{"type":"nodes","nodes":[
+            {"id":"op-1h-2c-2h","call":{"type":"bid","level":2,"strain":"H"},"meaning":{"description":"5+ hearts, minimum (12-14)"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1h-2c-2d","call":{"type":"bid","level":2,"strain":"D"},"meaning":{"description":"4+ diamonds, 12-15 HCP — new suit"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1h-2c-2s","call":{"type":"bid","level":2,"strain":"S"},"meaning":{"description":"4+ spades, 16+ HCP reverse, forcing"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1h-2c-2n","call":{"type":"bid","level":2,"strain":"N"},"meaning":{"description":"Balanced 17-18 HCP"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1h-2c-3c","call":{"type":"bid","level":3,"strain":"C"},"meaning":{"description":"4+ clubs, 12-15 HCP — support"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1h-2c-3h","call":{"type":"bid","level":3,"strain":"H"},"meaning":{"description":"6+ hearts, 16-18 HCP — game try"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1h-2c-3n","call":{"type":"bid","level":3,"strain":"N"},"meaning":{"description":"Game try in NT, balanced 18-19 HCP"},"variants":[],"competitive":[],"continuations":{"type":"end"}}
+          ]}},
+        {"id":"op-1h-2d","call":{"type":"bid","level":2,"strain":"D"},
+          "meaning":{"description":"10+ HCP, 4+ diamonds, forcing for one round","hcp":[10,null],"forcing":"1r"},
+          "variants":[],"competitive":[],
+          "continuations":{"type":"nodes","nodes":[
+            {"id":"op-1h-2d-2h","call":{"type":"bid","level":2,"strain":"H"},"meaning":{"description":"5+ hearts, minimum (12-14)"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1h-2d-3d","call":{"type":"bid","level":3,"strain":"D"},"meaning":{"description":"4+ diamonds support, 12-15 HCP"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1h-2d-2s","call":{"type":"bid","level":2,"strain":"S"},"meaning":{"description":"Reverse — 4+ spades, 16+ HCP"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1h-2d-2n","call":{"type":"bid","level":2,"strain":"N"},"meaning":{"description":"Balanced 17-18 HCP"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1h-2d-3h","call":{"type":"bid","level":3,"strain":"H"},"meaning":{"description":"6+ hearts, 16-18 HCP — game try"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}}
+          ]}},
+        {"id":"op-1h-2h","call":{"type":"bid","level":2,"strain":"H"},
+          "meaning":{"description":"Simple raise — 4+ hearts, 6-9 HCP","hcp":[6,9]},
+          "variants":[],"competitive":[],"continuations":{"type":"ref","conventionId":"major-raises"}},
+        {"id":"op-1h-3h","call":{"type":"bid","level":3,"strain":"H"},
+          "meaning":{"description":"Limit raise — 4+ hearts, 10-12 HCP","hcp":[10,12]},
+          "variants":[],"competitive":[],"continuations":{"type":"ref","conventionId":"major-raises"}},
+        {"id":"op-1h-4h","call":{"type":"bid","level":4,"strain":"H"},
+          "meaning":{"description":"To play — 4+ hearts, 8-10 HCP or distributional, pre-emptive","hcp":[8,10]},
+          "variants":[],"competitive":[],"continuations":{"type":"end"}},
+        {"id":"op-1h-2n","call":{"type":"bid","level":2,"strain":"N"},
+          "meaning":{"description":"Invitational, balanced 11-12 HCP, no heart fit","hcp":[11,12]},
+          "variants":[],"competitive":[],
+          "continuations":{"type":"nodes","nodes":[
+            {"id":"op-1h-2n-p","call":{"type":"pass"},"meaning":{"description":"Minimum"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+            {"id":"op-1h-2n-3n","call":{"type":"bid","level":3,"strain":"N"},"meaning":{"description":"Maximum, accepts"},"variants":[],"competitive":[],"continuations":{"type":"end"}}
+          ]}},
+        {"id":"op-1h-3n","call":{"type":"bid","level":3,"strain":"N"},
+          "meaning":{"description":"To play, 13+ HCP balanced, no heart fit","hcp":[13,null]},
+          "variants":[],"competitive":[],"continuations":{"type":"end"}}
+      ]}
+    },
+    {
+      "id": "op-1s",
+      "call": {"type":"bid","level":1,"strain":"S"},
+      "meaning": {"description":"4+ spades, 12-19 HCP","hcp":[12,19]},
+      "variants": [],
+      "competitive": [],
+      "continuations": {"type":"nodes","nodes":[
+        {"id":"op-1s-1n","call":{"type":"bid","level":1,"strain":"N"},
+          "meaning":{"description":"6-9 HCP, may have 4-card minor (not forcing in ACOL)","hcp":[6,9]},
+          "variants":[],"competitive":[],
+          "continuations":{"type":"nodes","nodes":[
+            {"id":"op-1s-1n-p","call":{"type":"pass"},"meaning":{"description":"Minimum, prefers 1NT"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+            {"id":"op-1s-1n-2s","call":{"type":"bid","level":2,"strain":"S"},"meaning":{"description":"5+ spades, minimum rebid"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1s-1n-2c","call":{"type":"bid","level":2,"strain":"C"},"meaning":{"description":"4+ clubs, 12-15 HCP"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1s-1n-2d","call":{"type":"bid","level":2,"strain":"D"},"meaning":{"description":"4+ diamonds, 12-15 HCP"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1s-1n-2h","call":{"type":"bid","level":2,"strain":"H"},"meaning":{"description":"4+ hearts, 12-15 HCP"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1s-1n-2n","call":{"type":"bid","level":2,"strain":"N"},"meaning":{"description":"17-18 HCP balanced"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1s-1n-3s","call":{"type":"bid","level":3,"strain":"S"},"meaning":{"description":"6+ spades, 16-18 HCP — strong"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}}
+          ]}},
+        {"id":"op-1s-2c","call":{"type":"bid","level":2,"strain":"C"},
+          "meaning":{"description":"10+ HCP, 4+ clubs, forcing for one round","hcp":[10,null],"forcing":"1r"},
+          "variants":[],"competitive":[],
+          "continuations":{"type":"nodes","nodes":[
+            {"id":"op-1s-2c-2s","call":{"type":"bid","level":2,"strain":"S"},"meaning":{"description":"5+ spades, minimum (12-14)"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1s-2c-2h","call":{"type":"bid","level":2,"strain":"H"},"meaning":{"description":"4+ hearts, 12-15 HCP"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1s-2c-2d","call":{"type":"bid","level":2,"strain":"D"},"meaning":{"description":"4+ diamonds, 12-15 HCP"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1s-2c-3c","call":{"type":"bid","level":3,"strain":"C"},"meaning":{"description":"4+ clubs, good support, 12-15 HCP"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1s-2c-2n","call":{"type":"bid","level":2,"strain":"N"},"meaning":{"description":"Balanced 17-18 HCP"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1s-2c-3s","call":{"type":"bid","level":3,"strain":"S"},"meaning":{"description":"6+ spades, 16-18 HCP — game try"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}}
+          ]}},
+        {"id":"op-1s-2d","call":{"type":"bid","level":2,"strain":"D"},
+          "meaning":{"description":"10+ HCP, 4+ diamonds, forcing for one round","hcp":[10,null],"forcing":"1r"},
+          "variants":[],"competitive":[],
+          "continuations":{"type":"nodes","nodes":[
+            {"id":"op-1s-2d-2s","call":{"type":"bid","level":2,"strain":"S"},"meaning":{"description":"5+ spades, minimum (12-14)"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1s-2d-3d","call":{"type":"bid","level":3,"strain":"D"},"meaning":{"description":"4+ diamonds, good support, 12-15 HCP"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1s-2d-2h","call":{"type":"bid","level":2,"strain":"H"},"meaning":{"description":"4+ hearts, 16+ HCP reverse, forcing"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1s-2d-2n","call":{"type":"bid","level":2,"strain":"N"},"meaning":{"description":"Balanced 17-18 HCP"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1s-2d-3s","call":{"type":"bid","level":3,"strain":"S"},"meaning":{"description":"6+ spades, 16-18 HCP — game try"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}}
+          ]}},
+        {"id":"op-1s-2h","call":{"type":"bid","level":2,"strain":"H"},
+          "meaning":{"description":"10+ HCP, 5+ hearts, forcing for one round","hcp":[10,null],"forcing":"1r"},
+          "variants":[],"competitive":[],
+          "continuations":{"type":"nodes","nodes":[
+            {"id":"op-1s-2h-2s","call":{"type":"bid","level":2,"strain":"S"},"meaning":{"description":"5+ spades, minimum (12-14)"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1s-2h-3h","call":{"type":"bid","level":3,"strain":"H"},"meaning":{"description":"4+ hearts, 12-15 HCP — good fit"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1s-2h-2n","call":{"type":"bid","level":2,"strain":"N"},"meaning":{"description":"Balanced 17-18 HCP"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-1s-2h-4h","call":{"type":"bid","level":4,"strain":"H"},"meaning":{"description":"4+ hearts game — big heart fit"},"variants":[],"competitive":[],"continuations":{"type":"end"}}
+          ]}},
+        {"id":"op-1s-2s","call":{"type":"bid","level":2,"strain":"S"},
+          "meaning":{"description":"Simple raise — 4+ spades, 6-9 HCP","hcp":[6,9]},
+          "variants":[],"competitive":[],"continuations":{"type":"ref","conventionId":"major-raises"}},
+        {"id":"op-1s-3s","call":{"type":"bid","level":3,"strain":"S"},
+          "meaning":{"description":"Limit raise — 4+ spades, 10-12 HCP","hcp":[10,12]},
+          "variants":[],"competitive":[],"continuations":{"type":"ref","conventionId":"major-raises"}},
+        {"id":"op-1s-4s","call":{"type":"bid","level":4,"strain":"S"},
+          "meaning":{"description":"To play — 4+ spades, 8-10 HCP or distributional, pre-emptive","hcp":[8,10]},
+          "variants":[],"competitive":[],"continuations":{"type":"end"}},
+        {"id":"op-1s-2n","call":{"type":"bid","level":2,"strain":"N"},
+          "meaning":{"description":"Invitational, balanced 11-12 HCP","hcp":[11,12]},
+          "variants":[],"competitive":[],
+          "continuations":{"type":"nodes","nodes":[
+            {"id":"op-1s-2n-p","call":{"type":"pass"},"meaning":{"description":"Minimum"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+            {"id":"op-1s-2n-3n","call":{"type":"bid","level":3,"strain":"N"},"meaning":{"description":"Maximum, accepts"},"variants":[],"competitive":[],"continuations":{"type":"end"}}
+          ]}},
+        {"id":"op-1s-3n","call":{"type":"bid","level":3,"strain":"N"},
+          "meaning":{"description":"To play, 13+ HCP balanced","hcp":[13,null]},
+          "variants":[],"competitive":[],"continuations":{"type":"end"}}
+      ]}
+    },
+    {
+      "id": "op-1n",
+      "call": {"type":"bid","level":1,"strain":"N"},
+      "meaning": {"description":"Balanced: no 5-card major, no singleton/void, 12-14 HCP","hcp":[12,14],"announce":"12-14"},
+      "variants": [],
+      "competitive": [],
+      "continuations": {"type":"ref","conventionId":"nt-responses"}
+    },
+    {
+      "id": "op-2c",
+      "call": {"type":"bid","level":2,"strain":"C"},
+      "meaning": {"description":"ACOL Two Clubs — strong, artificial, forcing: 22+ balanced or 8+ tricks any suit","alert":true,"announce":"Strong"},
+      "variants": [],
+      "competitive": [],
+      "continuations": {"type":"nodes","nodes":[
+        {"id":"op-2c-2d","call":{"type":"bid","level":2,"strain":"D"},
+          "meaning":{"description":"Waiting / negative — fewer than 8 HCP, or balanced waiting","alert":true},
+          "variants":[],"competitive":[],
+          "continuations":{"type":"nodes","nodes":[
+            {"id":"op-2c-2d-2h","call":{"type":"bid","level":2,"strain":"H"},"meaning":{"description":"5+ hearts, own suit"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-2c-2d-2s","call":{"type":"bid","level":2,"strain":"S"},"meaning":{"description":"5+ spades, own suit"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-2c-2d-2n","call":{"type":"bid","level":2,"strain":"N"},"meaning":{"description":"Balanced 22-23 HCP"},"variants":[],"competitive":[],
+              "continuations":{"type":"nodes","nodes":[
+                {"id":"op-2c-2d-2n-p","call":{"type":"pass"},"meaning":{"description":"0-3 HCP, pass"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+                {"id":"op-2c-2d-2n-3c","call":{"type":"bid","level":3,"strain":"C"},"meaning":{"description":"Puppet Stayman","alert":true},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+                {"id":"op-2c-2d-2n-3d","call":{"type":"bid","level":3,"strain":"D"},"meaning":{"description":"Transfer to hearts","alert":true,"announce":"Transfer"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+                {"id":"op-2c-2d-2n-3h","call":{"type":"bid","level":3,"strain":"H"},"meaning":{"description":"Transfer to spades","alert":true,"announce":"Transfer"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+                {"id":"op-2c-2d-2n-3n","call":{"type":"bid","level":3,"strain":"N"},"meaning":{"description":"To play"},"variants":[],"competitive":[],"continuations":{"type":"end"}}
+              ]}},
+            {"id":"op-2c-2d-3c","call":{"type":"bid","level":3,"strain":"C"},"meaning":{"description":"5+ clubs, own suit"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-2c-2d-3d","call":{"type":"bid","level":3,"strain":"D"},"meaning":{"description":"5+ diamonds, own suit"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-2c-2d-3n","call":{"type":"bid","level":3,"strain":"N"},"meaning":{"description":"Balanced 24-25 HCP — to play"},"variants":[],"competitive":[],"continuations":{"type":"end"}}
+          ]}},
+        {"id":"op-2c-2h","call":{"type":"bid","level":2,"strain":"H"},
+          "meaning":{"description":"Positive — 5+ hearts, 8+ HCP, two of top three honours","hcp":[8,null]},
+          "variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+        {"id":"op-2c-2s","call":{"type":"bid","level":2,"strain":"S"},
+          "meaning":{"description":"Positive — 5+ spades, 8+ HCP, two of top three honours","hcp":[8,null]},
+          "variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+        {"id":"op-2c-2n","call":{"type":"bid","level":2,"strain":"N"},
+          "meaning":{"description":"Positive — balanced 8+ HCP, no 5-card suit","hcp":[8,null]},
+          "variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+        {"id":"op-2c-3c","call":{"type":"bid","level":3,"strain":"C"},
+          "meaning":{"description":"Positive — 5+ clubs, 8+ HCP","hcp":[8,null]},
+          "variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+        {"id":"op-2c-3d","call":{"type":"bid","level":3,"strain":"D"},
+          "meaning":{"description":"Positive — 5+ diamonds, 8+ HCP","hcp":[8,null]},
+          "variants":[],"competitive":[],"continuations":{"type":"tbd"}}
+      ]}
+    },
+    {
+      "id": "op-2d",
+      "call": {"type":"bid","level":2,"strain":"D"},
+      "meaning": {"description":"Weak two — 6+ diamonds, 6-10 HCP","hcp":[6,10],"shape":"6+ D"},
+      "variants": [
+        {"condition":{"seats":[3]},"meaningOverride":{"hcp":[4,11],"description":"Weak two — 6+ diamonds, wider range in 3rd seat"},"notes":"Wider range 3rd seat"}
+      ],
+      "competitive": [],
+      "continuations": {"type":"nodes","nodes":[
+        {"id":"op-2d-2n","call":{"type":"bid","level":2,"strain":"N"},
+          "meaning":{"description":"Ogust — asks about hand quality and suit quality","forcing":"1r","alert":true},
+          "variants":[],"competitive":[],
+          "continuations":{"type":"nodes","nodes":[
+            {"id":"op-2d-2n-3c","call":{"type":"bid","level":3,"strain":"C"},"meaning":{"description":"Minimum hand, bad suit"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-2d-2n-3d","call":{"type":"bid","level":3,"strain":"D"},"meaning":{"description":"Minimum hand, good suit (two of top three)"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-2d-2n-3h","call":{"type":"bid","level":3,"strain":"H"},"meaning":{"description":"Maximum hand, bad suit"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-2d-2n-3s","call":{"type":"bid","level":3,"strain":"S"},"meaning":{"description":"Maximum hand, good suit"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-2d-2n-3n","call":{"type":"bid","level":3,"strain":"N"},"meaning":{"description":"AKQxxx in diamonds — solid suit"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}}
+          ]}},
+        {"id":"op-2d-3d","call":{"type":"bid","level":3,"strain":"D"},"meaning":{"description":"Pre-emptive raise — pass or correct"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+        {"id":"op-2d-3n","call":{"type":"bid","level":3,"strain":"N"},"meaning":{"description":"To play"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+        {"id":"op-2d-4d","call":{"type":"bid","level":4,"strain":"D"},"meaning":{"description":"Further pre-empt — pass"},"variants":[],"competitive":[],"continuations":{"type":"end"}}
+      ]}
+    },
+    {
+      "id": "op-2h",
+      "call": {"type":"bid","level":2,"strain":"H"},
+      "meaning": {"description":"Weak two — 6+ hearts, 6-10 HCP","hcp":[6,10],"shape":"6+ H"},
+      "variants": [
+        {"condition":{"seats":[3]},"meaningOverride":{"hcp":[4,11],"description":"Weak two — 6+ hearts, wider range in 3rd seat"},"notes":"Wider range 3rd seat"}
+      ],
+      "competitive": [],
+      "continuations": {"type":"nodes","nodes":[
+        {"id":"op-2h-2n","call":{"type":"bid","level":2,"strain":"N"},
+          "meaning":{"description":"Ogust — asks about hand quality and suit quality","forcing":"1r","alert":true},
+          "variants":[],"competitive":[],
+          "continuations":{"type":"nodes","nodes":[
+            {"id":"op-2h-2n-3c","call":{"type":"bid","level":3,"strain":"C"},"meaning":{"description":"Minimum hand, bad suit"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-2h-2n-3d","call":{"type":"bid","level":3,"strain":"D"},"meaning":{"description":"Minimum hand, good suit"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-2h-2n-3h","call":{"type":"bid","level":3,"strain":"H"},"meaning":{"description":"Maximum hand, bad suit"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-2h-2n-3s","call":{"type":"bid","level":3,"strain":"S"},"meaning":{"description":"Maximum hand, good suit"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-2h-2n-3n","call":{"type":"bid","level":3,"strain":"N"},"meaning":{"description":"AKQxxx in hearts — solid suit"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}}
+          ]}},
+        {"id":"op-2h-4h","call":{"type":"bid","level":4,"strain":"H"},"meaning":{"description":"To play, pre-emptive raise"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+        {"id":"op-2h-3h","call":{"type":"bid","level":3,"strain":"H"},"meaning":{"description":"Pre-emptive raise — pass or correct"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+        {"id":"op-2h-3n","call":{"type":"bid","level":3,"strain":"N"},"meaning":{"description":"To play"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+        {"id":"op-2h-2s","call":{"type":"bid","level":2,"strain":"S"},"meaning":{"description":"Natural, own suit — to play"},"variants":[],"competitive":[],"continuations":{"type":"end"}}
+      ]}
+    },
+    {
+      "id": "op-2s",
+      "call": {"type":"bid","level":2,"strain":"S"},
+      "meaning": {"description":"Weak two — 6+ spades, 6-10 HCP","hcp":[6,10],"shape":"6+ S"},
+      "variants": [
+        {"condition":{"seats":[3]},"meaningOverride":{"hcp":[4,11],"description":"Weak two — 6+ spades, wider range in 3rd seat"},"notes":"Wider range 3rd seat"}
+      ],
+      "competitive": [],
+      "continuations": {"type":"nodes","nodes":[
+        {"id":"op-2s-2n","call":{"type":"bid","level":2,"strain":"N"},
+          "meaning":{"description":"Ogust — asks about hand quality and suit quality","forcing":"1r","alert":true},
+          "variants":[],"competitive":[],
+          "continuations":{"type":"nodes","nodes":[
+            {"id":"op-2s-2n-3c","call":{"type":"bid","level":3,"strain":"C"},"meaning":{"description":"Minimum hand, bad suit"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-2s-2n-3d","call":{"type":"bid","level":3,"strain":"D"},"meaning":{"description":"Minimum hand, good suit"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-2s-2n-3h","call":{"type":"bid","level":3,"strain":"H"},"meaning":{"description":"Maximum hand, bad suit"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-2s-2n-3s","call":{"type":"bid","level":3,"strain":"S"},"meaning":{"description":"Maximum hand, good suit"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+            {"id":"op-2s-2n-3n","call":{"type":"bid","level":3,"strain":"N"},"meaning":{"description":"AKQxxx in spades — solid suit"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}}
+          ]}},
+        {"id":"op-2s-3s","call":{"type":"bid","level":3,"strain":"S"},"meaning":{"description":"Pre-emptive raise"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+        {"id":"op-2s-4s","call":{"type":"bid","level":4,"strain":"S"},"meaning":{"description":"To play, pre-emptive raise"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+        {"id":"op-2s-3n","call":{"type":"bid","level":3,"strain":"N"},"meaning":{"description":"To play"},"variants":[],"competitive":[],"continuations":{"type":"end"}}
+      ]}
+    },
+    {
+      "id": "op-2n",
+      "call": {"type":"bid","level":2,"strain":"N"},
+      "meaning": {"description":"Balanced, 20-21 HCP","hcp":[20,21],"announce":"20-21"},
+      "variants": [],
+      "competitive": [],
+      "continuations": {"type":"nodes","nodes":[
+        {"id":"op-2n-3c","call":{"type":"bid","level":3,"strain":"C"},
+          "meaning":{"description":"Puppet Stayman — asks for 5-card major or 4-card major","alert":true},
+          "variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+        {"id":"op-2n-3d","call":{"type":"bid","level":3,"strain":"D"},
+          "meaning":{"description":"Jacoby transfer to hearts","alert":true,"announce":"Transfer"},
+          "variants":[],"competitive":[],
+          "continuations":{"type":"nodes","nodes":[
+            {"id":"op-2n-3d-3h","call":{"type":"bid","level":3,"strain":"H"},"meaning":{"description":"Completing transfer"},"variants":[],"competitive":[],
+              "continuations":{"type":"nodes","nodes":[
+                {"id":"op-2n-3d-3h-p","call":{"type":"pass"},"meaning":{"description":"Weak hand, to play"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+                {"id":"op-2n-3d-3h-4h","call":{"type":"bid","level":4,"strain":"H"},"meaning":{"description":"To play, game in hearts"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+                {"id":"op-2n-3d-3h-4n","call":{"type":"bid","level":4,"strain":"N"},"meaning":{"description":"Blackwood, slam interest"},"variants":[],"competitive":[],"continuations":{"type":"ref","conventionId":"blackwood"}}
+              ]}}
+          ]}},
+        {"id":"op-2n-3h","call":{"type":"bid","level":3,"strain":"H"},
+          "meaning":{"description":"Jacoby transfer to spades","alert":true,"announce":"Transfer"},
+          "variants":[],"competitive":[],
+          "continuations":{"type":"nodes","nodes":[
+            {"id":"op-2n-3h-3s","call":{"type":"bid","level":3,"strain":"S"},"meaning":{"description":"Completing transfer"},"variants":[],"competitive":[],
+              "continuations":{"type":"nodes","nodes":[
+                {"id":"op-2n-3h-3s-p","call":{"type":"pass"},"meaning":{"description":"Weak hand, to play"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+                {"id":"op-2n-3h-3s-4s","call":{"type":"bid","level":4,"strain":"S"},"meaning":{"description":"To play, game in spades"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+                {"id":"op-2n-3h-3s-4n","call":{"type":"bid","level":4,"strain":"N"},"meaning":{"description":"Blackwood, slam interest"},"variants":[],"competitive":[],"continuations":{"type":"ref","conventionId":"blackwood"}}
+              ]}}
+          ]}},
+        {"id":"op-2n-3n","call":{"type":"bid","level":3,"strain":"N"},"meaning":{"description":"To play"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+        {"id":"op-2n-4n","call":{"type":"bid","level":4,"strain":"N"},"meaning":{"description":"Quantitative slam invite"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}},
+        {"id":"op-2n-6n","call":{"type":"bid","level":6,"strain":"N"},"meaning":{"description":"To play"},"variants":[],"competitive":[],"continuations":{"type":"end"}}
+      ]}
+    },
+    {
+      "id": "op-3c",
+      "call": {"type":"bid","level":3,"strain":"C"},
+      "meaning": {"description":"Pre-empt — 7+ clubs, 6-10 HCP","hcp":[6,10],"shape":"7+ C"},
+      "variants": [
+        {"condition":{"seats":[3]},"meaningOverride":{"hcp":[4,11]},"notes":"Wider 3rd seat"},
+        {"condition":{"seats":[4]},"meaningOverride":{"description":"Sound pre-empt — near-opening values","hcp":[8,11]},"notes":"Sound 4th seat"}
+      ],
+      "competitive": [],
+      "continuations": {"type":"nodes","nodes":[
+        {"id":"op-3c-3n","call":{"type":"bid","level":3,"strain":"N"},"meaning":{"description":"To play"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+        {"id":"op-3c-5c","call":{"type":"bid","level":5,"strain":"C"},"meaning":{"description":"To play, pre-emptive"},"variants":[],"competitive":[],"continuations":{"type":"end"}}
+      ]}
+    },
+    {
+      "id": "op-3d",
+      "call": {"type":"bid","level":3,"strain":"D"},
+      "meaning": {"description":"Pre-empt — 7+ diamonds, 6-10 HCP","hcp":[6,10],"shape":"7+ D"},
+      "variants": [
+        {"condition":{"seats":[3]},"meaningOverride":{"hcp":[4,11]},"notes":"Wider 3rd seat"},
+        {"condition":{"seats":[4]},"meaningOverride":{"description":"Sound pre-empt","hcp":[8,11]},"notes":"Sound 4th seat"}
+      ],
+      "competitive": [],
+      "continuations": {"type":"nodes","nodes":[
+        {"id":"op-3d-3n","call":{"type":"bid","level":3,"strain":"N"},"meaning":{"description":"To play"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+        {"id":"op-3d-5d","call":{"type":"bid","level":5,"strain":"D"},"meaning":{"description":"To play, pre-emptive"},"variants":[],"competitive":[],"continuations":{"type":"end"}}
+      ]}
+    },
+    {
+      "id": "op-3h",
+      "call": {"type":"bid","level":3,"strain":"H"},
+      "meaning": {"description":"Pre-empt — 7+ hearts, 6-10 HCP","hcp":[6,10],"shape":"7+ H"},
+      "variants": [
+        {"condition":{"seats":[3]},"meaningOverride":{"hcp":[4,11]},"notes":"Wider 3rd seat"},
+        {"condition":{"seats":[4]},"meaningOverride":{"description":"Sound pre-empt","hcp":[8,11]},"notes":"Sound 4th seat"}
+      ],
+      "competitive": [],
+      "continuations": {"type":"nodes","nodes":[
+        {"id":"op-3h-3n","call":{"type":"bid","level":3,"strain":"N"},"meaning":{"description":"To play"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+        {"id":"op-3h-4h","call":{"type":"bid","level":4,"strain":"H"},"meaning":{"description":"To play"},"variants":[],"competitive":[],"continuations":{"type":"end"}}
+      ]}
+    },
+    {
+      "id": "op-3s",
+      "call": {"type":"bid","level":3,"strain":"S"},
+      "meaning": {"description":"Pre-empt — 7+ spades, 6-10 HCP","hcp":[6,10],"shape":"7+ S"},
+      "variants": [
+        {"condition":{"seats":[3]},"meaningOverride":{"hcp":[4,11]},"notes":"Wider 3rd seat"},
+        {"condition":{"seats":[4]},"meaningOverride":{"description":"Sound pre-empt","hcp":[8,11]},"notes":"Sound 4th seat"}
+      ],
+      "competitive": [],
+      "continuations": {"type":"nodes","nodes":[
+        {"id":"op-3s-3n","call":{"type":"bid","level":3,"strain":"N"},"meaning":{"description":"To play"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+        {"id":"op-3s-4s","call":{"type":"bid","level":4,"strain":"S"},"meaning":{"description":"To play"},"variants":[],"competitive":[],"continuations":{"type":"end"}}
+      ]}
+    },
+    {
+      "id": "op-3n",
+      "call": {"type":"bid","level":3,"strain":"N"},
+      "meaning": {"description":"Gambling 3NT — solid 7-card minor, little outside","shape":"AKQxxxxx minor"},
+      "variants": [],
+      "competitive": [],
+      "continuations": {"type":"nodes","nodes":[
+        {"id":"op-3n-p","call":{"type":"pass"},"meaning":{"description":"Happy to play 3NT"},"variants":[],"competitive":[],"continuations":{"type":"end"}},
+        {"id":"op-3n-4c","call":{"type":"bid","level":4,"strain":"C"},"meaning":{"description":"Pass or correct — find the solid suit"},"variants":[],"competitive":[],"continuations":{"type":"tbd"}}
+      ]}
+    }
+  ]
+}
