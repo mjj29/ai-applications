@@ -130,6 +130,11 @@ async function renderAuthBar() {
       <button class="btn btn-sm" id="btn-signout">Sign out</button>`;
     document.getElementById('btn-signout').addEventListener('click', async () => {
       await signOut();
+      // Don't rely solely on onAuthChange — update immediately in case the event
+      // doesn't fire reliably (can happen with the no-op storage lock).
+      clearCloudSystems();
+      await renderAuthBar();
+      setView('view-systems');
     });
   }
 }
@@ -229,7 +234,9 @@ async function renderSystemsList() {
       container.innerHTML = newBanner + renderList(synced, user) + (pubSectionEl?.outerHTML ?? '');
       document.getElementById('btn-upload-all')?.addEventListener('click', uploadLocalSystems);
       attachSystemActions(container, user);
-      attachPublicActions(container, [], user);
+      // Re-attach public actions with the real pubList (not []) so View/Clone still work
+      // after the container is re-rendered. renderPublicList also refreshes the list contents.
+      renderPublicList(cachedPubList);
     }).catch(e => {
       const statusEl = document.getElementById('sync-status');
       if (statusEl) statusEl.textContent = `⚠ Cloud sync failed: ${e.message}`;
@@ -238,8 +245,12 @@ async function renderSystemsList() {
 
   attachSystemActions(container, user);
 
-  // Load public systems — no auth required
-  listPublicSystems().then(pubList => {
+  // Load public systems — no auth required.
+  // Keep the fetched list in a closure variable so the syncFromCloud handler
+  // below can re-attach handlers with the real data after it re-renders the DOM.
+  let cachedPubList = [];
+  const renderPublicList = (pubList) => {
+    cachedPubList = pubList;
     const el = document.getElementById('public-systems-list');
     if (!el) return;
     const ownedIds = new Set(listSystems().map(s => s.id));
@@ -261,7 +272,8 @@ async function renderSystemsList() {
           </div>`).join('')
       : '<div style="font-size:0.82rem;color:var(--text-muted);padding:0.5rem 0">No public systems available.</div>';
     attachPublicActions(container, pubList, user);
-  }).catch(() => {
+  };
+  listPublicSystems().then(renderPublicList).catch(() => {
     const el = document.getElementById('public-systems-list');
     if (el) el.innerHTML = '<span style="font-size:0.82rem;color:var(--text-muted)">Could not load public systems.</span>';
   });
