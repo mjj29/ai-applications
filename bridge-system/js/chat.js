@@ -624,24 +624,40 @@ async function callClaudeStream(sys, settings, history, userText,
 
   let resp;
   if (settings._key) {
-    // BYOK — call Anthropic directly from the browser
+    // BYOK — call Anthropic directly from the browser (streaming)
     resp = await fetch('https://api.anthropic.com/v1/messages', {
       method:  'POST',
       headers: reqHeaders,
       body:    JSON.stringify(reqBody),
     });
   } else {
-    // No BYOK key — route through Supabase Edge Function proxy
+    // No BYOK key — proxy returns non-streaming JSON (SSE through edge functions gets buffered)
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error('Please sign in (or add an API key in ⚙️ Settings) to use the AI assistant.');
-    resp = await fetch(`${SUPABASE_URL}/functions/v1/ai-proxy`, {
+    const proxyResp = await fetch(`${SUPABASE_URL}/functions/v1/ai-proxy`, {
       method:  'POST',
-      headers: {
-        'Authorization': `Bearer ${session.access_token}`,
-        'content-type': 'application/json',
-      },
+      headers: { 'Authorization': `Bearer ${session.access_token}`, 'content-type': 'application/json' },
       body: JSON.stringify({ provider: 'anthropic', model, body: reqBody }),
     });
+    const data = await proxyResp.json().catch(() => ({}));
+    if (!proxyResp.ok) {
+      const msg = data?.error?.message ?? data?.error ?? `HTTP ${proxyResp.status}`;
+      if (proxyResp.status === 429 || /rate.?limit|quota|resource.?exhaust/i.test(msg))
+        throw new Error('Rate limit reached on the shared AI key. Add your own API key in ⚙️ Settings for higher limits.');
+      throw new Error(msg);
+    }
+    // Parse non-streaming Anthropic response: content[] of {type:'text'} / {type:'tool_use'} blocks
+    let reply = null, system = null;
+    for (const block of (data?.content ?? [])) {
+      if (block.type === 'text' && block.text) {
+        reply = (reply ?? '') + block.text;
+        onTextChunk(block.text);
+      }
+      if (block.type === 'tool_use' && block.name === 'update_system') {
+        try { system = block.input?.system ?? null; } catch { /* malformed */ }
+      }
+    }
+    return { reply, system };
   }
 
   if (!resp.ok) {
@@ -769,7 +785,7 @@ async function callGeminiStream(sys, settings, history, userText,
 
   let resp;
   if (settings._key) {
-    // BYOK — call Gemini directly from the browser
+    // BYOK — call Gemini directly from the browser (streaming)
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${
       encodeURIComponent(model)}:streamGenerateContent?alt=sse&key=${encodeURIComponent(settings._key)}`;
     resp = await fetch(url, {
@@ -778,17 +794,35 @@ async function callGeminiStream(sys, settings, history, userText,
       body:    JSON.stringify(reqBody),
     });
   } else {
-    // No BYOK key — route through Supabase Edge Function proxy
+    // No BYOK key — proxy returns non-streaming JSON (SSE through edge functions gets buffered)
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error('Please sign in (or add an API key in ⚙️ Settings) to use the AI assistant.');
-    resp = await fetch(`${SUPABASE_URL}/functions/v1/ai-proxy`, {
+    const proxyResp = await fetch(`${SUPABASE_URL}/functions/v1/ai-proxy`, {
       method:  'POST',
-      headers: {
-        'Authorization': `Bearer ${session.access_token}`,
-        'content-type': 'application/json',
-      },
+      headers: { 'Authorization': `Bearer ${session.access_token}`, 'content-type': 'application/json' },
       body: JSON.stringify({ provider: 'gemini', model, body: reqBody }),
     });
+    const data = await proxyResp.json().catch(() => ({}));
+    if (!proxyResp.ok) {
+      const msg = data?.error?.message ?? data?.error ?? `HTTP ${proxyResp.status}`;
+      if (proxyResp.status === 429 || /rate.?limit|quota|resource.?exhaust/i.test(msg))
+        throw new Error('Rate limit reached on the shared AI key. Add your own API key in ⚙️ Settings for higher limits.');
+      throw new Error(msg);
+    }
+    // Parse non-streaming Gemini response: same candidates[] structure as each SSE event
+    let reply = null, system = null;
+    for (const cand of (data?.candidates ?? [])) {
+      for (const part of (cand?.content?.parts ?? [])) {
+        if (part.text != null) { reply = (reply ?? '') + part.text; onTextChunk(part.text); }
+        if (part.functionCall?.name === 'update_system') {
+          try {
+            const args = part.functionCall.args;
+            system = (typeof args === 'string' ? JSON.parse(args) : args)?.system ?? null;
+          } catch { /* malformed */ }
+        }
+      }
+    }
+    return { reply, system };
   }
 
   if (!resp.ok) {

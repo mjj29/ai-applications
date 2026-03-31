@@ -139,7 +139,9 @@ supabase link --project-ref nltiszypgoidzsgsqjdi
 ### Deploy the function
 
 ```bash
-supabase functions deploy ai-proxy
+# --no-verify-jwt disables the Supabase gateway's built-in JWT check so the
+# function handles auth itself via supabase.auth.getUser() (see index.ts).
+supabase functions deploy ai-proxy --no-verify-jwt
 ```
 
 ### Set API key secrets
