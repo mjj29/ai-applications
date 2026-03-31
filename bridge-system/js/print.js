@@ -1286,7 +1286,7 @@ function generateWBF(sys) {
   const O = '1.50pt solid #000000';   // thick outer
   const I = '1px solid #000000';      // thin inner
   const G = '#e5e5e5';                // gray header background
-  const P = 'padding:0 0.05cm';       // standard cell padding
+  const P = 'padding:0 0.05cm;overflow:hidden;white-space:nowrap';  // standard cell — never wraps
 
   // ── Cell style builder ────────────────────────────────────────────────────
   // Each side is: 'O' (thick), 'I' (thin), 'N' (none)
@@ -1418,7 +1418,7 @@ function generateWBF(sys) {
   const leadLabels = ['Ace','King','Queen','Jack','10','9','Hi-X','Lo-X'];
   const rightLeadsContent = [
     `GENERAL APPROACH AND STYLE`,
-    rt(sys.metadata?.description ? sys.metadata.description.slice(0,80) : buildGenDesc().replace(/<[^>]+>/g,'')),
+    rt((sys.metadata?.description ? sys.metadata.description : buildGenDesc().replace(/<[^>]+>/g,'')).slice(0,60)),
     '&nbsp;','&nbsp;','&nbsp;','&nbsp;','&nbsp;','&nbsp;'
   ];
   leadLabels.forEach((lbl, i) => {
@@ -1570,8 +1570,8 @@ function generateWBF(sys) {
   rows.push(row('&nbsp;', cs('N','O','O','O'), '&nbsp;', 6, cs('I','O','O','O'), '<b>PSYCHICS:</b>', cs('I','O','O','O')));
 
   // ─── Page 1 ────────────────────────────────────────────────────────────────
-  const page1 = `<div style="page-break-after:always">
-    <table cellpadding="2" cellspacing="0" style="width:100%;border-collapse:collapse;font-size:9pt;font-family:Arial,sans-serif">
+  const page1 = `<div style="width:29.7cm;height:21cm;overflow:hidden;box-sizing:border-box;padding-left:0.75cm;padding-right:0.44cm;padding-top:0.42cm;padding-bottom:0.43cm;page-break-after:always">
+    <table cellpadding="0" cellspacing="0" style="width:100%;table-layout:fixed;border-collapse:collapse;font-size:9pt;font-family:Arial,sans-serif">
       <col style="width:31.3%"/>
       <col style="width:0.9%"/>
       <col style="width:4.3%"/>
@@ -1590,7 +1590,7 @@ function generateWBF(sys) {
   // Columns: Opening(48) | Tick-if-artificial(34) | Min.cards(42) | Neg.Dbl.Thru(42) | Description(156) | Responses(251) | Subsequent Action(222) | Competitive & Passed Hand(164)
   const O2 = O, I2 = I;
   const hdrCell = (w,txt,extra='') =>
-    `<td style="background:${G};border:${O2};padding:2px 3px;${extra}"><b>${txt}</b></td>`;
+    `<td style="background:${G};border:${O2};padding:1px 3px;overflow:hidden;white-space:nowrap;${extra}"><b>${txt}</b></td>`;
 
   const opRow = (nd, label) => {
     if (!nd) return `<tr valign="top">
@@ -1615,8 +1615,8 @@ function generateWBF(sys) {
       <td style="border-top:${I2};border-bottom:${O2};border-right:${O2};padding:1px 2px;text-align:center">${art}</td>
       <td style="border-top:${I2};border-bottom:${O2};border-right:${O2};padding:1px 2px;text-align:center">${minLen}</td>
       <td style="border:${O2};padding:1px 2px;text-align:center">&nbsp;</td>
-      <td style="border-top:${O2};border-bottom:${I2};border-left:none;border-right:${O2};padding:1px 3px">${desc}</td>
-      <td style="border-top:${O2};border-bottom:${I2};border-left:${O2};border-right:${O2};padding:1px 3px">${resp}</td>
+      <td style="border-top:${O2};border-bottom:${I2};border-left:none;border-right:${O2};padding:1px 3px"><div style="overflow:hidden;height:2.6em">${desc}</div></td>
+      <td style="border-top:${O2};border-bottom:${I2};border-left:${O2};border-right:${O2};padding:1px 3px"><div style="overflow:hidden;height:2.6em">${resp}</div></td>
       <td style="border-top:${O2};border-bottom:${I2};border-left:none;border-right:none;padding:0">&nbsp;</td>
       <td style="border-top:${O2};border-bottom:${I2};border-left:${O2};border-right:${O2};padding:1px 3px">&nbsp;</td>
     </tr>
@@ -1645,8 +1645,8 @@ function generateWBF(sys) {
       <td style="border:${O2};padding:1px 2px">&nbsp;</td>
       <td style="border:${O2};padding:1px 2px">&nbsp;</td>
       <td style="border:${O2};padding:1px 2px">&nbsp;</td>
-      <td style="border-top:${O2};border-bottom:${O2};border-left:none;border-right:${O2};padding:1px 3px">${desc}</td>
-      <td style="border-top:${O2};border-bottom:${O2};border-left:${O2};border-right:${O2};padding:1px 3px">${resp}</td>
+      <td style="border-top:${O2};border-bottom:${O2};border-left:none;border-right:${O2};padding:1px 3px"><div style="overflow:hidden;height:2.6em">${desc}</div></td>
+      <td style="border-top:${O2};border-bottom:${O2};border-left:${O2};border-right:${O2};padding:1px 3px"><div style="overflow:hidden;height:2.6em">${resp}</div></td>
       <td style="border:none;padding:0">&nbsp;</td>
       <td style="border:${O2};padding:1px 3px">&nbsp;</td>
     </tr>`;
@@ -1673,16 +1673,16 @@ function generateWBF(sys) {
     <td colspan="2" style="border-top:${i===0?'none':I2};border-bottom:${i===6?O2:I2};border-left:${i===0?'none':I2};border-right:${O2};padding:1px 3px">&nbsp;</td>
   </tr>`).join('');
 
-  const page2 = `<div style="page-break-before:always">
-    <table cellpadding="2" cellspacing="0" style="width:100%;border-collapse:collapse;font-size:8pt;font-family:Arial,sans-serif">
-      <col style="width:5.5%"/>
+  const page2 = `<div style="width:29.7cm;height:21cm;overflow:hidden;box-sizing:border-box;padding-left:0.75cm;padding-right:0.44cm;padding-top:0.42cm;padding-bottom:0.43cm;page-break-after:always">
+    <table id="p2" cellpadding="0" cellspacing="0" style="width:100%;table-layout:fixed;border-collapse:collapse;font-size:8pt;font-family:Arial,sans-serif">
+      <col style="width:5%"/>
       <col style="width:4%"/>
-      <col style="width:5%"/>
-      <col style="width:5%"/>
-      <col style="width:18%"/>
-      <col style="width:29%"/>
-      <col style="width:26%"/>
-      <col style="width:19%"/>
+      <col style="width:4%"/>
+      <col style="width:4%"/>
+      <col style="width:24%"/>
+      <col style="width:36%"/>
+      <col style="width:7%"/>
+      <col style="width:16%"/>
       <tr>
         ${hdrCell('','OPENING','text-align:center')}
         ${hdrCell('','TICK IF ARTIFICIAL','text-align:center')}
@@ -1690,7 +1690,7 @@ function generateWBF(sys) {
         ${hdrCell('','NEG. DBL THRU','text-align:center')}
         ${hdrCell('','DESCRIPTION','text-align:center')}
         ${hdrCell('','RESPONSES','text-align:center')}
-        ${hdrCell('','SUBSEQUENT ACTION','text-align:center')}
+        ${hdrCell('','SUBSEQ. ACTION','text-align:center')}
         ${hdrCell('','COMPETITIVE &amp; PASSED HAND BIDDING','text-align:center')}
       </tr>
       ${opRow(f(1,'C'), '1♣')}
@@ -1721,7 +1721,7 @@ function generateWBF(sys) {
   const body = page1 + page2 + page3;
 
   const extraCss = `
-    @page { size: 29.7cm 21cm; margin-left:0.75cm; margin-right:0.44cm; margin-top:0.42cm; margin-bottom:0.43cm }
+    @page { size: 29.7cm 21cm; margin: 0 }
     body { font-family: Arial, sans-serif; font-size: 9pt; background: #fff; margin: 0; padding: 0; }
     table { border-collapse: collapse; margin: 0; }
     th, td { border: none; padding: 0; }
