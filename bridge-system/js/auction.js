@@ -16,12 +16,21 @@ import { getActiveSystem } from './store.js';
 import { callToString, callToHTML, nodeCallToHTML, sortNodes, renderText } from './model.js';
 import { resolve, resolveSequence } from './resolver.js';
 import { flash } from './ui.js';
+import { supabase } from './supabase.js';
+import { SUPABASE_URL } from './config.js';
 
 // Reuse the API key stored by the chat tab.
 const SETTINGS_KEY = 'bridge_ai_settings';
 
 function getSettings() {
-  try { return JSON.parse(localStorage.getItem(SETTINGS_KEY)) ?? {}; } catch { return {}; }
+  try {
+    const s = JSON.parse(localStorage.getItem(SETTINGS_KEY)) ?? {};
+    // Backwards-compat: migrate old separate key fields to single byokKey
+    if (!s.byokKey && s.apiKey)       s.byokKey = s.apiKey;
+    if (!s.byokKey && s.anthropicKey) s.byokKey = s.anthropicKey;
+    if (!s.byokKey && s.geminiKey)    s.byokKey = s.geminiKey;
+    return s;
+  } catch { return {}; }
 }
 
 // ─── Card / hand utilities ────────────────────────────────────────────────────
@@ -333,7 +342,6 @@ export function renderAuction(container) {
     const sys  = getActiveSystem();
     if (!sys) { flash('Open a system first', 'err'); return; }
     const s = getSettings();
-    if (!s.apiKey) { flash('Add your Anthropic API key in the AI Chat ⚙ Settings tab first', 'err'); return; }
     const hands = dealHands();
     runAuction(container, sys, hands, seat, vul, s);
   });
@@ -343,7 +351,6 @@ export function renderAuction(container) {
     const sys = getActiveSystem();
     if (!sys) { flash('Open a system first', 'err'); return; }
     const s = getSettings();
-    if (!s.apiKey) { flash('Add your Anthropic API key in the AI Chat ⚙ Settings tab first', 'err'); return; }
     runAuction(container, sys, _auctionState.hands, _auctionState.seat, _auctionState.vul, s);
   });
 
@@ -613,7 +620,7 @@ End your reply with just the bid code alone on the last line (e.g. 1N, 4S, P, X)
 
       let chosenCallStr = null;
       try {
-        chosenCallStr = await callClaudeOnce(settings, prompt);
+        chosenCallStr = await callAIOnce(settings, prompt);
       } catch (e) {
         error = `AI error at step ${displayLog.length + 1}: ${e.message}`;
         break outer;
@@ -910,35 +917,95 @@ function getSuitSym(strain) {
   return { S:'♠', H:'♥', D:'♦', C:'♣', N:'NT' }[strain] ?? strain;
 }
 
-// ─── Single Claude call for a single bid decision ────────────────────────────
+// ─── Single AI call for a single bid decision ────────────────────────────────
 
-async function callClaudeOnce(settings, userPrompt) {
+const AI_SYSTEM = 'You are an expert bridge player. Given a hand and the available system bids with their meanings, choose the single best bid. End your reply with just the bid code alone on the last line (e.g. 1N, 2H, P, X, XX).';
+
+async function callAIOnce(settings, userPrompt) {
+  const key      = settings.byokKey || null;
+  const isAnth   = key?.startsWith('sk-ant-');
+  const isGemini = key?.startsWith('AIza');
+  const isProxy  = !key;
+
+  // ── Proxy path (no BYOK key) ───────────────────────────────────────────────
+  if (isProxy) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Please sign in (or add an API key in AI Chat ⚙️ Settings) to use the AI assistant.');
+    const model   = 'gemini-2.5-flash';
+    const reqBody = {
+      systemInstruction: { parts: [{ text: AI_SYSTEM }] },
+      contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
+      generationConfig: { maxOutputTokens: 1024 },
+    };
+    const resp = await fetch(`${SUPABASE_URL}/functions/v1/ai-proxy`, {
+      method:  'POST',
+      headers: { 'Authorization': `Bearer ${session.access_token}`, 'content-type': 'application/json' },
+      body:    JSON.stringify({ provider: 'gemini', model, body: reqBody }),
+    });
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok) {
+      const msg = data?.error?.message ?? data?.error ?? `HTTP ${resp.status}`;
+      if (resp.status === 429 || /rate.?limit|quota|resource.?exhaust/i.test(msg))
+        throw new Error('Rate limit reached on the shared AI key. Add your own API key in AI Chat ⚙️ Settings for higher limits.');
+      throw new Error(msg);
+    }
+    const parts = data?.candidates?.[0]?.content?.parts ?? [];
+    return parts.map(p => p.text ?? '').join('').trim() || null;
+  }
+
+  // ── Gemini BYOK ────────────────────────────────────────────────────────────
+  if (isGemini) {
+    const model = settings.model || 'gemini-2.0-flash';
+    const reqBody = {
+      systemInstruction: { parts: [{ text: AI_SYSTEM }] },
+      contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
+      generationConfig: { maxOutputTokens: 1024 },
+    };
+    const url  = `https://generativelanguage.googleapis.com/v1beta/models/${
+      encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(key)}`;
+    const resp = await fetch(url, {
+      method:  'POST',
+      headers: { 'content-type': 'application/json' },
+      body:    JSON.stringify(reqBody),
+    });
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok) {
+      const msg = data?.error?.message ?? `HTTP ${resp.status}`;
+      if (resp.status === 429 || /rate.?limit|quota|resource.?exhaust/i.test(msg))
+        throw new Error('Rate limit reached on your Gemini key — wait a moment and try again.');
+      throw new Error(msg);
+    }
+    const parts = data?.candidates?.[0]?.content?.parts ?? [];
+    return parts.map(p => p.text ?? '').join('').trim() || null;
+  }
+
+  // ── Anthropic BYOK (default for sk-ant- keys or unrecognised prefix) ───────
   const model = settings.model || 'claude-3-5-haiku-20241022';
-  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+  const resp  = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
       'content-type':                              'application/json',
-      'x-api-key':                                 settings.apiKey,
+      'x-api-key':                                 key,
       'anthropic-version':                         '2023-06-01',
       'anthropic-dangerous-direct-browser-access': 'true',
     },
     body: JSON.stringify({
       model,
-      // High enough for a thinking model to think + produce a short text reply
-      max_tokens: 8000,
-      system: 'You are an expert bridge player. Given a hand and the available system bids with their meanings, choose the single best bid. End your reply with just the bid code alone on the last line (e.g. 1N, 2H, P, X, XX).',
+      max_tokens: 1024,
+      system:   AI_SYSTEM,
       messages: [{ role: 'user', content: userPrompt }],
     }),
   });
   if (!resp.ok) {
     const body = await resp.json().catch(() => ({}));
-    throw new Error(body?.error?.message ?? `HTTP ${resp.status}`);
+    const msg  = body?.error?.message ?? `HTTP ${resp.status}`;
+    if (resp.status === 429 || /rate.?limit|quota|resource.?exhaust/i.test(msg))
+      throw new Error('Rate limit reached on your Anthropic key — wait a moment and try again.');
+    throw new Error(msg);
   }
   const data = await resp.json();
-  // Thinking models return multiple content blocks; only look at text blocks
   const textBlocks = (data.content ?? []).filter(b => b.type === 'text');
-  const fullText = textBlocks.map(b => b.text).join('\n').trim();
-  return fullText || null;
+  return textBlocks.map(b => b.text).join('\n').trim() || null;
 }
 
 // ─── Utils ───────────────────────────────────────────────────────────────────

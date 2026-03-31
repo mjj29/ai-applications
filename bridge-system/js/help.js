@@ -528,7 +528,7 @@ const SECTIONS = [
 <p>The left panel shows both hands as card fans — four rows of playing cards, one per suit, highest card on the left. The hand summary (shape, HCP, balanced/unbalanced) is shown above each hand.</p>
 
 <h3>Requirements</h3>
-<p>The Auction tab uses the same API key as AI Chat. Set it up in <strong>AI Chat → ⚙ Settings</strong> first.</p>
+<p>The Auction tab uses the same AI provider as AI Chat. Sign in to use the shared Gemini AI, or set your own API key in <strong>AI Chat → ⚙ Settings</strong>.</p>
 ` },
 
 // ── Data format ───────────────────────────────────────────────────────────────

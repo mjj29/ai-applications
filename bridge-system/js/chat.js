@@ -24,22 +24,33 @@ let _chatAuthUnsub = null; // cleanup fn for the auth-state listener
 function getSettings() {
   try {
     const s = JSON.parse(localStorage.getItem(SETTINGS_KEY)) ?? {};
-    // Backwards-compat: old saves only had 'apiKey' (Anthropic)
-    if (!s.provider && s.apiKey) { s.provider = 'anthropic'; s.anthropicKey = s.apiKey; }
+    // Backwards-compat: migrate old separate key fields to single byokKey
+    if (!s.byokKey && s.apiKey)      s.byokKey = s.apiKey;
+    if (!s.byokKey && s.anthropicKey) s.byokKey = s.anthropicKey;
+    if (!s.byokKey && s.geminiKey)    s.byokKey = s.geminiKey;
     return s;
   } catch { return {}; }
 }
 function saveSettings(s) { localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); }
 
+/** Infer provider from key prefix. Anthropic = sk-ant-, Gemini = AIza, else unknown. */
+function providerFromKey(key) {
+  if (!key) return null;
+  if (key.startsWith('sk-ant-')) return 'anthropic';
+  if (key.startsWith('AIza'))    return 'gemini';
+  return null;  // unrecognised — will attempt Gemini and surface the API error
+}
+
 /**
  * Determine which provider and key to use.
- * Anthropic BYOK takes highest precedence, then Gemini BYOK, then shared proxy (Gemini).
+ * BYOK key takes precedence; provider is auto-detected from key prefix.
+ * Falls back to shared Gemini proxy.
  * Returns { provider, key, isProxy }.
  */
 function resolveProvider(s) {
-  if (s.anthropicKey) return { provider: 'anthropic', key: s.anthropicKey, isProxy: false };
-  if (s.geminiKey)    return { provider: 'gemini',    key: s.geminiKey,    isProxy: false };
-  return                     { provider: 'gemini',    key: null,           isProxy: true  };
+  const key = s.byokKey || null;
+  if (key) return { provider: providerFromKey(key) ?? 'gemini', key, isProxy: false };
+  return          { provider: 'gemini', key: null, isProxy: true };
 }
 
 /**
@@ -48,7 +59,7 @@ function resolveProvider(s) {
  * BYOK calls use the user's saved model, falling back to the provider default.
  */
 function resolveModel(s, provider) {
-  if (!s.anthropicKey && !s.geminiKey) return DEFAULT_PROXY_MODEL;
+  if (!s.byokKey) return DEFAULT_PROXY_MODEL;
   if (s.model) return s.model;
   return provider === 'gemini' ? DEFAULT_GEMINI_MODEL : DEFAULT_MODEL;
 }
@@ -133,24 +144,22 @@ export function renderChat(container) {
          style="display:none;position:absolute;top:3rem;right:1rem;z-index:50;
                 background:var(--bg2);border:1px solid var(--border);border-radius:8px;
                 padding:1rem;width:360px;box-shadow:0 4px 20px rgba(0,0,0,0.5)">
-      <div style="font-weight:600;margin-bottom:0.75rem;font-size:0.9rem">API Settings</div>
+      <div style="font-weight:600;margin-bottom:0.75rem;font-size:0.9rem">AI Settings</div>
       <div class="form-group">
-        <label>Anthropic API Key <small style="color:var(--text-muted);font-weight:400">optional</small></label>
-        <input type="password" id="chat-anthropic-key" value="${escAttr(s.anthropicKey??'')}" placeholder="sk-ant-…">
-      </div>
-      <div class="form-group">
-        <label>Gemini API Key <small style="color:var(--text-muted);font-weight:400">optional</small></label>
-        <input type="password" id="chat-gemini-key" value="${escAttr(s.geminiKey??'')}" placeholder="AIza…">
-        <small style="color:var(--text-muted);font-size:0.72rem">
-          Leave both blank to use the shared Gemini AI (sign-in required).
-          Anthropic key takes priority if both are set.
+        <label>API Key <small style="color:var(--text-muted);font-weight:400">optional</small></label>
+        <input type="password" id="chat-byok-key" value="${escAttr(s.byokKey??'')}" placeholder="sk-ant-… or AIza…">
+        <small id="chat-key-hint" style="color:var(--text-muted);font-size:0.72rem">
+          ${s.byokKey?.startsWith('sk-ant-') ? '🔵 Anthropic key detected'
+           : s.byokKey?.startsWith('AIza')   ? '🔵 Gemini key detected'
+           : s.byokKey                       ? '⚠️ Unrecognised key prefix (expected <code>sk-ant-</code> or <code>AIza</code>)'
+           : 'Leave blank to use the shared Gemini AI (sign-in required).'}
         </small>
       </div>
-      <div class="form-group" id="chat-model-group" style="${(s.anthropicKey||s.geminiKey)?'':'display:none'}">
+      <div class="form-group" id="chat-model-group" style="${s.byokKey?'':'display:none'}">
         <label>Model</label>
-        <input type="text" id="chat-model" value="${escAttr(s.model??'')}" placeholder="(default for selected provider)">
+        <input type="text" id="chat-model" value="${escAttr(s.model??'')}" placeholder="(default for detected provider)">
         <small id="chat-model-hint" style="color:var(--text-muted);font-size:0.72rem">
-          ${s.anthropicKey
+          ${s.byokKey?.startsWith('sk-ant-')
             ?'e.g. claude-3-5-sonnet-20241022 &middot; claude-3-7-sonnet-20250219 &middot; claude-opus-4-5'
             :'e.g. gemini-2.0-flash &middot; gemini-1.5-pro &middot; gemini-2.5-pro-exp-03-25'}
         </small>
@@ -176,22 +185,26 @@ export function renderChat(container) {
   container.querySelector('#chat-settings-cancel').addEventListener('click', () => {
     panel.style.display = 'none';
   });
-  // Show/hide model group and update hint as user types in either key field
-  const updateModelGroup = () => {
-    const anthKey = container.querySelector('#chat-anthropic-key').value.trim();
-    const gemKey  = container.querySelector('#chat-gemini-key').value.trim();
-    container.querySelector('#chat-model-group').style.display = (anthKey || gemKey) ? '' : 'none';
-    container.querySelector('#chat-model-hint').innerHTML = anthKey
+  // Update key hint and show/hide model group as user types
+  const updateKeyHint = () => {
+    const key = container.querySelector('#chat-byok-key').value.trim();
+    const isAnth = key.startsWith('sk-ant-');
+    const isGem  = key.startsWith('AIza');
+    container.querySelector('#chat-key-hint').innerHTML = isAnth
+      ? '🔵 Anthropic key detected'
+      : isGem ? '🔵 Gemini key detected'
+      : key   ? '⚠️ Unrecognised key prefix (expected <code>sk-ant-</code> or <code>AIza</code>)'
+      : 'Leave blank to use the shared Gemini AI (sign-in required).';
+    container.querySelector('#chat-model-group').style.display = key ? '' : 'none';
+    container.querySelector('#chat-model-hint').innerHTML = isAnth
       ? 'e.g. claude-3-5-sonnet-20241022 &middot; claude-3-7-sonnet-20250219 &middot; claude-opus-4-5'
       : 'e.g. gemini-2.0-flash &middot; gemini-1.5-pro &middot; gemini-2.5-pro-exp-03-25';
   };
-  container.querySelector('#chat-anthropic-key').addEventListener('input', updateModelGroup);
-  container.querySelector('#chat-gemini-key').addEventListener('input', updateModelGroup);
+  container.querySelector('#chat-byok-key').addEventListener('input', updateKeyHint);
   container.querySelector('#chat-settings-save').addEventListener('click', () => {
     saveSettings({
-      anthropicKey: container.querySelector('#chat-anthropic-key').value.trim(),
-      geminiKey:    container.querySelector('#chat-gemini-key').value.trim(),
-      model:        container.querySelector('#chat-model').value.trim(),
+      byokKey: container.querySelector('#chat-byok-key').value.trim(),
+      model:   container.querySelector('#chat-model').value.trim(),
     });
     panel.style.display = 'none';
     flash('API settings saved', 'ok');
