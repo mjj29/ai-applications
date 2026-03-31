@@ -32,6 +32,16 @@ export async function signInWithGitHub() {
   if (error) throw error;
 }
 
+/** Kick off Google OAuth — same redirect pattern as GitHub. */
+export async function signInWithGoogle() {
+  const redirectTo = window.location.href.split(/[#?]/)[0];
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo },
+  });
+  if (error) throw error;
+}
+
 export async function signOut() {
   const { error } = await supabase.auth.signOut();
   if (error) throw error;

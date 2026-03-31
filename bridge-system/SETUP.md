@@ -22,9 +22,9 @@ This creates:
 
 ---
 
-## 2. Enable GitHub OAuth in Supabase
+## 2. Enable OAuth providers in Supabase
 
-### Create a GitHub OAuth App
+### GitHub
 
 1. Go to **GitHub → Settings → Developer settings → OAuth Apps → New OAuth App**
 2. Fill in:
@@ -37,13 +37,20 @@ This creates:
      (Find your project ID in Supabase: **Project Settings → General → Reference ID**)
 3. Click **Register application**
 4. Copy the **Client ID** and generate a **Client Secret** — keep these
+5. Supabase → **Authentication → Providers → GitHub** → toggle on → paste Client ID + Secret → Save
 
-### Configure Supabase
+### Google
 
-1. Supabase → **Authentication → Providers → GitHub**
-2. Toggle it **on**
-3. Paste the **Client ID** and **Client Secret** from GitHub
-4. Save
+1. Go to [Google Cloud Console](https://console.cloud.google.com) → **APIs & Services → Credentials → Create OAuth 2.0 Client ID**
+2. Application type: **Web application**
+3. Authorised redirect URI:
+   ```
+   https://<YOUR_PROJECT_ID>.supabase.co/auth/v1/callback
+   ```
+4. Copy the **Client ID** and **Client Secret**
+5. Supabase → **Authentication → Providers → Google** → toggle on → paste Client ID + Secret → Save
+
+> A regular Google account is sufficient — no Workspace required.
 
 ### Add redirect URL allowlist
 

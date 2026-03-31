@@ -10,7 +10,7 @@ import { listSystems, createSystem, getActiveSystem, setActiveId,
          publishSystem, unpublishSystem, cloneSystem, listPublicSystems, loadPublicSystem,
          listCollaborators, addCollaborator, removeCollaborator,
          findUserByEmail } from './store.js';
-import { signInWithGitHub, signOut, onAuthChange } from './supabase.js';
+import { signInWithGitHub, signInWithGoogle, signOut, onAuthChange } from './supabase.js';
 import { renderEditor, initAddBidModal, initAddVariantModal, initCopyToModal, initAddCompetitiveModal } from './editor.js';
 import { renderPosition } from './position.js';
 import { renderLookup }   from './lookup.js';
@@ -78,7 +78,7 @@ function refreshCurrentView(id) {
       document.getElementById('btn-banner-clone').onclick = async () => {
         const s = getActiveSystem();
         const user = await currentUser();
-        if (!user) { signInWithGitHub(); return; }
+        if (!user) { flash('Use the GitHub or Google sign-in button in the top-right corner, then clone.', 'info'); return; }
         try {
           const cloned = await cloneSystem(s);
           clearPreviewSystem();
@@ -102,12 +102,21 @@ async function renderAuthBar() {
   if (!bar) return;
   const user = await currentUser();
   if (!user) {
-    bar.innerHTML = `<button class="btn btn-sm btn-primary" id="btn-signin">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style="vertical-align:text-bottom;margin-right:4px">
-        <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
-      </svg>Sign in with GitHub</button>`;
-    document.getElementById('btn-signin').addEventListener('click', async () => {
+    bar.innerHTML = `
+      <button class="btn btn-sm btn-primary" id="btn-signin-github">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style="vertical-align:text-bottom;margin-right:4px">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+        </svg>GitHub</button>
+      <button class="btn btn-sm btn-primary" id="btn-signin-google" style="margin-left:0.4rem">
+        <svg width="16" height="16" viewBox="0 0 48 48" style="vertical-align:text-bottom;margin-right:4px">
+          <path fill="#fff" d="M44.5 20H24v8.5h11.8C34.7 33.9 30.1 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 5.1 29.6 3 24 3 12.4 3 3 12.4 3 24s9.4 21 21 21c10.5 0 20-7.9 20-21 0-1.4-.1-2.7-.3-4h-.2z"/>
+        </svg>Google</button>`;
+    document.getElementById('btn-signin-github').addEventListener('click', async () => {
       try { await signInWithGitHub(); }
+      catch (e) { flash(`Sign-in failed: ${e.message}`, 'err'); }
+    });
+    document.getElementById('btn-signin-google').addEventListener('click', async () => {
+      try { await signInWithGoogle(); }
       catch (e) { flash(`Sign-in failed: ${e.message}`, 'err'); }
     });
   } else {
@@ -448,7 +457,7 @@ async function showPublicPreview(sys) {
   } else {
     cloneBtn.textContent = 'Sign in to clone';
     cloneBtn.disabled = false;
-    cloneBtn.onclick = () => signInWithGitHub();
+    cloneBtn.onclick = () => flash('Use the GitHub or Google sign-in button in the top-right corner, then clone.', 'info');
   }
 
   document.getElementById('btn-preview-close').onclick = () => {
