@@ -28,6 +28,9 @@ pose:
                          # delegate corrupts landmarks (median 13px / p95 194px vs CPU),
                          # so CPU is the trustworthy default for analysis.
   sample_stride: 1       # process every Nth frame. 1 = full 60fps (best release precision)
+  sample_fps: null       # or: a target rate (e.g. 15), whatever the footage's frame rate; overrides sample_stride
+  crop_to_spot: false    # run pose only on a band around the shooting spot (needs archer.select: spot);
+  crop_margin: 1.0       # ...that band reaches this many spot-widths either side (room for the bow arm)
 
 hands:                   # stage 1b: 21-landmark hand detail (draw/bow hands)
   enabled: true
@@ -59,10 +62,18 @@ segment:
   release_pre_s: 1.5                  # search for the snap this long before the hold's falling edge
   release_post_s: 0.5                 # ...and this long after
   release_search_window_s: 1.0        # match audio onsets within this of the pose release
+  release_snap_to_audio: true         # move the release onto the strongest onset in the window below:
+  release_snap_pre_s: 0.8             # ...from this long before the pose release (pose tends to run late)
+  release_snap_post_s: 0.1            # ...to this long after it
+  audio_latency_s: 0.0                # the crack is heard this long after the loose (~0.12 on a Pixel;
+                                      # a constant offset doesn't affect alignment between shots)
   # Clips start before the HOLD begins (adapts to variable hold length) so the raise +
   # draw into full draw is captured, not just the release.
   clip_lead_s: 3.0                    # seconds kept before the hold starts (raise + draw)
   clip_pad_post_s: 2.0                # seconds kept after release (follow-through)
+  clip_preset: fast                   # x264 preset for the shot clips (ultrafast..slow)
+  clip_crf: 18                        # x264 quality (lower = better/bigger)
+  clip_max_height: null               # downscale clips to at most this many pixels high (null = source)
 
 normalize:
   anchor: hip_center     # body landmark pinned to the origin each frame
@@ -136,10 +147,19 @@ identify:                # telling archers apart (archery/identify.py)
 # ~0.14x real time (a 2.5-min end takes ~18 min); fast runs at ~0.7x (~3.5 min) with the
 # landmarks ~2x noisier -- good enough to see the shape of each end during the session,
 # then re-run `session` (full) afterwards for the numbers you'd act on.
+# On the i7-10510U capture laptop (2:18 of 1080p60 VP9): the old fast settings (every 2nd frame,
+# num_poses 4, full-size clips) took 35 min; these take ~4 min (pose ~2 min). Release times come
+# from the audio snap (segment.release_snap_to_audio), so 15fps pose loses no release precision.
 profiles:
   fast:
     pose:
       model: models/pose_landmarker_full.task
-      sample_stride: 2     # every 2nd frame (60fps -> 30); use 1 if you record at 30fps
+      sample_fps: 15       # pose at 15fps whatever the footage's rate (lite model saves only ~20%)
+      num_poses: 1         # track one person (several times faster than re-detecting up to 4) ...
+      crop_to_spot: true   # ... and crop to the shooting spot so that one person is the archer
+    segment:
+      clip_preset: veryfast
+      clip_crf: 23
+      clip_max_height: 720
     hands:
       enabled: false       # hand detail roughly doubles the time; skip it for previews

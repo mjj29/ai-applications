@@ -88,6 +88,43 @@ def _select_person(pose_landmarks_list, prev_centroid, spot=None):
     return best_i, metrics[best_i][:3]
 
 
+class _Lm:
+    """A landmark mapped from crop coordinates back to full-frame normalized ones."""
+    __slots__ = ("x", "y", "z", "visibility")
+
+    def __init__(self, x, y, z, visibility):
+        self.x, self.y, self.z, self.visibility = x, y, z, visibility
+
+
+def crop_box(cfg, spot, width, height):
+    """Pixel box (x0, y0, x1, y1) to run pose on, or None for the whole frame.
+
+    With `pose.crop_to_spot` and a shooting spot, keep a band around the spot - wide enough for
+    an outstretched bow arm (`pose.crop_margin` spot-widths each side) and the full frame height -
+    so archers on neighbouring targets are cut out. That lets `pose.num_poses: 1` (much faster:
+    MediaPipe tracks one person instead of re-detecting everyone every frame) stay on the archer
+    on the spot instead of locking onto a neighbour."""
+    pc = cfg.get("pose", {})
+    if spot is None or not pc.get("crop_to_spot", False):
+        return None
+    m = float(pc.get("crop_margin", 1.0))
+    sx0, _, sx1, _ = spot
+    w = sx1 - sx0
+    x0 = int(max(0.0, sx0 - m * w) * width)
+    x1 = int(min(1.0, sx1 + m * w) * width)
+    if x1 - x0 >= width - 2:
+        return None
+    return x0, 0, x1, height
+
+
+def _uncrop(pose_landmarks_list, box, width, height):
+    x0, y0, x1, y1 = box
+    sx, sy = (x1 - x0) / width, (y1 - y0) / height
+    ox, oy = x0 / width, y0 / height
+    return [[_Lm(ox + p.x * sx, oy + p.y * sy, p.z * sx, p.visibility) for p in lms]
+            for lms in pose_landmarks_list]
+
+
 def spot_of(cfg):
     """The configured shooting-spot box (grown by archer.spot_margin of its size on each side,
     to tolerate landmark noise), or None when selecting by size alone."""
@@ -105,6 +142,60 @@ def spot_of(cfg):
     return x0 - mx, y0 - my, x1 + mx, y1 + my
 
 
+class _FrameReader:
+    """Decode on a background thread so decoding overlaps pose inference (OpenCV and MediaPipe
+    both release the GIL). Yields (frame index, contiguous RGB frame) for every `stride`-th
+    frame, cropped to `box` if given."""
+
+    def __init__(self, cap, stride, box, depth=8):
+        import queue
+        import threading
+        self.cap, self.stride, self.box = cap, stride, box
+        self.q = queue.Queue(maxsize=depth)
+        self.stopped = threading.Event()
+        self.thread = threading.Thread(target=self._run, daemon=True)
+        self.thread.start()
+
+    def _put(self, item):
+        import queue
+        while not self.stopped.is_set():
+            try:
+                self.q.put(item, timeout=0.2)
+                return True
+            except queue.Full:
+                continue
+        return False
+
+    def _run(self):
+        idx = -1
+        try:
+            while not self.stopped.is_set() and self.cap.grab():
+                idx += 1
+                if idx % self.stride:
+                    continue
+                ok, frame = self.cap.retrieve()
+                if not ok:
+                    break
+                if self.box:
+                    x0, y0, x1, y1 = self.box
+                    frame = frame[y0:y1, x0:x1]
+                if not self._put((idx, np.ascontiguousarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)))):
+                    return
+        finally:
+            self._put(None)
+
+    def __iter__(self):
+        while True:
+            item = self.q.get()
+            if item is None:
+                return
+            yield item
+
+    def stop(self):
+        self.stopped.set()
+        self.thread.join(timeout=5)
+
+
 def extract_pose(video_path, cfg, *, max_frames=None, stride=None, show_progress=True):
     """Extract the selected archer's pose track. Returns (DataFrame, meta dict)."""
     video_path = Path(video_path)
@@ -115,34 +206,32 @@ def extract_pose(video_path, cfg, *, max_frames=None, stride=None, show_progress
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    stride = int(stride or cfg.get("pose", {}).get("sample_stride", 1))
+    pc = cfg.get("pose", {})
+    if not stride and pc.get("sample_fps"):
+        # a target rate rather than a stride, so 30fps and 60fps footage are sampled alike
+        stride = max(1, int(round(fps / float(pc["sample_fps"]))))
+    stride = int(stride or pc.get("sample_stride", 1))
     nlm = L.N_LANDMARKS
 
     spot = spot_of(cfg)
+    box = crop_box(cfg, spot, width, height)
     landmarker = _make_landmarker(cfg)
     meta_rows, norm, world, bboxes = [], [], [], []
     prev_centroid = None
     frame_idx, processed = -1, 0
     pbar = tqdm(total=total, disable=not show_progress, unit="f", desc=video_path.stem[:24])
+    frames = _FrameReader(cap, stride, box)
     try:
-        while True:
-            if not cap.grab():
-                break
-            frame_idx += 1
-            pbar.update(1)
-            if frame_idx % stride != 0:
-                continue
-            ok, frame = cap.retrieve()
-            if not ok:
-                break
-            rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=np.ascontiguousarray(rgb))
+        for frame_idx, rgb in frames:
+            pbar.update(frame_idx + 1 - pbar.n)
+            mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
             t_ms = int(round(frame_idx * 1000.0 / fps))
             res = landmarker.detect_for_video(mp_image, t_ms)
-            n_people = len(res.pose_landmarks)
+            people = _uncrop(res.pose_landmarks, box, width, height) if box else res.pose_landmarks
+            n_people = len(people)
             sel = None
             if n_people:
-                sel, picked = _select_person(res.pose_landmarks, prev_centroid, spot)
+                sel, picked = _select_person(people, prev_centroid, spot)
             if sel is None:
                 norm.append(np.full((nlm, 4), np.nan, np.float32))
                 world.append(np.full((nlm, 3), np.nan, np.float32))
@@ -151,7 +240,7 @@ def extract_pose(video_path, cfg, *, max_frames=None, stride=None, show_progress
             else:
                 _, bbox, centroid = picked
                 prev_centroid = centroid
-                lms = res.pose_landmarks[sel]
+                lms = people[sel]
                 norm.append(np.array([[p.x, p.y, p.z, p.visibility] for p in lms], np.float32))
                 if res.pose_world_landmarks and len(res.pose_world_landmarks) > sel:
                     wl = res.pose_world_landmarks[sel]
@@ -164,6 +253,7 @@ def extract_pose(video_path, cfg, *, max_frames=None, stride=None, show_progress
             if max_frames and processed >= max_frames:
                 break
     finally:
+        frames.stop()
         pbar.close()
         cap.release()
         landmarker.close()
@@ -182,7 +272,8 @@ def extract_pose(video_path, cfg, *, max_frames=None, stride=None, show_progress
     meta = dict(video=str(video_path), width=width, height=height, fps=float(fps),
                 n_frames_total=total, stride=stride, frames_processed=int(len(df)),
                 model=cfg["pose"]["model"], select=cfg.get("archer", {}).get("select", "nearest"),
-                spot=list(spot) if spot else None)
+                spot=list(spot) if spot else None, crop=list(box) if box else None,
+                num_poses=int(cfg["pose"].get("num_poses", 3)))
     return df, meta
 
 

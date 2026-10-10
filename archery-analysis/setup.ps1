@@ -1,7 +1,11 @@
 # Windows setup: virtualenv + Python deps + MediaPipe models (no admin rights needed).
 # Run from this folder with:   powershell -ExecutionPolicy Bypass -File setup.ps1
 # (or double-click setup.cmd). Needs 64-bit Python 3.10-3.13 from python.org.
-$ErrorActionPreference = "Stop"
+# Windows PowerShell 5.1 turns anything a native command writes to stderr (pip notices,
+# Matplotlib's font-cache message, the py launcher's "not found") into an error record, so
+# "Stop" would abort on harmless output. Native steps check $LASTEXITCODE instead, and the
+# cmdlets that must succeed say -ErrorAction Stop.
+$ErrorActionPreference = "Continue"
 Set-Location $PSScriptRoot
 
 # Pick a Python: the py launcher's newest supported version, else whatever `python` is.
@@ -21,7 +25,10 @@ if (-not $py) {
 $pyExe = $py[0]; $pyArgs = @($py | Select-Object -Skip 1)
 Write-Host ">> Python: $(& $pyExe @pyArgs --version)"
 
-if (-not (Test-Path .venv)) { & $pyExe @pyArgs -m venv .venv }
+if (-not (Test-Path .venv)) {
+    & $pyExe @pyArgs -m venv .venv
+    if ($LASTEXITCODE -ne 0) { throw "creating .venv failed" }
+}
 $venvPy = Join-Path $PSScriptRoot ".venv\Scripts\python.exe"
 
 Write-Host ">> Installing Python dependencies into .venv"
@@ -30,7 +37,7 @@ Write-Host ">> Installing Python dependencies into .venv"
 if ($LASTEXITCODE -ne 0) { throw "pip install failed" }
 
 Write-Host ">> Downloading MediaPipe model files into models\"
-New-Item -ItemType Directory -Force models, data, output | Out-Null
+New-Item -ItemType Directory -Force models, data, output -ErrorAction Stop | Out-Null
 $base = "https://storage.googleapis.com/mediapipe-models"
 $models = @{
     "models\pose_landmarker_heavy.task" = "$base/pose_landmarker/pose_landmarker_heavy/float16/latest/pose_landmarker_heavy.task"
@@ -40,7 +47,7 @@ $models = @{
 foreach ($dest in $models.Keys) {
     if (Test-Path $dest) { Write-Host "   exists: $dest"; continue }
     Write-Host "   downloading: $dest"
-    Invoke-WebRequest -Uri $models[$dest] -OutFile $dest -UseBasicParsing
+    Invoke-WebRequest -Uri $models[$dest] -OutFile $dest -UseBasicParsing -ErrorAction Stop
 }
 
 Write-Host ">> Checking the install"

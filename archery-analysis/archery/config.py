@@ -9,7 +9,7 @@ import yaml
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_CONFIG = PROJECT_ROOT / "config.yaml"
-VIDEO_EXTS = (".mp4", ".mov", ".mkv", ".avi", ".m4v")
+VIDEO_EXTS = (".mp4", ".mov", ".mkv", ".avi", ".m4v", ".wmv")
 
 
 def load_config(path=DEFAULT_CONFIG) -> dict:

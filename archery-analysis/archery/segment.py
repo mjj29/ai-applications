@@ -182,6 +182,18 @@ def segment_video(stem, cfg, *, make_plot=True):
             de, rel_row = ds, min(int(h1), we)
         rel_t = float(t[rel_row])
         t_peak = rel_t
+        # The pose estimate above only finds the neighbourhood of the loose: seen from in front,
+        # the draw hand's move off the anchor is small in the image and landmark jitter or
+        # smoothing shifts it by up to ~0.9s. The string's crack is a sharp transient a fixed
+        # time after the loose (0.12 +/- 0.04s on Pixel footage, hand-checked frame by frame), so
+        # snap to the strongest onset just before (pose runs late) or right at the pose estimate.
+        if sg.get("release_snap_to_audio", True) and len(onset_t):
+            win = ((onset_t >= rel_t - float(sg.get("release_snap_pre_s", 0.8)))
+                   & (onset_t <= rel_t + float(sg.get("release_snap_post_s", 0.1))))
+            if win.any():
+                snap_t = float(onset_t[win][np.argmax(onset_s[win])]) - float(sg.get("audio_latency_s", 0.0))
+                rel_row = int(np.clip(np.searchsorted(t, snap_t), 0, len(t) - 1))
+                rel_t = float(t[rel_row])
         # bow lowered = end of follow-through: first time after release the bow hand drops
         # back past halfway (capped 3s after release, before the next shot).
         bl = rel_row

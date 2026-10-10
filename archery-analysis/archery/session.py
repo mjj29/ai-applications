@@ -75,8 +75,21 @@ def _shots_count(stem: str, cfg: dict) -> int:
     return len(pd.read_parquet(f)) if f.exists() else 0
 
 
+def _refresh_shots_page(video: Path, cfg: dict):
+    from . import gallery
+    try:
+        page = gallery.archer_page(video.parent.name, _config.list_videos(video.parent), cfg)
+        if page:
+            print(f"   -> {page}", flush=True)
+    except OSError as e:     # e.g. the page is open somewhere that locks it; next end retries
+        print(f"   (couldn't refresh the shots page: {e})", flush=True)
+
+
 def process_video(video: Path, cfg: dict, *, overwrite=False) -> int:
-    """Run every per-video stage on one end. Returns the number of shots found."""
+    """Run every per-video stage on one end. Returns the number of shots found.
+
+    Ordered so what an archer wants to see first lands first: the cut shots (then the
+    archer's shots.html page), then the aligned ghost overlay, then the charts."""
     from . import clip, compare, extract_hands, extract_pose, ghost, normalize, segment
     vids = [video]
     extract_pose.run(vids, cfg, overwrite=overwrite)
@@ -89,8 +102,10 @@ def process_video(video: Path, cfg: dict, *, overwrite=False) -> int:
     extract_hands.run(vids, cfg, overwrite=overwrite)
     normalize.run(vids, cfg)
     clip.run(vids, cfg)
-    compare.run(vids, cfg)
+    _refresh_shots_page(video, cfg)
     ghost.run(vids, cfg)
+    _refresh_shots_page(video, cfg)
+    compare.run(vids, cfg)
     return n
 
 
@@ -109,18 +124,23 @@ def summarise_archer(videos: list[Path], cfg: dict) -> bool:
 
 
 def write_index(session: Path, base: dict, profile: str) -> Path:
-    """<results>/index.md: one row per archer with ends/shots and a link to their report."""
+    """<results>/index.md: one row per archer with ends/shots and a link to their report
+    (plus index.html linking each archer's shots page)."""
     session = Path(session).resolve()
     rdir = results_dir(session, profile)
     rdir.mkdir(parents=True, exist_ok=True)
+    from . import gallery
     rows = ["| archer | ends | shots | report |", "|---|---|---|---|"]
+    html_rows = []
     for name, vids in archers(session).items():
         cfg = archer_cfg(base, session, name, profile)
         shots = [_shots_count(v.stem, cfg) for v in vids]
         rep = Path(cfg["output"]["dir"]) / "report.md"
         link = f"[{name}/report.md]({name}/report.md)" if rep.exists() else "_not yet_"
         rows.append(f"| {name} | {len(vids)} | {sum(shots)} | {link} |")
+        html_rows.append((name, len(vids), sum(shots)))
     kind = "quick previews (fast model)" if profile == "fast" else "full analysis"
+    gallery.session_page(rdir, f"Session {session.name} - {kind}", html_rows)
     text = (f"# Session {session.name} - {kind}\n\n" + "\n".join(rows) + "\n\n"
             "Open each report in VS Code's Markdown preview (or any Markdown viewer) so the "
             "images show. Check each end's `segment.png` before trusting the comparisons.\n")
@@ -276,6 +296,7 @@ def watch(session: Path, base: dict, profile: str = "fast", interval_s: float | 
     _warn_no_spot(_config.apply_profile(_config.merge(base, _read_yaml(session / "session.yaml")), profile))
     seen: dict[Path, tuple] = {}
     waiting_msg = True
+    stale: dict[str, dict] = {}     # archers with new ends whose report hasn't been rebuilt yet
     try:
         while True:
             if inc and inc.collect(seen, settle_s):
@@ -290,17 +311,14 @@ def watch(session: Path, base: dict, profile: str = "fast", interval_s: float | 
                         continue
                     if _ready(v, seen, settle_s):
                         todo.append((name, v, cfg, sig, mk.exists()))
-            if not todo:
-                if waiting_msg:
-                    print(f"[{time.strftime('%H:%M:%S')}] waiting for new videos...", flush=True)
-                    waiting_msg = False
-                time.sleep(interval_s)
-                continue
-            waiting_msg = True
-            touched = {}
-            for name, v, cfg, sig, changed in todo:
+            if todo:
+                # One end per pass, oldest recording first, then look for new recordings again:
+                # every waiting end gets its shots cut and aligned before any archer's slower report.
+                waiting_msg = True
+                name, v, cfg, sig, changed = min(todo, key=lambda r: r[1].stat().st_mtime)
                 t0 = time.time()
-                print(f"\n[{time.strftime('%H:%M:%S')}] ===== {name}/{v.name}", flush=True)
+                print(f"\n[{time.strftime('%H:%M:%S')}] ===== {name}/{v.name}"
+                      + (f"  ({len(todo) - 1} more waiting)" if len(todo) > 1 else ""), flush=True)
                 try:
                     n = process_video(v, cfg, overwrite=changed)
                     status = f"{n} shots"
@@ -310,15 +328,24 @@ def watch(session: Path, base: dict, profile: str = "fast", interval_s: float | 
                 _marker(v, cfg).write_text(f"{sig}\n{status}\n", encoding="utf-8")
                 print(f"[{time.strftime('%H:%M:%S')}] {name}/{v.name}: {status} "
                       f"({(time.time() - t0) / 60:.1f} min)", flush=True)
-                touched[name] = cfg
-            for name, cfg in touched.items():
-                try:
-                    if summarise_archer(archers(session).get(name, []), cfg):
-                        print(f"   -> {Path(cfg['output']['dir']) / 'report.md'}")
-                except Exception:  # noqa: BLE001 - e.g. a result video open in a player on Windows
-                    print(f"!! {name}: report refresh failed (will retry after the next end):\n"
-                          f"{traceback.format_exc()}")
-            write_index(session, base, profile)
+                stale[name] = cfg
+                write_index(session, base, profile)
+                continue
+            if stale:
+                for name, cfg in stale.items():
+                    try:
+                        if summarise_archer(archers(session).get(name, []), cfg):
+                            print(f"   -> {Path(cfg['output']['dir']) / 'report.md'}")
+                    except Exception:  # noqa: BLE001 - e.g. a result video open in a player on Windows
+                        print(f"!! {name}: report refresh failed (will retry after the next end):\n"
+                              f"{traceback.format_exc()}")
+                stale.clear()
+                write_index(session, base, profile)
+                continue
+            if waiting_msg:
+                print(f"[{time.strftime('%H:%M:%S')}] waiting for new videos...", flush=True)
+                waiting_msg = False
+            time.sleep(interval_s)
     except KeyboardInterrupt:
         print("\nStopped watching.")
 

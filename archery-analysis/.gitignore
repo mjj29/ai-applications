@@ -7,6 +7,9 @@ __pycache__/
 *.mp4
 *.mov
 *.mkv
+*.wmv
+*.avi
+*.m4v
 models/
 
 # Pipeline outputs / intermediates
@@ -16,3 +19,7 @@ output/
 # Session result folders (inside session folders kept under the project)
 _analysis/
 _quick/
+
+# Session folders made on the capture laptop (sessions\<date>\) and setup output
+sessions/
+setup.log

@@ -26,7 +26,10 @@ README.md explains the outputs and design; config.yaml holds every tunable.
    `watch <session>`. Each new recording in the incoming folder is identified by appearance
    (clothing colours and body proportions of whoever is on the spot), moved into
    `<session>\<Pseudonym>\` (Kestrel, Heron, ...), and processed with the fast profile
-   (about 1.5x the video's length). Each archer's `_quick\<name>\report.md` is then refreshed.
+   (about 1.6x the video's length on the i7-10510U capture laptop). The shot clips and
+   `_quick\<name>\shots.html` (every shot, plus each end's aligned ghost) come first; that's what
+   Matt shows the archer. `_quick\index.html` links them. Each archer's `report.md` is rebuilt
+   once no other end is waiting. Incoming recordings may be .wmv as well as .mp4 etc.
    Recordings already in the incoming folder when the watcher starts are ignored; use
    `sort <session>` to file those.
 4. **Afterwards**, run `session <session>` for the full-accuracy run (heavy model, about 7x the
@@ -49,6 +52,10 @@ README.md explains the outputs and design; config.yaml holds every tunable.
 - Always look at each end's `<stem>.segment.png` first: the red lines should sit on the
   releases. The `expected_shots` warning is only a hint (indoor ends are 3 arrows; set it in
   `session.yaml`).
+- Release times are snapped to the strongest audio onset just before the pose estimate
+  (`segment.release_snap_to_audio`). Seen from in front, pose alone was off by up to 0.9s;
+  with the snap, releases land a steady ~0.1s after the visible loose (the crack + phone audio
+  delay). If they look wrong in `segment.png`, check that the recording has sound.
 - "no shots detected" usually means the archer isn't inside the spot box. Check `spot.png`.
 - A PermissionError while refreshing a report means a result video is open in a player
   (Windows locks open files). The report retries after the next end.

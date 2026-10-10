@@ -38,6 +38,11 @@ def clip_video(stem, cfg):
     outdir = _config.output_dir(cfg) / stem
     outdir.mkdir(parents=True, exist_ok=True)
     ff = _ffmpeg()
+    # encoding speed vs quality: previews (fast profile) shrink and use a quicker preset
+    enc = ["-c:v", "libx264", "-crf", str(sg.get("clip_crf", 18)),
+           "-preset", str(sg.get("clip_preset", "fast"))]
+    if sg.get("clip_max_height"):
+        enc += ["-vf", f"scale=-2:'min({int(sg['clip_max_height'])},ih)'"]
     written = []
     for _, r in shots.iterrows():
         # start before the hold begins (captures raise + draw), end after follow-through
@@ -45,8 +50,7 @@ def clip_video(stem, cfg):
         dur = float(r["release_t"]) + post - start
         out = outdir / f"shot_{int(r['shot'])}.mp4"
         cmd = [ff, "-v", "error", "-y", "-ss", f"{start:.3f}", "-i", str(video),
-               "-t", f"{dur:.3f}", "-c:v", "libx264", "-crf", "18", "-preset", "fast",
-               "-c:a", "aac", str(out)]
+               "-t", f"{dur:.3f}", *enc, "-c:a", "aac", str(out)]
         subprocess.run(cmd, check=True)
         written.append(out)
     print(f"{stem}: cut {len(written)} shot clips -> {outdir}")

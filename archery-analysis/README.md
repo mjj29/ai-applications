@@ -78,13 +78,21 @@ For a fixed camera on one shooting spot, with archers taking turns:
    files recordings that were already in the folder. To set the spot from a recording that is
    still in the incoming folder, use `spot <recording> --session <session>`.
 
-3. **During the session**, leave this running. Each end is processed (fast profile, about 1.5x
-   the video's length on a laptop CPU) as soon as its file is complete, and that archer's
-   report is refreshed:
+3. **During the session**, leave this running. Each end is processed (fast profile: about 1.6x
+   the video's length on the i7-10510U capture laptop) as soon as its file is complete:
 
    ```bash
    python -m archery.cli watch 2026-10-11           # results in 2026-10-11/_quick/
    ```
+
+   The first thing ready is the part to show the archer: their shots cut into clips, then all of
+   an end's shots overlaid and body-aligned on the release (the "ghost"). Open
+   `_quick/index.html` in a browser and click the archer: `shots.html` plays every shot they've
+   shot so far, newest end first. Ends are taken one at a time, oldest first, and each archer's
+   slower report (`report.md`: outliers, most vs least typical) is rebuilt only once no other
+   end is waiting.
+
+   Recordings can be `.mp4`, `.mov`, `.mkv`, `.avi`, `.m4v` or `.wmv`.
 
 4. **Afterwards**, run the full-accuracy analysis (heavy model, every frame, hand detail,
    roughly 7x the video's length, so leave it running overnight for a big session):
@@ -95,7 +103,7 @@ For a fixed camera on one shooting spot, with archers taking turns:
    ```
 
 Start at `_analysis/index.md` (or `_quick/index.md`), which has one row per archer linking
-their `report.md`. Each archer is analysed only against their own shots. "Typical" and
+their `report.md` (`index.html` alongside links each archer's `shots.html`). Each archer is analysed only against their own shots. "Typical" and
 "outlier" are never judged across archers.
 
 Settings layer as `config.yaml` <- `<session>/session.yaml` <- `<session>/<archer>/archer.yaml`
@@ -248,6 +256,7 @@ archery/
   normalize.py       # stage 3 — center/scale on body; reindex time to release == t0
   clip.py            # stage 4 — cut single-shot segments (ffmpeg)
   compare.py         # stage 5 — overlay tracks, plot angles, highlight deviations
+  gallery.py         # shots.html per archer (every clip + aligned ghost) and index.html
   session.py         # per-archer session folders: batch run, watch, spot, merge/move
   identify.py        # appearance signatures: which archer is this end?
   cli.py             # `python -m archery.cli <stage>`
