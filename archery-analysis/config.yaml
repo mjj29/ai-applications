@@ -1,0 +1,145 @@
+# Archery shot-analysis pipeline configuration.
+# Copy/edit per session or per archer. Paths are relative to the project root.
+
+input:
+  # Glob(s) for the raw "end" videos (one file = one end of ~6 arrows).
+  videos:
+    - "PXL_*.mp4"
+  fps: null              # null = read from file metadata; set to override if wrong
+
+archer:
+  # Multiple people may be in frame. Which one is "the archer"?
+  #   nearest - largest body in frame (outdoors, you closest to the camera)
+  #   spot    - whoever's torso centre is inside `spot` (indoors: fixed shooting position, archers
+  #             take turns; people behind the line / on other targets are ignored).
+  # Sessions set this per session in <session>/session.yaml via `archery.cli spot`.
+  select: nearest        # nearest | spot
+  spot: null             # [x0, y0, x1, y1] fractions of the frame (0..1) the torso centre must be in
+  spot_margin: 0.25      # grow the spot by this fraction of its size on each side (landmark noise)
+  handedness: right      # right-handed draws with the right hand (= release hand)
+
+pose:
+  model: models/pose_landmarker_heavy.task
+  hand_model: models/hand_landmarker.task
+  num_poses: 4           # detect up to N people per frame, then pick per archer.select
+  min_detection_confidence: 0.5
+  min_tracking_confidence: 0.5
+  delegate: cpu          # cpu | gpu. GPU is ~2.6x faster here but the Intel Arc GPU
+                         # delegate corrupts landmarks (median 13px / p95 194px vs CPU),
+                         # so CPU is the trustworthy default for analysis.
+  sample_stride: 1       # process every Nth frame. 1 = full 60fps (best release precision)
+
+hands:                   # stage 1b: 21-landmark hand detail (draw/bow hands)
+  enabled: true
+  num_hands: 4           # detect up to N hands per frame, then associate to your wrists
+  min_detection_confidence: 0.4
+  min_tracking_confidence: 0.4
+
+segment:
+  # A real shot = a SUSTAINED hold at full draw. Wind let-downs raise the bow but never
+  # hold at the top, so they're rejected by the high-threshold + minimum-hold rule.
+  activity_signal: bow_wrist_height   # bow_wrist_height | hand_separation
+  activity_high_threshold: 0.8        # bow hand must exceed this fraction of its range...
+  min_hold_s: 1.5                     # ...for at least this long to count as a shot (vs a let-down)
+  max_gap_bridge_s: 2.0               # no archer tracked for longer than this = bow down (stepped off the spot)
+  draw_start_threshold: 0.25          # bow-hand height below this (walking back from full draw) = draw start
+  expected_shots: 6                   # sanity check (an "end" is usually 6 arrows)
+  # NOTE: tuned for a clicker archer who holds. A snap-shooter would need a lower
+  # min_hold_s; tune against the output/<video>.segment.png diagnostic plot.
+  # Release = release-hand backward snap near the hold's falling edge, cross-checked
+  # against the clicker/shot audio transient.
+  use_audio_clicker: true
+  require_audio: true                # drop holds with no matching clicker/shot transient.
+                                      # true = cleaner (every real clicker shot clicks) but
+                                      # risks dropping a real shot if its audio match fails.
+  relative_hold_min: 0.5              # drop holds shorter than this x the end's median hold (raises/let-downs)
+  relative_onset_min: 0.4             # a click weaker than this x the end's median confirming click
+                                      # isn't this archer's (neighbours' clickers indoors)
+  onset_highpass_hz: 1500             # high-pass before onset detection (suppress wind/voices)
+  release_pre_s: 1.5                  # search for the snap this long before the hold's falling edge
+  release_post_s: 0.5                 # ...and this long after
+  release_search_window_s: 1.0        # match audio onsets within this of the pose release
+  # Clips start before the HOLD begins (adapts to variable hold length) so the raise +
+  # draw into full draw is captured, not just the release.
+  clip_lead_s: 3.0                    # seconds kept before the hold starts (raise + draw)
+  clip_pad_post_s: 2.0                # seconds kept after release (follow-through)
+
+normalize:
+  anchor: hip_center     # body landmark pinned to the origin each frame
+  scale_by: torso        # normalize size by torso (shoulder->hip) length
+  align_time_on: release # t = 0 is the release frame for every shot
+  align_pre_s: 5.0       # keep this many seconds before release (covers draw + hold)
+  align_post_s: 1.0      # ...and this many after (release + follow-through)
+  grid_fps: 60           # resample rate of the common time grid
+  rotate_upright: false  # rotate spine vertical? off = preserve lean as a real difference
+  min_visibility: 0.5    # drop landmarks below this confidence, then gap-fill
+  smooth_frames: 7       # temporal median filter window (frames) to remove glitch spikes
+  warp_variable_phase: dtw   # dtw | none — time-warp the variable draw/aim phase (stage 5)
+
+compare:
+  reference: mean        # compare each shot to the mean trajectory, or an integer shot index
+  score_window: [-0.5, 0.1]  # rank shot differences over this time-from-release window
+                             # (focus on the release; the follow-through diverges naturally)
+  joints:                # joints / angles to track, overlay, and plot
+    - draw_elbow_angle
+    - bow_shoulder_angle
+    - draw_wrist_path
+    - bow_wrist_path
+    - head_position
+    - spine_tilt
+  highlight_threshold_std: 2.0   # flag deviations beyond N std from the reference
+
+ghost:                   # stage 5b: translucent overlay of real frames, body-aligned
+  fps: 20                # frames/s of the ghost/delta video
+  width: 720             # canvas size (px) - landscape suits the spread draw posture
+  height: 560
+  target_torso: 150      # body scaled so torso = this many canvas px (bigger = tighter crop)
+  hip_y_frac: 0.62       # vertical position of the hips on the canvas
+
+timeline:                # time axis for ghost + delta animations
+  mode: phase            # phase = warp draw, then show the SHORTER shot's hold in full (cut
+                         #         the longer shot's static middle to match), then warp the
+                         #         follow-through -- draw, hold, release and bow-down all stay
+                         #         in step; at most the longer shot loses (only static aim).
+                         # release = plain real time aligned only on release.
+  draw_s: 1.5            # display seconds for the (time-warped) draw phase
+  max_hold_s: 3.0        # cap on the hold shown (shorter shot's hold is shown in full up to this)
+  follow_s: 1.0          # display seconds for the (time-warped) follow-through to bow-down
+  fps: 24                # sampling resolution of the timeline
+  slow_factor: 2.0       # playback slowdown (output video fps = fps / slow_factor; 2 = half speed)
+
+output:
+  dir: output
+  data_dir: data
+  overlay_video: true
+  trajectory_plots: true
+
+watch:                   # `watch` command (in-session processing)
+  # Folder your recorder saves into (e.g. 'C:/Users/me/Videos/Captures' or
+  # 'C:/Users/me/Pictures/Camera Roll'). When set, each NEW recording there is identified by
+  # the appearance of whoever is on the shooting spot and moved into <session>/<pseudonym>/.
+  # Files already there when watching starts are left alone (`sort` files those).
+  # null = save recordings into the archer folders yourself.
+  incoming: null
+  interval_s: 10         # seconds between folder scans
+  settle_s: 15           # a file must be unchanged this long (recording finished) before use
+
+identify:                # telling archers apart (archery/identify.py)
+  model: models/pose_landmarker_full.task
+  match_threshold: 0.42  # appearance distance below this = same archer. Measured on outdoor
+                         # footage: same person 0.15-0.30 (0.57 after a big sun/exposure change),
+                         # different people >= 0.49. Raise if one archer keeps splitting into two
+                         # pseudonyms; lower if two archers get merged. `who` shows the distances.
+
+# Named overlays applied on top of everything else (`watch` uses fast; `session --fast` too).
+# Measured on an Intel Core Ultra 5 laptop CPU, 1080p60 footage: the heavy model runs at
+# ~0.14x real time (a 2.5-min end takes ~18 min); fast runs at ~0.7x (~3.5 min) with the
+# landmarks ~2x noisier -- good enough to see the shape of each end during the session,
+# then re-run `session` (full) afterwards for the numbers you'd act on.
+profiles:
+  fast:
+    pose:
+      model: models/pose_landmarker_full.task
+      sample_stride: 2     # every 2nd frame (60fps -> 30); use 1 if you record at 30fps
+    hands:
+      enabled: false       # hand detail roughly doubles the time; skip it for previews

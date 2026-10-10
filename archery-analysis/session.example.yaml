@@ -1,0 +1,10 @@
+# Copy to <session folder>/session.yaml (the `spot` command creates/updates it for you).
+# Anything from config.yaml can be overridden here for the whole session; put per-archer
+# overrides in <session>/<archer>/archer.yaml the same way.
+
+archer:
+  select: spot
+  spot: [0.40, 0.45, 0.60, 0.80]   # [x0, y0, x1, y1] fractions of the frame; set with `spot --pick N`
+
+segment:
+  expected_shots: 3                 # indoor (WA 18m) ends are 3 arrows; only used for a warning

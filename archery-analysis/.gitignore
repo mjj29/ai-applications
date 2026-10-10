@@ -1,0 +1,18 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Large/binary assets — keep raw footage and models out of git
+*.mp4
+*.mov
+*.mkv
+models/
+
+# Pipeline outputs / intermediates
+data/
+output/
+
+# Session result folders (inside session folders kept under the project)
+_analysis/
+_quick/
