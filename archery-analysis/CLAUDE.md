@@ -32,8 +32,26 @@ README.md explains the outputs and design; config.yaml holds every tunable.
    once no other end is waiting. Incoming recordings may be .wmv as well as .mp4 etc.
    Recordings already in the incoming folder when the watcher starts are ignored; use
    `sort <session>` to file those.
-4. **Afterwards**, run `session <session>` for the full-accuracy run (heavy model, about 7x the
-   video's length, so it can take hours). Start at `<session>\_analysis\index.md`.
+   Archers often take turns *within* one recording (3-5 arrows each, then swap): each recording is
+   cut at the changeover (`identify.split_turns`) into `<stem>_t1`, `_t2`, ... and each part filed
+   separately; the original goes to `<session>\_originals\`.
+4. **Afterwards**, run `session <session>` for the full-accuracy run (heavy model; ~1h for 40 min of
+   video on the capture laptop). It ends by building each archer's reel (`<archer>.reel.mp4`, all
+   shots back to back: the baseline review video) and `_analysis\insights\insights.html` (pooled
+   statistics per archer). Start at `<session>\_analysis\index.html`. `reel <session>` and
+   `insights <session>` rebuild those alone. For 2026-10-13 the write-up is `_analysis\FINDINGS.html`.
+
+## SparkoCam / indoor club footage (2026-10-13 lessons)
+
+- SparkoCam WMVs have **no audio** and a **variable frame rate** (nominal 30, ~26 real). Times come
+  from frame timestamps everywhere; never use frame index / fps or OpenCV time seeks directly
+  (use `align.open_before`).
+- Without audio the release is timed from the **bow's motion** (`segment._bow_motion_release`):
+  validated on 13 hand-labelled shots, within 0.17s. If releases look wrong, check frames around them.
+- Neighbours on adjacent lanes are close: per-session `session.yaml` sets `pose.num_poses: 1`
+  (track one person), `normalize.min_visibility: 0.2` (a draw hand tucked under the jaw is rated
+  ~0.3 visible) and ghost framing. Copy `sessions\2026-10-13\session.yaml` for similar sessions.
+- 2D arm/shoulder angles are unreliable from a front-on camera; trust timing, positions, release.
 
 ## Who's who
 

@@ -30,6 +30,8 @@ TIMING = {"draw_s": "draw time (raise to full draw)", "aim_s": "aim time (full d
           "bowup_s": "bow-up time (bow raised to loose)"}
 RELEASE = {"creep": "creep before the loose (+ forward / - expanding)",
            "live_release": "draw hand travel back in 0.3s after the loose",
+           "hand_drop": "draw hand drop in 0.3s after the loose",
+           "elbow_drop": "draw elbow drop in 0.3s after the loose",
            "bow_drop": "bow-hand drop in 0.5s after the loose"}
 
 
@@ -55,7 +57,11 @@ def _release_features(coords, grid, s):
     live = -np.sum((dw_3 - dw_0) * aim, axis=1)                    # + = back, away from the bow
     bw_0, bw_5 = at(s["bow_wrist"], -0.04, 0.0), at(s["bow_wrist"], 0.45, 0.55)
     drop = bw_5[:, 1] - bw_0[:, 1]                                 # + = down (image y down)
-    return {"creep": creep, "live_release": live, "bow_drop": drop}
+    hand_drop = dw_3[:, 1] - dw_0[:, 1]                            # + = down (falls to the chest)
+    de_0, de_3 = at(s["draw_elbow"], -0.04, 0.0), at(s["draw_elbow"], 0.25, 0.35)
+    elbow_drop = de_3[:, 1] - de_0[:, 1]                           # + = the draw elbow collapses down
+    return {"creep": creep, "live_release": live, "hand_drop": hand_drop, "elbow_drop": elbow_drop,
+            "bow_drop": drop}
 
 
 def shot_table(session: Path, base: dict, profile: str = "full") -> pd.DataFrame:

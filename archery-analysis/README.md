@@ -257,6 +257,8 @@ archery/
   clip.py            # stage 4 — cut single-shot segments (ffmpeg)
   compare.py         # stage 5 — overlay tracks, plot angles, highlight deviations
   gallery.py         # shots.html per archer (every clip + aligned ghost) and index.html
+  reel.py            # <archer>.reel.mp4: all an archer's shots back to back, captioned
+  insights.py        # session-wide statistics per archer (trends, consistency, comparisons)
   session.py         # per-archer session folders: batch run, watch, spot, merge/move
   identify.py        # appearance signatures: which archer is this end?
   cli.py             # `python -m archery.cli <stage>`
