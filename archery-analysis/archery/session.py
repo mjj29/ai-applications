@@ -120,7 +120,20 @@ def summarise_archer(videos: list[Path], cfg: dict) -> bool:
         return False
     outliers.run(usable, cfg)
     report.run(usable, cfg)
+    _build_reel(videos, cfg)
     return True
+
+
+def _build_reel(videos: list[Path], cfg: dict):
+    """<archer>.reel.mp4: all the archer's shots back to back (the baseline review video)."""
+    from . import reel
+    if not videos:
+        return
+    try:
+        reel.build(videos[0].parent.name, videos, cfg)
+        _refresh_shots_page(videos[0], cfg)
+    except Exception:  # noqa: BLE001 - e.g. the reel is open in a player (Windows locks it)
+        print(f"!! reel failed (retries next time):\n{traceback.format_exc()}")
 
 
 def write_index(session: Path, base: dict, profile: str) -> Path:
@@ -314,12 +327,30 @@ def check_duplicates(session: Path, base: dict):
                       f"python -m archery.cli merge <session> {b} {a}", flush=True)
 
 
+def _lower_priority():
+    """Let the recorder have the CPU first. The watcher runs on the laptop that is recording;
+    at normal priority it starved SparkoCam, which dropped from ~26fps to 6-8fps mid-end.
+    Below-normal priority is inherited by the ffmpeg processes it starts."""
+    import os
+    try:
+        if os.name == "nt":
+            import ctypes
+            k = ctypes.windll.kernel32
+            k.SetPriorityClass(k.GetCurrentProcess(), 0x4000)   # BELOW_NORMAL_PRIORITY_CLASS
+        else:
+            os.nice(10)
+    except Exception:  # noqa: BLE001 - not worth failing the watcher over
+        pass
+
+
 def watch(session: Path, base: dict, profile: str = "fast", interval_s: float | None = None,
           settle_s: float | None = None, incoming: Path | None = None):
     """Process each new end as soon as its file is complete, then refresh that archer's report."""
     session = Path(session).resolve()
     session.mkdir(parents=True, exist_ok=True)
     wc = base.get("watch", {})
+    if wc.get("low_priority", True):
+        _lower_priority()
     interval_s = float(interval_s or wc.get("interval_s", 10))
     settle_s = float(settle_s or wc.get("settle_s", 15))
     incoming = incoming or wc.get("incoming")

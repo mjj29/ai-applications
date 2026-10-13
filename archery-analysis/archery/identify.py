@@ -102,7 +102,7 @@ def timeline(video, cfg, *, every_s=None):
     model = str((_config.PROJECT_ROOT / ic.get("model", "models/pose_landmarker_full.task")).resolve())
     opts = vision.PoseLandmarkerOptions(
         base_options=mp_python.BaseOptions(model_asset_path=model),
-        running_mode=vision.RunningMode.IMAGE, num_poses=int(cfg["pose"].get("num_poses", 4)),
+        running_mode=vision.RunningMode.IMAGE, num_poses=int(ic.get("num_poses", 4)),
         min_pose_detection_confidence=0.5, min_pose_presence_confidence=0.5)
     spot = spot_of(cfg)
     cap = cv2.VideoCapture(str(video))
@@ -215,7 +215,7 @@ def signature(video, cfg, *, max_samples=150, show_progress=False):
     model = str((_config.PROJECT_ROOT / ic.get("model", "models/pose_landmarker_full.task")).resolve())
     opts = vision.PoseLandmarkerOptions(
         base_options=mp_python.BaseOptions(model_asset_path=model),
-        running_mode=vision.RunningMode.IMAGE, num_poses=int(cfg["pose"].get("num_poses", 4)),
+        running_mode=vision.RunningMode.IMAGE, num_poses=int(ic.get("num_poses", 4)),
         min_pose_detection_confidence=0.5, min_pose_presence_confidence=0.5)
     spot = spot_of(cfg)
     cap = cv2.VideoCapture(str(video))

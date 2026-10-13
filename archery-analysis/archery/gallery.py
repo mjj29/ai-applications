@@ -67,6 +67,11 @@ def archer_page(name: str, videos: list[Path], cfg: dict) -> Path | None:
     parts = [f"<h1>{html.escape(name)}</h1>",
              f"<p class=\"sub\">{total} shots in {len(ends)} end{'s' if len(ends) != 1 else ''}, "
              f"newest first. <a href=\"../index.html\">All archers</a></p>"]
+    reel = odir / f"{name}.reel.mp4"
+    if reel.exists():
+        parts.append(f"<h2>Every shot in order</h2><figure class=\"ghost\"><video controls preload=\"metadata\" "
+                     f"src=\"{html.escape(reel.name)}\"></video><figcaption>All {total} shots back to back, "
+                     f"first end first</figcaption></figure>")
     for stem, clips in ends:
         parts.append(f"<h2>{html.escape(stem)}</h2>")
         ghost = odir / f"{stem}.ghost.mp4"

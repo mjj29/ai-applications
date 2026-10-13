@@ -99,6 +99,57 @@ def _has_audio(video_path) -> bool:
     return "Audio:" in r.stderr
 
 
+def _bow_motion_release(video, t_from, t_to, hold_end_t, roi):
+    """Release time from the bow's own motion. While aiming the bow is still; on the loose it
+    jumps forward and tips (the stabiliser makes this large and sudden). Mean absolute frame
+    difference in a box just beyond the bow hand, at the full frame rate, frames picked by
+    their own timestamps (variable-frame-rate safe). The loose = the first frame from 2s before
+    the hold's end whose change reaches 40% of the biggest change in that stretch. Hand-checked
+    on 8 silent indoor shots (two archers): -0.03s mean, 0.15s worst, vs +0.65s / 1.45s for the
+    pose rule. None if there is no clear jump (bow hidden, no change)."""
+    import cv2
+
+    from .align import open_before
+    x0, y0, x1, y1 = roi
+    cap = open_before(video, t_from)
+    prev, ts, ds = None, [], []
+    try:
+        while cap.grab():
+            ft = cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0
+            if ft < t_from:
+                continue
+            if ft > t_to:
+                break
+            ok, f = cap.retrieve()
+            if not ok:
+                break
+            g = cv2.GaussianBlur(cv2.cvtColor(f[y0:y1, x0:x1], cv2.COLOR_BGR2GRAY), (5, 5), 0).astype(np.int16)
+            if prev is not None:
+                ts.append(ft)
+                ds.append(float(np.mean(np.abs(g - prev))))
+            prev = g
+    finally:
+        cap.release()
+    ts, ds = np.array(ts), np.array(ds)
+    if len(ts) < 5:
+        return None
+    still = ds[ts < hold_end_t - 1.0]
+    # quiet level: the stillest quarter of the aim (the stretch also holds the draw, a neighbour...)
+    base = max(float(np.percentile(still if len(still) else ds, 25)), 0.5)
+    search = ts >= hold_end_t - 2.0
+    if not search.any() or ds[search].max() < 2.5 * base:
+        return None
+    big = search & (ds >= 0.4 * ds[search].max())
+    # The archer's own loose comes straight out of the still aim; a neighbour drawing or shooting
+    # inside the box ramps up without that. So prefer a jump preceded by 0.5s of quiet.
+    for i in np.flatnonzero(big):
+        pre = ds[(ts >= ts[i] - 0.5) & (ts < ts[i])]
+        if len(pre) and float(np.mean(pre)) <= 2.0 * base:
+            return float(ts[i])
+    j = np.flatnonzero(big)
+    return float(ts[j[0]]) if len(j) else None
+
+
 def _detect_onsets(wav_path, cfg):
     """Return (times[s], strengths) of sharp high-frequency transients (clicks/shots)."""
     y, sr = librosa.load(str(wav_path), sr=None, mono=True)
@@ -210,6 +261,28 @@ def segment_video(stem, cfg, *, make_plot=True):
         # smoothing shifts it by up to ~0.9s. The string's crack is a sharp transient a fixed
         # time after the loose (0.12 +/- 0.04s on Pixel footage, hand-checked frame by frame), so
         # snap to the strongest onset just before (pose runs late) or right at the pose estimate.
+        motion_t = None
+        if not have_audio and sg.get("release_from_bow_motion", True):
+            # no clicker to hear: watch the bow jump instead (see _bow_motion_release)
+            pick = np.arange(h0, h1 + 1)
+            bwx = float(np.nanmedian(df[f"x{sides['bow_wrist']}"].to_numpy()[pick])) * W
+            bwy = float(np.nanmedian(df[f"y{sides['bow_wrist']}"].to_numpy()[pick])) * H
+            bsx = float(np.nanmedian(df[f"x{sides['bow_shoulder']}"].to_numpy()[pick])) * W
+            bsy = float(np.nanmedian(df[f"y{sides['bow_shoulder']}"].to_numpy()[pick])) * H
+            if np.isfinite([bwx, bwy, bsx, bsy]).all() and (bwx, bwy) != (bsx, bsy):
+                u = np.array([bwx - bsx, bwy - bsy]) / np.hypot(bwx - bsx, bwy - bsy)
+                cx, cy = np.array([bwx, bwy]) + 0.3 * torso_px * u
+                half = 0.7 * torso_px
+                roi = (int(max(0, cx - half)), int(max(0, cy - half)), int(min(W, cx + half)), int(min(H, cy + half)))
+                if roi[2] - roi[0] > 8 and roi[3] - roi[1] > 8:
+                    try:
+                        motion_t = _bow_motion_release(meta["video"], float(t[h0]) + 0.5,
+                                                       float(t[h1]) + float(sg.get("release_motion_after_s", 2.0)), float(t[h1]), roi)
+                    except Exception as e:  # noqa: BLE001
+                        print(f"  bow-motion release failed ({type(e).__name__}: {e}); using pose")
+            if motion_t is not None:
+                rel_row = int(np.clip(np.searchsorted(t, motion_t), 0, len(t) - 1))
+                rel_t = float(t[rel_row])
         if sg.get("release_snap_to_audio", True) and len(onset_t):
             win = ((onset_t >= rel_t - float(sg.get("release_snap_pre_s", 0.8)))
                    & (onset_t <= rel_t + float(sg.get("release_snap_post_s", 0.1))))
@@ -225,7 +298,7 @@ def segment_video(stem, cfg, *, make_plot=True):
             bl += 1
         # audio used only to confirm a real shot (a clicker/string transient near the loose)
         near = (onset_t >= rel_t - search) & (onset_t <= rel_t + 0.5)
-        source = "audio" if bool(near.any()) else "pose"
+        source = "audio" if bool(near.any()) else ("bow" if motion_t is not None else "pose")
         strength = float(np.max(onset_s[near])) if near.any() else float("nan")
         rows.append(dict(
             shot=i + 1,
@@ -273,7 +346,9 @@ def segment_video(stem, cfg, *, make_plot=True):
     exp = sg.get("expected_shots", 6)
     flag = "" if n == exp else f"  <-- expected {exp}!"
     n_audio = int((shots["release_source"] == "audio").sum()) if n else 0
-    print(f"{stem}: {n} shots{flag}  ({n_audio} release times from audio, {n - n_audio} pose-only)")
+    n_bow = int((shots["release_source"] == "bow").sum()) if n else 0
+    print(f"{stem}: {n} shots{flag}  ({n_audio} release times from audio, {n_bow} from the bow's "
+          f"motion, {n - n_audio - n_bow} pose-only)")
     return shots
 
 

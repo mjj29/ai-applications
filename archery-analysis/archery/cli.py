@@ -50,6 +50,10 @@ def main(argv=None):
     sp.add_argument("session", type=Path)
     sp.add_argument("--fast", action="store_true", help="use the fast profile (results in _quick/)")
     sp.add_argument("--archer", action="append", help="only these archer folder(s); repeatable")
+    sp = sub.add_parser("reel", help="One video per archer: all their shots back to back")
+    sp.add_argument("session", type=Path)
+    sp.add_argument("--fast", action="store_true", help="from the fast results (_quick/)")
+    sp.add_argument("--archer", action="append", help="only these archer folder(s); repeatable")
     sp = sub.add_parser("watch", help="Process each new end as it is saved into a session folder")
     sp.add_argument("session", type=Path)
     sp.add_argument("--full", action="store_true", help="full accuracy instead of the fast profile (slow)")
@@ -102,9 +106,14 @@ def main(argv=None):
         else:
             _session.move_end(args.session, cfg, args.video, args.dst)
         return
-    if args.stage in ("session", "watch", "spot"):
+    if args.stage in ("session", "watch", "spot", "reel"):
         from . import session as _session
-        if args.stage == "session":
+        if args.stage == "reel":
+            prof = "fast" if args.fast else "full"
+            for name, vids in _session.archers(args.session).items():
+                if not args.archer or name in args.archer:
+                    _session._build_reel(vids, _session.archer_cfg(cfg, args.session, name, prof))
+        elif args.stage == "session":
             _session.run_session(args.session, cfg, "fast" if args.fast else "full", args.archer)
         elif args.stage == "watch":
             _session.watch(args.session, cfg, "full" if args.full else "fast", args.interval, args.settle,

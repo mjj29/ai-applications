@@ -65,7 +65,10 @@ segment:
   release_snap_to_audio: true         # move the release onto the strongest onset in the window below:
   release_snap_pre_s: 0.8             # ...from this long before the pose release (pose tends to run late)
   release_snap_post_s: 0.1            # ...to this long after it
-  audio_latency_s: 0.0                # the crack is heard this long after the loose (~0.12 on a Pixel;
+  release_from_bow_motion: true       # no audio track: time the loose by the bow jumping forward
+  release_motion_after_s: 2.0         # ...looking up to this long past the end of the hold
+                                      # (12 hand-checked silent shots: within 0.17s, mean -0.01s)
+  audio_latency_s: 0.0              # the crack is heard this long after the loose (~0.12 on a Pixel;
                                       # a constant offset doesn't affect alignment between shots)
   # Clips start before the HOLD begins (adapts to variable hold length) so the raise +
   # draw into full draw is captured, not just the release.

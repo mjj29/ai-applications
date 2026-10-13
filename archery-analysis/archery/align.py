@@ -54,6 +54,27 @@ def ffmpeg_writer(path, Wc, Hc, fps):
         stdin=subprocess.PIPE)
 
 
+def open_before(video, t_s: float):
+    """A VideoCapture whose next frame is at or before `t_s` seconds (by the frames' own
+    timestamps). OpenCV turns a time seek into a frame number at the nominal frame rate, which
+    overshoots on variable-frame-rate files, so check where a seek lands and back off further
+    until it is early enough (worst case: from the start)."""
+    import cv2
+    for back in (2.0, 10.0, 30.0, 90.0):
+        start = max(0.0, t_s - back)
+        if start == 0.0:
+            break
+        cap = cv2.VideoCapture(str(video))
+        cap.set(cv2.CAP_PROP_POS_MSEC, start * 1000.0)
+        landed = cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0 if cap.grab() else float("inf")
+        cap.release()
+        if landed <= t_s:
+            cap = cv2.VideoCapture(str(video))
+            cap.set(cv2.CAP_PROP_POS_MSEC, start * 1000.0)
+            return cap
+    return cv2.VideoCapture(str(video))
+
+
 def aligned_frames(stem, source_times, torso, canvas, cfg):
     """Body-aligned BGR frames sampled at the given source times (seconds).
 
@@ -83,8 +104,7 @@ def aligned_frames(stem, source_times, torso, canvas, cfg):
     order = np.argsort(want_t)
     out = [None] * len(want_t)
     half = 0.5 / (fps or 30.0)
-    cap = cv2.VideoCapture(str(meta["video"]))
-    cap.set(cv2.CAP_PROP_POS_MSEC, max(0.0, (float(want_t.min()) - 2.0) * 1000.0))
+    cap = open_before(meta["video"], float(want_t.min()))
     k = 0
     while k < len(order) and cap.grab():
         ft = cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0
