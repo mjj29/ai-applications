@@ -191,6 +191,11 @@ def run_session(session: Path, base: dict, profile: str = "full", only: list[str
             summarise_archer(vids, cfg)
         except Exception:  # noqa: BLE001
             print(f"!! {name}: report failed:\n{traceback.format_exc()}")
+    try:
+        from . import insights
+        insights.write(session, base, profile)
+    except Exception:  # noqa: BLE001
+        print(f"!! insights failed:\n{traceback.format_exc()}")
     idx = write_index(session, base, profile)
     print(f"\nDone. Start at {idx}")
 

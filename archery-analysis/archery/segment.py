@@ -193,8 +193,24 @@ def segment_video(stem, cfg, *, make_plot=True):
     # looses). Wind let-downs raise the bow but never settle at the top, so requiring the
     # bow hand to stay above a high threshold for a minimum duration keeps the genuine
     # shots and discards the let-downs. (min_gap_s=0 -> no merging across dips.)
-    holds = _runs(act > float(sg.get("activity_high_threshold", 0.8)), eff_fps,
-                  min_gap_s=0.0, min_len_s=float(sg.get("min_hold_s", 1.5)))
+    # An archer who sets up high and draws down (bow hand dips during the draw, then settles)
+    # would split one shot into two short holds - or lose it as a "raise". Join holds whose
+    # dip between them is brief and shallow: between real shots the bow comes right down.
+    low_thr = float(sg.get("draw_start_threshold", 0.25))
+    join_s = float(sg.get("join_dip_s", 3.0))
+    pieces = _runs(act > float(sg.get("activity_high_threshold", 0.8)), eff_fps, min_gap_s=0.0, min_len_s=0.0)
+    joined = []
+    for p in pieces:
+        if joined and (p[0] - joined[-1][1]) < join_s * eff_fps and act[joined[-1][1]:p[0] + 1].min() > low_thr:
+            joined[-1] = (joined[-1][0], p[1])
+        else:
+            joined.append(p)
+    holds = [h for h in joined if (h[1] - h[0]) >= float(sg.get("min_hold_s", 1.5)) * eff_fps]
+    # A shot already at full draw when the recording starts is incomplete (no raise or draw to
+    # measure) and is often the previous archer's last arrow; leave it out.
+    if holds and t[holds[0][0]] - t[0] < 0.5:
+        print(f"  skipped a shot already under way when the recording started (release ~{t[holds[0][1]]:.1f}s)")
+        holds = holds[1:]
 
     # --- release-hand speed (px/s) ---
     dw = sides["draw_wrist"]

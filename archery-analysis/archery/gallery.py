@@ -97,12 +97,20 @@ def archer_page(name: str, videos: list[Path], cfg: dict) -> Path | None:
 def session_page(rdir: Path, title: str, rows: list[tuple[str, int, int]]) -> Path:
     """Write <rdir>/index.html linking each archer's shots page. rows = (name, ends, shots)."""
     body = [f"<h1>{html.escape(title)}</h1>",
-            "<table><tr><th>archer</th><th>ends</th><th>shots</th></tr>"]
+            "<table><tr><th>archer</th><th>ends</th><th>shots</th><th>all shots in order</th>"
+            "<th>report</th></tr>"]
     for name, n_ends, n_shots in rows:
-        link = (f"<a href=\"{html.escape(name)}/shots.html\">{html.escape(name)}</a>"
-                if (rdir / name / "shots.html").exists() else html.escape(name))
-        body.append(f"<tr><td>{link}</td><td>{n_ends}</td><td>{n_shots}</td></tr>")
+        q = html.escape(name)
+        link = (f"<a href=\"{q}/shots.html\">{q}</a>" if (rdir / name / "shots.html").exists() else q)
+        reel = (f"<a href=\"{q}/{q}.reel.mp4\">{q}.reel.mp4</a>"
+                if (rdir / name / f"{name}.reel.mp4").exists() else "")
+        rep = f"<a href=\"{q}/report.md\">report.md</a>" if (rdir / name / "report.md").exists() else ""
+        body.append(f"<tr><td>{link}</td><td>{n_ends}</td><td>{n_shots}</td><td>{reel}</td><td>{rep}</td></tr>")
     body.append("</table>")
+    for extra, text in (("FINDINGS.html", "Findings: what the analysis shows (start here)"),
+                        ("insights/insights.html", "Insights: session-wide statistics and charts")):
+        if (rdir / extra).exists():
+            body.append(f"<p><a href=\"{extra}\">{text}</a></p>")
     out = rdir / "index.html"
     out.write_text(_page(title, "\n".join(body)), encoding="utf-8")
     return out

@@ -50,6 +50,9 @@ def main(argv=None):
     sp.add_argument("session", type=Path)
     sp.add_argument("--fast", action="store_true", help="use the fast profile (results in _quick/)")
     sp.add_argument("--archer", action="append", help="only these archer folder(s); repeatable")
+    sp = sub.add_parser("insights", help="Session-wide statistics per archer: trends, consistency, comparisons")
+    sp.add_argument("session", type=Path)
+    sp.add_argument("--fast", action="store_true", help="from the fast results (_quick/)")
     sp = sub.add_parser("reel", help="One video per archer: all their shots back to back")
     sp.add_argument("session", type=Path)
     sp.add_argument("--fast", action="store_true", help="from the fast results (_quick/)")
@@ -106,9 +109,12 @@ def main(argv=None):
         else:
             _session.move_end(args.session, cfg, args.video, args.dst)
         return
-    if args.stage in ("session", "watch", "spot", "reel"):
+    if args.stage in ("session", "watch", "spot", "reel", "insights"):
         from . import session as _session
-        if args.stage == "reel":
+        if args.stage == "insights":
+            from . import insights
+            insights.write(args.session, cfg, "fast" if args.fast else "full")
+        elif args.stage == "reel":
             prof = "fast" if args.fast else "full"
             for name, vids in _session.archers(args.session).items():
                 if not args.archer or name in args.archer:
