@@ -211,21 +211,60 @@ def session_cfg(base: dict, session: Path) -> dict:
     return _config.merge(base, _read_yaml(Path(session) / "session.yaml"))
 
 
-def file_recording(video: Path, session: Path, base: dict, *, move=True) -> tuple[str, Path]:
-    """Identify who is on the spot in `video`, put it in <session>/<archer>/, save its signature."""
+def _cut(video: Path, start: float, end: float, out: Path):
+    """Losslessly copy [start, end) seconds of `video` to `out` (starts at the keyframe before
+    `start`; turns are separated by someone stepping off, so a second or two either way is fine)."""
+    import subprocess
+
+    from .clip import _ffmpeg
+    subprocess.run([_ffmpeg(), "-v", "error", "-y", "-ss", f"{start:.3f}", "-i", str(video),
+                    "-t", f"{end - start:.3f}", "-map", "0", "-c", "copy", str(out)], check=True)
+
+
+def file_recording(video: Path, session: Path, base: dict, *, move=True) -> list[tuple[str, Path]]:
+    """Identify who is on the spot in `video`, put it in <session>/<archer>/, save its signature.
+
+    Archers can take turns within one recording (one shoots a few arrows, steps off, the next
+    steps on). With identify.split_turns, the recording is cut into one part per turn
+    (<stem>_t1, _t2, ...), each filed separately; the original is kept in <session>/_originals/.
+    Returns [(archer, filed path)] - one entry per part."""
     import json
     import shutil
 
     from . import identify
-    name, sig = identify.identify(video, session, session_cfg(base, session))
-    dest_dir = Path(session) / name
-    dest_dir.mkdir(parents=True, exist_ok=True)
-    dest = dest_dir / video.name
-    if dest.resolve() != video.resolve():
-        (shutil.move if move else shutil.copy2)(str(video), str(dest))
-    (identify.ids_dir(session) / f"{video.stem}.json").write_text(json.dumps(sig), encoding="utf-8")
-    print(f"   {video.name} -> {name}/", flush=True)
-    return name, dest
+    cfg = session_cfg(base, session)
+    session = Path(session)
+    samples = identify.timeline(video, cfg)
+    parts = identify.turns(samples, cfg) if cfg.get("identify", {}).get("split_turns", True) else []
+    if len(parts) <= 1:
+        pieces = [(video, samples)]
+    else:
+        print(f"   {video.name}: {len(parts)} turns on the spot - "
+              + ", ".join(f"{a:.0f}-{b:.0f}s" for a, b in parts), flush=True)
+        tmp = session / "_split"
+        tmp.mkdir(parents=True, exist_ok=True)
+        pieces = []
+        for i, (a, b) in enumerate(parts, 1):
+            out = tmp / f"{video.stem}_t{i}{video.suffix}"
+            _cut(video, a, b, out)
+            pieces.append((out, [s for s in samples if a <= s["t"] < b]))
+        keep = session / "_originals"
+        keep.mkdir(parents=True, exist_ok=True)
+        (shutil.move if move else shutil.copy2)(str(video), str(keep / video.name))
+        move = True        # the parts are ours to move
+    filed = []
+    for piece, smp in pieces:
+        sig = identify.signature_of(smp, piece)
+        name, sig = identify.identify(piece, session, cfg, sig=sig)
+        dest_dir = session / name
+        dest_dir.mkdir(parents=True, exist_ok=True)
+        dest = dest_dir / piece.name
+        if dest.resolve() != piece.resolve():
+            (shutil.move if move else shutil.copy2)(str(piece), str(dest))
+        (identify.ids_dir(session) / f"{piece.stem}.json").write_text(json.dumps(sig), encoding="utf-8")
+        print(f"   {piece.name} -> {name}/", flush=True)
+        filed.append((name, dest))
+    return filed
 
 
 class _Incoming:
@@ -252,8 +291,7 @@ class _Incoming:
             if f in self.ignore or not _ready(f, seen, settle_s):
                 continue
             try:
-                name, _ = file_recording(f, self.session, self.base)
-                got.add(name)
+                got.update(n for n, _ in file_recording(f, self.session, self.base))
             except OSError as e:     # still locked by the recorder, etc. - retry next scan
                 self.failed[f] = self.failed.get(f, 0) + 1
                 print(f"   (can't file {f.name} yet: {e})", flush=True)

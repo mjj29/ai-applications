@@ -144,8 +144,9 @@ def spot_of(cfg):
 
 class _FrameReader:
     """Decode on a background thread so decoding overlaps pose inference (OpenCV and MediaPipe
-    both release the GIL). Yields (frame index, contiguous RGB frame) for every `stride`-th
-    frame, cropped to `box` if given."""
+    both release the GIL). Yields (frame index, timestamp ms, contiguous RGB frame) for every
+    `stride`-th frame, cropped to `box` if given. The timestamp is the frame's own, not
+    index / fps: some recorders (SparkoCam's WMV) write a variable frame rate."""
 
     def __init__(self, cap, stride, box, depth=8):
         import queue
@@ -173,13 +174,14 @@ class _FrameReader:
                 idx += 1
                 if idx % self.stride:
                     continue
+                t_ms = self.cap.get(cv2.CAP_PROP_POS_MSEC)
                 ok, frame = self.cap.retrieve()
                 if not ok:
                     break
                 if self.box:
                     x0, y0, x1, y1 = self.box
                     frame = frame[y0:y1, x0:x1]
-                if not self._put((idx, np.ascontiguousarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)))):
+                if not self._put((idx, t_ms, np.ascontiguousarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)))):
                     return
         finally:
             self._put(None)
@@ -222,10 +224,13 @@ def extract_pose(video_path, cfg, *, max_frames=None, stride=None, show_progress
     pbar = tqdm(total=total, disable=not show_progress, unit="f", desc=video_path.stem[:24])
     frames = _FrameReader(cap, stride, box)
     try:
-        for frame_idx, rgb in frames:
+        prev_t = -1
+        for frame_idx, pos_ms, rgb in frames:
             pbar.update(frame_idx + 1 - pbar.n)
             mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
-            t_ms = int(round(frame_idx * 1000.0 / fps))
+            # the frame's own timestamp (variable-frame-rate safe); MediaPipe needs it increasing
+            t_ms = int(round(pos_ms)) if pos_ms and pos_ms > 0 else int(round(frame_idx * 1000.0 / fps))
+            t_ms = prev_t = max(t_ms, prev_t + 1)
             res = landmarker.detect_for_video(mp_image, t_ms)
             people = _uncrop(res.pose_landmarks, box, width, height) if box else res.pose_landmarks
             n_people = len(people)

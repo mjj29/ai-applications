@@ -86,6 +86,122 @@ def _frame_features(frame_bgr, lms):
     return torso, thigh, props
 
 
+def timeline(video, cfg, *, every_s=None):
+    """Appearance of whoever is on the spot, sampled through the video every `every_s` seconds
+    (identify.sample_every_s, default 1). Returns [{t, torso, thigh, proportions}] with None
+    features where nobody was clearly there. Times are the frames' own timestamps."""
+    import cv2
+    import mediapipe as mp
+    from mediapipe.tasks import python as mp_python
+    from mediapipe.tasks.python import vision
+
+    from .extract_pose import _select_person, spot_of
+
+    ic = cfg.get("identify", {})
+    every_s = float(every_s or ic.get("sample_every_s", 1.0))
+    model = str((_config.PROJECT_ROOT / ic.get("model", "models/pose_landmarker_full.task")).resolve())
+    opts = vision.PoseLandmarkerOptions(
+        base_options=mp_python.BaseOptions(model_asset_path=model),
+        running_mode=vision.RunningMode.IMAGE, num_poses=int(cfg["pose"].get("num_poses", 4)),
+        min_pose_detection_confidence=0.5, min_pose_presence_confidence=0.5)
+    spot = spot_of(cfg)
+    cap = cv2.VideoCapture(str(video))
+    rows, nxt = [], 0.0
+    with vision.PoseLandmarker.create_from_options(opts) as lm:
+        while cap.grab():
+            t = cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0
+            if t < nxt:
+                continue
+            nxt = t + every_s
+            ok, frame = cap.retrieve()
+            if not ok:
+                break
+            row = dict(t=t, torso=None, thigh=None, proportions=None)
+            res = lm.detect(mp.Image(image_format=mp.ImageFormat.SRGB,
+                                     data=np.ascontiguousarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))))
+            if res.pose_landmarks:
+                sel, _ = _select_person(res.pose_landmarks, None, spot)
+                if sel is not None:
+                    to, th, pr = _frame_features(frame, res.pose_landmarks[sel])
+                    row.update(torso=None if to is None else to.tolist(),
+                               thigh=None if th is None else th.tolist(),
+                               proportions=None if pr is None else pr.tolist())
+            rows.append(row)
+    cap.release()
+    return rows
+
+
+def signature_of(samples, video) -> dict:
+    """Signature (as `signature` returns) from timeline samples."""
+    torsos = [s["torso"] for s in samples if s.get("torso") is not None]
+    thighs = [s["thigh"] for s in samples if s.get("thigh") is not None]
+    props = [s["proportions"] for s in samples if s.get("proportions") is not None]
+    return dict(video=Path(video).name,
+                torso=np.mean(torsos, axis=0).tolist() if torsos else None,
+                thigh=np.mean(thighs, axis=0).tolist() if thighs else None,
+                proportions=np.nanmedian(np.array(props, float), axis=0).tolist() if props else None,
+                frames=dict(torso=len(torsos), thigh=len(thighs), proportions=len(props)))
+
+
+def turns(samples, cfg) -> list[tuple[float, float]]:
+    """Split a recording into turns: archers take turns on the spot within one recording (one
+    shoots 3-5 arrows, steps off, the next steps on). Groups the timeline into consecutive
+    chunks, merges neighbouring chunks that look like the same person, folds turns shorter than
+    identify.min_turn_s into a neighbour, and returns [(start_s, end_s)] cut points that cover
+    the whole recording (cuts fall midway between the last sample of one person and the first
+    of the next)."""
+    ic = cfg.get("identify", {})
+    thr = float(ic.get("turn_threshold", ic.get("match_threshold", 0.42)))
+    chunk_s = float(ic.get("turn_chunk_s", 5.0))
+    min_turn = float(ic.get("min_turn_s", 20.0))
+    seen = [s for s in samples if s.get("torso") is not None]
+    if not samples:
+        return []
+    end_t = float(samples[-1]["t"]) + 1.0
+    if len(seen) < 2:
+        return [(0.0, end_t)]
+    # chunks of consecutive samples -> runs: [first sample index, last sample index] into `seen`
+    runs, cur = [], [0, 0]
+    for i in range(1, len(seen)):
+        if seen[i]["t"] - seen[cur[0]]["t"] < chunk_s:
+            cur[1] = i
+        else:
+            runs.append(cur)
+            cur = [i, i]
+    runs.append(cur)
+
+    def sig(r):
+        return signature_of(seen[r[0]:r[1] + 1], "")
+
+    def dur(r):
+        return seen[r[1]]["t"] - seen[r[0]]["t"]
+
+    while True:   # merge the closest-looking neighbours until every neighbour pair differs
+        ds = [distance(sig(a), sig(b)) for a, b in zip(runs, runs[1:])]
+        if not ds or min(ds) >= thr:
+            break
+        k = int(np.argmin(ds))
+        runs[k:k + 2] = [[runs[k][0], runs[k + 1][1]]]
+    while len(runs) > 1:  # fold blips (someone walking past, a mis-detection) into a neighbour
+        short = [k for k, r in enumerate(runs) if dur(r) < min_turn]
+        if not short:
+            break
+        k = min(short, key=lambda k: dur(runs[k]))
+        if k == 0:
+            j = 1
+        elif k == len(runs) - 1:
+            j = k - 1
+        else:
+            j = min((k - 1, k + 1), key=lambda j: distance(sig(runs[k]), sig(runs[j])))
+        lo, hi = sorted((k, j))
+        runs[lo:hi + 1] = [[runs[lo][0], runs[hi][1]]]
+    cuts = [0.0]
+    for a, b in zip(runs, runs[1:]):
+        cuts.append((seen[a[1]]["t"] + seen[b[0]]["t"]) / 2)
+    cuts.append(end_t)
+    return list(zip(cuts[:-1], cuts[1:]))
+
+
 def signature(video, cfg, *, max_samples=150, show_progress=False):
     """Appearance signature of the archer on the spot in this video (dict, JSON-able)."""
     import cv2
@@ -214,9 +330,9 @@ def new_pseudonym(session: Path) -> str:
     return f"Archer{i:02d}"
 
 
-def identify(video: Path, session: Path, cfg) -> tuple[str, dict]:
+def identify(video: Path, session: Path, cfg, sig: dict | None = None) -> tuple[str, dict]:
     """Decide which archer folder this video belongs to. Returns (name, signature)."""
-    sig = signature(video, cfg)
+    sig = sig or signature(video, cfg)
     thr = float(cfg.get("identify", {}).get("match_threshold", 0.42))
     known = known_archers(session)
     scored = sorted(((distance(sig, s), n) for n, s in known.items()))

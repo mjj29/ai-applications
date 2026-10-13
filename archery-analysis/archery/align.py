@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import shutil
 import subprocess
-from collections import defaultdict
 
 import cv2
 import numpy as np
@@ -69,8 +68,7 @@ def aligned_frames(stem, source_times, torso, canvas, cfg):
     fi = pf.index.to_numpy()
     mhx_all = (pf["x23"].to_numpy() + pf["x24"].to_numpy()) / 2 * W
     mhy_all = (pf["y23"].to_numpy() + pf["y24"].to_numpy()) / 2 * H
-    tgt = np.round(np.asarray(source_times) * fps).astype(int)
-    lo, hi = int(tgt.min()), int(tgt.max())
+    want_t = np.asarray(source_times, float)
     # Center on the PER-VIDEO median hip (same archer + fixed camera = same place all end),
     # not this shot's window -- so one shot's mis-detected hip can't shift it vertically and
     # every shot of an end centers identically.
@@ -78,25 +76,27 @@ def aligned_frames(stem, source_times, torso, canvas, cfg):
     scale = T / (torso if torso > 1 else 1.0)
     M = np.array([[scale, 0, Cx - scale * anchor_x], [0, scale, Cy - scale * anchor_y]], np.float32)
 
-    want = defaultdict(list)
-    for gi, ti in enumerate(tgt):
-        want[ti].append(gi)
-    out = [None] * len(tgt)
+    # Pick frames by their own timestamps, not index * fps: some recorders (SparkoCam's WMV)
+    # write a variable frame rate, where frame numbers and times drift apart. Seek to a little
+    # before the first wanted time, then step forward taking, for each wanted time, the first
+    # frame within half a frame of it (or past it).
+    order = np.argsort(want_t)
+    out = [None] * len(want_t)
+    half = 0.5 / (fps or 30.0)
     cap = cv2.VideoCapture(str(meta["video"]))
-    cap.set(cv2.CAP_PROP_POS_FRAMES, max(0, lo))
-    idx = max(0, lo) - 1
-    while idx < hi:
-        if not cap.grab():
-            break
-        idx += 1
-        if idx not in want:
+    cap.set(cv2.CAP_PROP_POS_MSEC, max(0.0, (float(want_t.min()) - 2.0) * 1000.0))
+    k = 0
+    while k < len(order) and cap.grab():
+        ft = cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0
+        if ft < want_t[order[k]] - half:
             continue
         ok, frame = cap.retrieve()
         if not ok:
             break
         warped = cv2.warpAffine(frame, M, (Wc, Hc), flags=cv2.INTER_LINEAR)
-        for gi in want[idx]:
-            out[gi] = warped
+        while k < len(order) and want_t[order[k]] - half <= ft:
+            out[order[k]] = warped
+            k += 1
     cap.release()
     return out
 

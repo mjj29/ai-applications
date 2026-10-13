@@ -141,6 +141,10 @@ identify:                # telling archers apart (archery/identify.py)
                          # footage: same person 0.15-0.30 (0.57 after a big sun/exposure change),
                          # different people >= 0.49. Raise if one archer keeps splitting into two
                          # pseudonyms; lower if two archers get merged. `who` shows the distances.
+  sample_every_s: 2      # look at who's on the spot this often through each recording
+  split_turns: true      # archers take turns within one recording: cut it into one end per turn
+  turn_chunk_s: 6        # appearance is compared in chunks this long...
+  min_turn_s: 20         # ...and a "turn" shorter than this is someone walking past
 
 # Named overlays applied on top of everything else (`watch` uses fast; `session --fast` too).
 # Measured on an Intel Core Ultra 5 laptop CPU, 1080p60 footage: the heavy model runs at

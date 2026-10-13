@@ -88,6 +88,17 @@ def _ensure_wav(video_path, cfg):
     return wav
 
 
+def _has_audio(video_path) -> bool:
+    """Does the recording have an audio stream at all? (ffmpeg lists its streams on stderr.)"""
+    ff = shutil.which("ffmpeg")
+    if ff is None:
+        import imageio_ffmpeg
+        ff = imageio_ffmpeg.get_ffmpeg_exe()
+    r = subprocess.run([ff, "-hide_banner", "-i", str(video_path)], capture_output=True, text=True,
+                       errors="replace")
+    return "Audio:" in r.stderr
+
+
 def _detect_onsets(wav_path, cfg):
     """Return (times[s], strengths) of sharp high-frequency transients (clicks/shots)."""
     y, sr = librosa.load(str(wav_path), sr=None, mono=True)
@@ -106,12 +117,14 @@ def _detect_onsets(wav_path, cfg):
 def segment_video(stem, cfg, *, make_plot=True):
     df, meta = _load(stem, cfg)
     fps = meta["fps"]
-    eff_fps = fps / max(meta.get("stride", 1), 1)
     W, H = meta["width"], meta["height"]
     sg = cfg["segment"]
     sides = L.sides(cfg["archer"]["handedness"])
 
     t = df["t_ms"].to_numpy() / 1000.0
+    # samples per second actually achieved (frame timestamps; the nominal rate can be wrong for
+    # variable-frame-rate recordings)
+    eff_fps = (len(t) - 1) / (t[-1] - t[0]) if len(t) > 1 and t[-1] > t[0] else fps / max(meta.get("stride", 1), 1)
 
     # --- activity signal: bow-hand height (1 - y, since image y grows downward) ---
     bw = sides["bow_wrist"]
@@ -146,21 +159,29 @@ def segment_video(stem, cfg, *, make_plot=True):
 
     # --- audio onsets ---
     onset_t, onset_s, env_full = (np.array([]), np.array([]), None)
+    have_audio = False
     if sg.get("use_audio_clicker", True):
-        try:
-            onset_t, onset_s, env_full = _detect_onsets(_ensure_wav(meta["video"], cfg), cfg)
-        except Exception as e:  # noqa: BLE001
-            print(f"  audio onset detection failed ({type(e).__name__}: {e}); using pose only")
+        if not _has_audio(meta["video"]):
+            print("  no audio track in this recording; finding shots and releases from pose only")
+        else:
+            try:
+                onset_t, onset_s, env_full = _detect_onsets(_ensure_wav(meta["video"], cfg), cfg)
+                have_audio = True
+            except Exception as e:  # noqa: BLE001
+                print(f"  audio onset detection failed ({type(e).__name__}: {e}); using pose only")
 
     post = float(sg.get("release_post_s", 0.5))
     search = float(sg.get("release_search_window_s", 1.0))
     low = float(sg.get("draw_start_threshold", 0.25))
     rows = []
+    prev_h1 = -1
     for i, (h0, h1) in enumerate(holds):
-        # draw start = walk back from bow-up until the bow hand was low (the raise begins)
+        # draw start = walk back from bow-up until the bow hand was low (the raise begins), but
+        # never back into the previous shot (the bow may not drop that low between shots)
         ds = h0
-        while ds > 0 and act[ds] > low:
+        while ds > prev_h1 + 1 and act[ds] > low:
             ds -= 1
+        prev_h1 = h1
         # full-draw anchor = the draw/bow hands' positions during the aim (median over the
         # plateau); draw_end = when the draw hand first reaches its anchor (end of the pull).
         ax, ay = float(np.nanmedian(x[h0:h1 + 1])), float(np.nanmedian(y[h0:h1 + 1]))
@@ -175,7 +196,9 @@ def segment_video(stem, cfg, *, make_plot=True):
             brk = np.flatnonzero(np.diff(atanchor) > 1)
             starts = np.r_[atanchor[0], atanchor[brk + 1]]
             ends = np.r_[atanchor[brk], atanchor[-1]]
-            b = int(np.argmax(ends - starts))
+            # the loose comes after the bow is up: ignore anchor runs that end before the hold
+            span = np.where(ends >= h0 - ds, ends - starts, -1)
+            b = int(np.argmax(span))
             de = ds + int(starts[b])
             rel_row = min(ds + int(ends[b]) + 1, we)      # first frame the hand departs = loose
         else:
@@ -231,7 +254,9 @@ def segment_video(stem, cfg, *, make_plot=True):
         conf = shots["onset_strength"]
         weak = conf < float(sg.get("relative_onset_min", 0.4)) * conf.median()
         shots.loc[weak, "release_source"] = "pose"
-    if sg.get("require_audio", False) and len(shots):
+    # require_audio can only mean something when there is audio: a silent recording (e.g. a
+    # webcam app saving video only) would otherwise lose every shot.
+    if sg.get("require_audio", False) and have_audio and len(shots):
         before = len(shots)
         shots = shots[shots["release_source"] == "audio"].reset_index(drop=True)
         if len(shots) < before:
