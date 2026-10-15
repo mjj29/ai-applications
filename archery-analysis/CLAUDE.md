@@ -47,7 +47,9 @@ README.md explains the outputs and design; config.yaml holds every tunable.
   from frame timestamps everywhere; never use frame index / fps or OpenCV time seeks directly
   (use `align.open_before`).
 - Without audio the release is timed from the **bow's motion** (`segment._bow_motion_release`):
-  validated on 13 hand-labelled shots, within 0.17s. If releases look wrong, check frames around them.
+  validated on 20 hand-labelled shots, within 0.23s. It looks for the last jump out of a still aim
+  in a window bounded by full draw, the end of the hold and the pose estimate. A let-down (draw hand
+  goes forward to the bow) is dropped. If releases look wrong, check frames around them.
 - Neighbours on adjacent lanes are close: per-session `session.yaml` sets `pose.num_poses: 1`
   (track one person), `normalize.min_visibility: 0.2` (a draw hand tucked under the jaw is rated
   ~0.3 visible) and ghost framing. Copy `sessions\2026-10-13\session.yaml` for similar sessions.

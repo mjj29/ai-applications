@@ -146,10 +146,22 @@ def collapsed(seglens: dict, frac: float = 0.5) -> dict:
     return {k: v < frac * np.nanpercentile(v, 90) for k, v in seglens.items()}
 
 
+def bent_bow_arm(elbow_angle, min_deg=140.0):
+    """True where the bow arm reads clearly bent at the loose. A recurve archer's bow arm is
+    extended there, so this means the tracking lost the bow wrist (e.g. it jumped onto a
+    neighbour or the bow), even when the forearm keeps a plausible length."""
+    a = np.asarray(elbow_angle, float)
+    return np.isfinite(a) & (a < min_deg)
+
+
 def mask_collapsed(F, names, seglens, frac=0.5):
     """Blank (NaN) every measure whose limb collapsed on that shot."""
     F = F.copy()
     bad = collapsed(seglens, frac)
+    if "angle_bow_elbow" in names:
+        bent = bent_bow_arm(F[:, names.index("angle_bow_elbow")])
+        bad["bow_fore"] = bad["bow_fore"] | bent
+        bad["bow_reach"] = bad["bow_reach"] | bent
     for j, n in enumerate(names):
         for seg in DEPENDS.get(n, ()):
             F[bad[seg], j] = np.nan

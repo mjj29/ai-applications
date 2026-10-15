@@ -108,6 +108,9 @@ def _mask(df, frac):
     for a, idx in df.groupby("archer").groups.items():
         seg = {k: df.loc[idx, f"seg_{k}"].to_numpy(float) for k in _out.SEGMENTS}
         bad = _out.collapsed(seg, frac)
+        bent = _out.bent_bow_arm(df.loc[idx, "angle_bow_elbow"].to_numpy(float))
+        bad["bow_fore"] = bad["bow_fore"] | bent
+        bad["bow_reach"] = bad["bow_reach"] | bent
         for k, b in bad.items():
             df.loc[idx, f"lost_{k}"] = b
         for col, segs in _DEPENDS.items():

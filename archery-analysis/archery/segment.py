@@ -99,7 +99,7 @@ def _has_audio(video_path) -> bool:
     return "Audio:" in r.stderr
 
 
-def _bow_motion_release(video, t_from, t_to, hold_end_t, roi):
+def _bow_motion_release(video, t_from, t_to, hold_end_t, roi, search_from=None, search_to=None):
     """Release time from the bow's own motion. While aiming the bow is still; on the loose it
     jumps forward and tips (the stabiliser makes this large and sudden). Mean absolute frame
     difference in a box just beyond the bow hand, at the full frame rate, frames picked by
@@ -136,13 +136,19 @@ def _bow_motion_release(video, t_from, t_to, hold_end_t, roi):
     still = ds[ts < hold_end_t - 1.0]
     # quiet level: the stillest quarter of the aim (the stretch also holds the draw, a neighbour...)
     base = max(float(np.percentile(still if len(still) else ds, 25)), 0.5)
-    search = ts >= hold_end_t - 2.0
+    # from the start of the aim, not just the end of the hold: an archer may keep the bow up
+    # well after the loose, so the hold "ends" late
+    search = ts >= (search_from if search_from is not None else ts[0] + 0.5)
+    if search_to is not None:
+        search &= ts <= search_to
     if not search.any() or ds[search].max() < 2.5 * base:
         return None
     big = search & (ds >= 0.4 * ds[search].max())
     # The archer's own loose comes straight out of the still aim; a neighbour drawing or shooting
-    # inside the box ramps up without that. So prefer a jump preceded by 0.5s of quiet.
-    for i in np.flatnonzero(big):
+    # inside the box ramps up without that. So prefer a jump preceded by 0.5s of quiet -
+    # the last such jump before the pose estimate: once the loose happens the bow keeps moving
+    # (nothing after it starts from quiet), whereas a neighbour can move earlier in the aim.
+    for i in np.flatnonzero(big)[::-1]:
         pre = ds[(ts >= ts[i] - 0.5) & (ts < ts[i])]
         if len(pre) and float(np.mean(pre)) <= 2.0 * base:
             return float(ts[i])
@@ -293,7 +299,14 @@ def segment_video(stem, cfg, *, make_plot=True):
                 if roi[2] - roi[0] > 8 and roi[3] - roi[1] > 8:
                     try:
                         motion_t = _bow_motion_release(meta["video"], float(t[h0]) + 0.5,
-                                                       float(t[h1]) + float(sg.get("release_motion_after_s", 2.0)), float(t[h1]), roi)
+                                                       float(t[h1]) + float(sg.get("release_motion_after_s", 2.0)), float(t[h1]), roi,
+                                                       # not before full draw (set-up / draw-down moves the bow too)
+                                                       search_from=max(float(t[h0]) + 1.0, float(t[de]) + 0.3,
+                                                                       float(t[h1]) - float(sg.get("release_motion_before_s", 3.0)),
+                                                                       # the pose estimate is usually late (up to
+                                                                       # 1.45s), occasionally early (0.5s): 20 labels
+                                                                       rel_t - float(sg.get("release_pose_late_s", 1.7))),
+                                                       search_to=rel_t + float(sg.get("release_pose_early_s", 0.8)))
                     except Exception as e:  # noqa: BLE001
                         print(f"  bow-motion release failed ({type(e).__name__}: {e}); using pose")
             if motion_t is not None:
@@ -306,6 +319,24 @@ def segment_video(stem, cfg, *, make_plot=True):
                 snap_t = float(onset_t[win][np.argmax(onset_s[win])]) - float(sg.get("audio_latency_s", 0.0))
                 rel_row = int(np.clip(np.searchsorted(t, snap_t), 0, len(t) - 1))
                 rel_t = float(t[rel_row])
+        # A let-down (the archer comes down without shooting) also ends the hold and moves the
+        # bow. Tell it apart by the draw hand: on a loose it springs back or stays at the face;
+        # letting down, it goes forward towards the bow with the string. (One let-down in 69
+        # shots on 2026-10-13: +0.44 torso lengths forward; every real shot -0.26..0.00.)
+        pre = (t > rel_t - 0.4) & (t < rel_t - 0.05)
+        post = (t > rel_t + 0.3) & (t < rel_t + 0.5)
+        if pre.any() and post.any():
+            bwx = _interp_nan(df[f"x{sides['bow_wrist']}"]) * W
+            bwy = _interp_nan(df[f"y{sides['bow_wrist']}"]) * H
+            dsx = _interp_nan(df[f"x{sides['draw_shoulder']}"]) * W
+            dsy = _interp_nan(df[f"y{sides['draw_shoulder']}"]) * H
+            aim = np.array([np.median(bwx[pre] - dsx[pre]), np.median(bwy[pre] - dsy[pre])])
+            aim /= np.linalg.norm(aim) + 1e-9
+            fwd = (np.median(x[post]) - np.median(x[pre])) * aim[0] + (np.median(y[post]) - np.median(y[pre])) * aim[1]
+            if fwd / torso_px > float(sg.get("letdown_forward", 0.2)):
+                print(f"  let-down at {rel_t:.1f}s (draw hand went {fwd / torso_px:.2f} torso lengths "
+                      f"forward, no loose) - not a shot")
+                continue
         # bow lowered = end of follow-through: first time after release the bow hand drops
         # back past halfway (capped 3s after release, before the next shot).
         bl = rel_row
