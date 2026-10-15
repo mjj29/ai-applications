@@ -117,6 +117,45 @@ def _features(coords, grid, cfg):
     return F, names
 
 
+# Which arm segments each measure relies on. When pose tracking loses a limb (e.g. a bow arm
+# pointing away from a front-on camera into the clutter of the riser), its elbow and wrist
+# points collapse together and the measures built on them become meaningless numbers.
+SEGMENTS = {"bow_upper": ("bow_shoulder", "bow_elbow"), "bow_fore": ("bow_elbow", "bow_wrist"),
+            "draw_upper": ("draw_shoulder", "draw_elbow"), "draw_fore": ("draw_elbow", "draw_wrist"),
+            # a straight bow arm keeps its reach; tracking that folds the arm shortens it
+            "bow_reach": ("bow_shoulder", "bow_wrist")}
+DEPENDS = {
+    "angle_bow_elbow": ("bow_upper", "bow_fore", "bow_reach"), "angle_bow_shoulder": ("bow_upper",),
+    "bow_wrist_y": ("bow_fore", "bow_reach"), "aim_wobble": ("bow_fore", "bow_reach"),
+    "angle_draw_elbow": ("draw_upper", "draw_fore"), "angle_draw_shoulder": ("draw_upper",),
+    "draw_elbow_y": ("draw_upper",), "draw_wrist_x": ("draw_fore",), "draw_wrist_y": ("draw_fore",),
+    "followthrough": ("draw_fore",),
+}
+
+
+def segment_lengths(coords, grid, cfg):
+    """Length of each arm segment at the loose, per shot (torso lengths)."""
+    s = L.sides(cfg["archer"]["handedness"])
+    pos = _wmean(coords, grid, -0.15, 0.05)
+    return {k: np.linalg.norm(pos[:, s[a]] - pos[:, s[b]], axis=1) for k, (a, b) in SEGMENTS.items()}
+
+
+def collapsed(seglens: dict, frac: float = 0.5) -> dict:
+    """{segment: bool per shot}: True where that segment is shorter than `frac` of its usual
+    full length (90th percentile over these shots) - the tracking lost that limb."""
+    return {k: v < frac * np.nanpercentile(v, 90) for k, v in seglens.items()}
+
+
+def mask_collapsed(F, names, seglens, frac=0.5):
+    """Blank (NaN) every measure whose limb collapsed on that shot."""
+    F = F.copy()
+    bad = collapsed(seglens, frac)
+    for j, n in enumerate(names):
+        for seg in DEPENDS.get(n, ()):
+            F[bad[seg], j] = np.nan
+    return F
+
+
 def _robust_z(F):
     med = np.nanmedian(F, axis=0)
     mad = np.nanmedian(np.abs(F - med), axis=0)
@@ -128,6 +167,8 @@ def _robust_z(F):
 def _compute(stems, cfg):
     coords, grid, labels = _load_all(stems, cfg)
     F, names = _features(coords, grid, cfg)
+    F = mask_collapsed(F, names, segment_lengths(coords, grid, cfg),
+                       float(cfg.get("outliers", {}).get("collapsed_limb_frac", 0.5)))
     Z, med, _ = _robust_z(F)
     score = np.sqrt(np.nanmean(Z ** 2, axis=1))         # overall atypicality (RMS z)
     return coords, grid, labels, F, names, Z, med, score

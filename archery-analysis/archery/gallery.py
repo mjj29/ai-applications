@@ -66,7 +66,9 @@ def archer_page(name: str, videos: list[Path], cfg: dict) -> Path | None:
     total = sum(len(c) for _, c in ends)
     parts = [f"<h1>{html.escape(name)}</h1>",
              f"<p class=\"sub\">{total} shots in {len(ends)} end{'s' if len(ends) != 1 else ''}, "
-             f"newest first. <a href=\"../index.html\">All archers</a></p>"]
+             f"newest first. <a href=\"../index.html\">All archers</a>"
+             + (" &middot; <a href=\"report.html\">report</a>" if (odir / "report.html").exists() else "")
+             + "</p>"]
     reel = odir / f"{name}.reel.mp4"
     if reel.exists():
         parts.append(f"<h2>Every shot in order</h2><figure class=\"ghost\"><video controls preload=\"metadata\" "
@@ -104,7 +106,8 @@ def session_page(rdir: Path, title: str, rows: list[tuple[str, int, int]]) -> Pa
         link = (f"<a href=\"{q}/shots.html\">{q}</a>" if (rdir / name / "shots.html").exists() else q)
         reel = (f"<a href=\"{q}/{q}.reel.mp4\">{q}.reel.mp4</a>"
                 if (rdir / name / f"{name}.reel.mp4").exists() else "")
-        rep = f"<a href=\"{q}/report.md\">report.md</a>" if (rdir / name / "report.md").exists() else ""
+        rep = (f"<a href=\"{q}/report.html\">report</a>" if (rdir / name / "report.html").exists()
+               else f"<a href=\"{q}/report.md\">report.md</a>" if (rdir / name / "report.md").exists() else "")
         body.append(f"<tr><td>{link}</td><td>{n_ends}</td><td>{n_shots}</td><td>{reel}</td><td>{rep}</td></tr>")
     body.append("</table>")
     for extra, text in (("FINDINGS.html", "Findings: what the analysis shows (start here)"),

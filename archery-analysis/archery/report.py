@@ -38,9 +38,12 @@ def run(videos, cfg):
     session_md = "\n".join([
         f"- **Most typical:** {ref_lbl}  •  **Least typical:** {worst_row['label']} "
         f"(atypicality {worst_row['score']:.1f}) — {worst_row['summary']}", "",
-        _img("delta_session.delta_skeleton.png", "most vs least typical skeleton"),
-        _img("delta_session.delta_release.png", "most vs least typical frames"),
-        "[▶ play delta_session.delta.mp4](delta_session.delta.mp4)",
+        _img("delta_session.delta_release.png", "most vs least typical frames") + " " +
+        _img("delta_session.delta_wire_release.png", "most vs least typical skeleton"),
+        "",
+        "[▶ play delta_session.delta.mp4 (real frames)](delta_session.delta.mp4)",
+        "",
+        "[▶ play delta_session.delta_wire.mp4 (skeletons)](delta_session.delta_wire.mp4)",
     ])
 
     # --- per-end: that end's worst shot vs its OWN most-typical shot ---
@@ -59,9 +62,10 @@ def run(videos, cfg):
             f"### {stem}\n\n"
             f"Best **{b['label']}** vs worst **{w['label']}** (atypicality {w['score']:.1f}) "
             f"— {w['summary']}\n\n"
-            f"{_img(tag + '.delta_skeleton.png', 'worst vs best')} "
-            f"{_img(tag + '.delta_release.png', 'worst vs best frames')}\n\n"
-            f"[▶ {tag}.delta.mp4]({tag}.delta.mp4)\n")
+            f"{_img(tag + '.delta_release.png', 'worst vs best frames')} "
+            f"{_img(tag + '.delta_wire_release.png', 'worst vs best skeleton')}\n\n"
+            f"[▶ {tag}.delta.mp4 (real frames)]({tag}.delta.mp4)\n\n"
+            f"[▶ {tag}.delta_wire.mp4 (skeletons)]({tag}.delta_wire.mp4)\n")
     per_md = "\n".join(per) if per else "_no shots found_"
 
     # --- ranked outlier table ---
@@ -95,5 +99,12 @@ def run(videos, cfg):
         text = text.replace("{{" + k + "}}", v)
     out = odir / "report.md"
     out.write_text(text, encoding="utf-8")
+    # the same report as a web page, with the overlay/ghost/delta videos playable in place
+    from . import mdhtml
+    (odir / "report.html").write_text(
+        mdhtml.page(f"{title} - report", text.replace(
+            "Open in VS Code's Markdown preview\n> (Ctrl/Cmd-Shift-V) so the images and links work.",
+            "report.md has the same content as Markdown.")),
+        encoding="utf-8")
     print(f"wrote {out}  (ref {ref_lbl}; session worst {worst_row['label']})")
     return out

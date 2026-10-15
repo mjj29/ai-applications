@@ -78,6 +78,7 @@ def shot_table(session: Path, base: dict, profile: str = "full") -> pd.DataFrame
             coords, grid = d["coords"], d["grid"]
             F, names = _out._features(coords, grid, cfg)
             R = _release_features(coords, grid, s)
+            seg = _out.segment_lengths(coords, grid, cfg)
             shots = pd.read_parquet(ddir / f"{stem}.shots.parquet").set_index("shot")
             for i, sh in enumerate(d["shots"]):
                 r = shots.loc[int(sh)]
@@ -89,8 +90,31 @@ def shot_table(session: Path, base: dict, profile: str = "full") -> pd.DataFrame
                            bowup_s=float(r["release_t"] - r["hold_start_t"]))
                 row.update({n: float(F[i, k]) for k, n in enumerate(names)})
                 row.update({k: float(v[i]) for k, v in R.items()})
+                row.update({f"seg_{k}": float(v[i]) for k, v in seg.items()})
                 rows.append(row)
-    return pd.DataFrame(rows)
+    df = pd.DataFrame(rows)
+    return _mask(df, float(base.get("outliers", {}).get("collapsed_limb_frac", 0.5))) if len(df) else df
+
+
+# release measures and the arm segments they rely on (the rest are in outliers.DEPENDS)
+_DEPENDS = {**_out.DEPENDS, "creep": ("draw_fore",), "live_release": ("draw_fore",),
+            "hand_drop": ("draw_fore",), "elbow_drop": ("draw_upper",), "bow_drop": ("bow_fore", "bow_reach")}
+
+
+def _mask(df, frac):
+    """Blank measures whose limb the tracking lost on that shot (see outliers.collapsed),
+    judged against each archer's own shots. Adds lost_<segment> flags."""
+    df = df.copy()
+    for a, idx in df.groupby("archer").groups.items():
+        seg = {k: df.loc[idx, f"seg_{k}"].to_numpy(float) for k in _out.SEGMENTS}
+        bad = _out.collapsed(seg, frac)
+        for k, b in bad.items():
+            df.loc[idx, f"lost_{k}"] = b
+        for col, segs in _DEPENDS.items():
+            if col in df:
+                for k in segs:
+                    df.loc[idx[bad[k]], col] = np.nan
+    return df
 
 
 def _label(col):
