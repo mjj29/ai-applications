@@ -106,9 +106,11 @@ compare:
 ghost:                   # stage 5b: translucent overlay of real frames, body-aligned
   fps: 20                # frames/s of the ghost/delta video
   width: 720             # canvas size (px) - landscape suits the spread draw posture
-  height: 560
-  target_torso: 150      # body scaled so torso = this many canvas px (bigger = tighter crop)
-  hip_y_frac: 0.62       # vertical position of the hips on the canvas
+  height: 480
+  frame: auto            # auto = fit the archer (head to hips, draw elbow to bow) from their own
+                         # landmarks: any camera distance/angle/handedness. fixed = the two below
+  target_torso: 150      # (fixed) body scaled so torso = this many canvas px (bigger = tighter crop)
+  hip_y_frac: 0.62       # (fixed) vertical position of the hips on the canvas
 
 timeline:                # time axis for ghost + delta animations
   mode: phase            # phase = warp draw, then show the SHORTER shot's hold in full (cut

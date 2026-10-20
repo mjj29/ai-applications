@@ -87,6 +87,10 @@ def archer_page(name: str, videos: list[Path], cfg: dict) -> Path | None:
             parts.append("<p class=\"sub\">Aligned overlay still being made; refresh shortly.</p>")
         parts.append("<div class=\"shots\">")
         for c in clips:
+            beh = c.with_name(c.stem + ".behind.mp4")
+            if beh.exists():
+                parts.append(f"<figure><video controls preload=\"metadata\" src=\"{html.escape(stem + '/' + beh.name)}\"></video>"
+                             f"<figcaption>Shot {c.stem.split('_')[1]}: release from behind, slowed</figcaption></figure>")
             rel = f"{stem}/{c.name}"
             parts.append(f"<figure><video controls preload=\"metadata\" src=\"{html.escape(rel)}\"></video>"
                          f"<figcaption>Shot {c.stem.split('_')[1]}</figcaption></figure>")

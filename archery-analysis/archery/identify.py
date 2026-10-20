@@ -195,6 +195,14 @@ def turns(samples, cfg) -> list[tuple[float, float]]:
             j = min((k - 1, k + 1), key=lambda j: distance(sig(runs[k]), sig(runs[j])))
         lo, hi = sorted((k, j))
         runs[lo:hi + 1] = [[runs[lo][0], runs[hi][1]]]
+    # Last pass on whole turns: neighbouring turns that look like the same person overall are one
+    # turn (6s chunks can differ - turning side-on, someone walking past - where whole turns don't).
+    k = 0
+    while k < len(runs) - 1:
+        if distance(sig(runs[k]), sig(runs[k + 1])) < thr:
+            runs[k:k + 2] = [[runs[k][0], runs[k + 1][1]]]
+        else:
+            k += 1
     cuts = [0.0]
     for a, b in zip(runs, runs[1:]):
         cuts.append((seen[a[1]]["t"] + seen[b[0]]["t"]) / 2)

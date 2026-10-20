@@ -20,6 +20,7 @@ Settings layer as: config.yaml <- session.yaml <- <archer>/archer.yaml <- profil
 """
 from __future__ import annotations
 
+import re
 import time
 import traceback
 from pathlib import Path
@@ -125,12 +126,17 @@ def summarise_archer(videos: list[Path], cfg: dict) -> bool:
 
 
 def _build_reel(videos: list[Path], cfg: dict):
-    """<archer>.reel.mp4: all the archer's shots back to back (the baseline review video)."""
+    """<archer>.reel.mp4: all the archer's shots back to back (the baseline review video), and
+    <archer>.reel2.mp4 with the second camera alongside when the session has one synced."""
     from . import reel
+    from . import sync as _sync
     if not videos:
         return
     try:
         reel.build(videos[0].parent.name, videos, cfg)
+        session = videos[0].parent.parent
+        if any(v.stem in _sync.load(session) for v in videos):
+            reel.build_dual(videos[0].parent.name, videos, cfg, session)
         _refresh_shots_page(videos[0], cfg)
     except Exception:  # noqa: BLE001 - e.g. the reel is open in a player (Windows locks it)
         print(f"!! reel failed (retries next time):\n{traceback.format_exc()}")
@@ -162,6 +168,19 @@ def write_index(session: Path, base: dict, profile: str) -> Path:
     return out
 
 
+def _ensure_spot(session: Path, base: dict, profile: str, archer: str):
+    """No shooting spot set: find one automatically (auto_spot), unless archer.auto_spot is off."""
+    from .extract_pose import spot_of
+    cfg = archer_cfg(base, session, archer, profile)
+    if spot_of(cfg) is None and cfg.get("archer", {}).get("auto_spot", True):
+        print("No shooting spot set - finding it automatically:")
+        try:
+            auto_spot(session, base)
+        except Exception:  # noqa: BLE001
+            print(f"!! auto spot failed:\n{traceback.format_exc()}")
+    _warn_no_spot(archer_cfg(base, session, archer, profile))
+
+
 def _warn_no_spot(cfg):
     from .extract_pose import spot_of
     if spot_of(cfg) is None:
@@ -178,7 +197,7 @@ def run_session(session: Path, base: dict, profile: str = "full", only: list[str
     if not found:
         raise SystemExit(f"no archer folders with videos under {session}")
     print(f"Session {session.name}: {', '.join(f'{k} ({len(v)})' for k, v in found.items())}  [{profile}]")
-    _warn_no_spot(archer_cfg(base, session, next(iter(found)), profile))
+    _ensure_spot(session, base, profile, next(iter(found)))
     for name, vids in found.items():
         cfg = archer_cfg(base, session, name, profile)
         print(f"\n===== {name}: {len(vids)} end(s) -> {cfg['output']['dir']}")
@@ -187,6 +206,17 @@ def run_session(session: Path, base: dict, profile: str = "full", only: list[str
                 process_video(v, cfg)
             except Exception:  # noqa: BLE001 - one bad file must not stop the session
                 print(f"!! {name}/{v.name} failed:\n{traceback.format_exc()}")
+        cam2 = cfg.get("cam2", {}).get("folder")
+        if cam2:
+            from . import sync as _sync
+            print(f"\n===== {name}: second camera ({cam2})")
+            try:
+                _sync.run(session, Path(cam2), base, profile, only=vids)
+                from . import behind
+                for v in vids:
+                    behind.run_end(v, cfg, session)
+            except Exception:  # noqa: BLE001
+                print(f"!! {name}: second-camera sync failed:\n{traceback.format_exc()}")
         try:
             summarise_archer(vids, cfg)
         except Exception:  # noqa: BLE001
@@ -645,3 +675,125 @@ def who(session: Path, base: dict):
         for a in names:
             row = "  ".join("      -" if a == b else f"{identify.distance(known[a], known[b]):7.2f}" for b in names)
             print(f"{a:>{w}}  {row}")
+
+
+# ---------------------------------------------------------------- automatic shooting spot
+def auto_spot(session: Path, base: dict, per_video: int = 8, save: bool = True):
+    """Find the shooting spot without being told. Samples frames from every recording in the
+    session, detects everyone, and groups the detections by where they stand. Each group gets
+    an appearance signature and is compared with the archers already known from other sessions
+    (sessions/*/_ids); the group that best matches a known archer is the spot. If nobody matches,
+    the position occupied in the most recordings with the bow raised wins. Writes
+    <session>/_analysis/spot_auto.png and (save) the spot to session.yaml, with
+    archer.select: spot and pose.num_poses: 4 (to pick the person on the spot each frame)."""
+    import cv2
+    import mediapipe as mp
+    import numpy as np
+    from mediapipe.tasks import python as mp_python
+    from mediapipe.tasks.python import vision
+
+    from . import identify
+    from . import landmarks as L
+    from .extract_pose import torso_centre
+    session = Path(session).resolve()
+    vids = sorted({v for vs in archers(session).values() for v in vs} |
+                  set(_config.list_videos(session / "_originals")) if (session / "_originals").exists()
+                  else {v for vs in archers(session).values() for v in vs}, key=lambda p: p.name)
+    vids = [v for v in vids if not re.search(r"_t\d+$", v.stem)] or vids
+    model = str((_config.PROJECT_ROOT / base.get("identify", {}).get("model", "models/pose_landmarker_full.task")).resolve())
+    opts = vision.PoseLandmarkerOptions(base_options=mp_python.BaseOptions(model_asset_path=model),
+                                        running_mode=vision.RunningMode.IMAGE, num_poses=6,
+                                        min_pose_detection_confidence=0.4, min_pose_presence_confidence=0.4)
+    dets, sample = [], None
+    with vision.PoseLandmarker.create_from_options(opts) as lm:
+        for vi, v in enumerate(vids):
+            cap = cv2.VideoCapture(str(v))
+            n = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            for fi in np.linspace(0.1 * n, 0.9 * n, per_video).astype(int):
+                cap.set(cv2.CAP_PROP_POS_FRAMES, int(fi))
+                ok, f = cap.read()
+                if not ok:
+                    continue
+                H, W = f.shape[:2]
+                if sample is None:
+                    sample = f.copy()
+                res = lm.detect(mp.Image(image_format=mp.ImageFormat.SRGB,
+                                         data=np.ascontiguousarray(cv2.cvtColor(f, cv2.COLOR_BGR2RGB))))
+                for p in res.pose_landmarks:
+                    cx, cy = torso_centre(p)
+                    sx, sy = (p[11].x + p[12].x) / 2, (p[11].y + p[12].y) / 2
+                    hx, hy = (p[23].x + p[24].x) / 2, (p[23].y + p[24].y) / 2
+                    torso = float(np.hypot((sx - hx) * W, (sy - hy) * H))
+                    raised = min(p[15].y, p[16].y) < sy        # a wrist above the shoulders
+                    to, th, pr = identify._frame_features(f, p)
+                    dets.append(dict(v=vi, x=cx, y=cy, torso=torso, raised=raised, W=W, H=H,
+                                     torso_h=to, thigh_h=th, props=pr))
+            cap.release()
+    if not dets:
+        print("auto spot: nobody detected")
+        return None
+    # group by position (greedy, within ~0.6 torso lengths)
+    groups = []
+    for d in sorted(dets, key=lambda d: -d["torso"]):
+        for g in groups:
+            if np.hypot((d["x"] - g["x"]) * d["W"], (d["y"] - g["y"]) * d["H"]) < 0.6 * g["torso"]:
+                g["m"].append(d)
+                break
+        else:
+            groups.append(dict(x=d["x"], y=d["y"], torso=d["torso"], m=[d]))
+    for g in groups:
+        g["x"] = float(np.median([d["x"] for d in g["m"]]))
+        g["y"] = float(np.median([d["y"] for d in g["m"]]))
+        g["torso"] = float(np.median([d["torso"] for d in g["m"]]))
+        g["videos"] = len({d["v"] for d in g["m"]})
+        g["raised"] = sum(d["raised"] for d in g["m"])
+        g["sig"] = identify.signature_of([dict(torso=None if d["torso_h"] is None else d["torso_h"].tolist(),
+                                               thigh=None if d["thigh_h"] is None else d["thigh_h"].tolist(),
+                                               proportions=None if d["props"] is None else d["props"].tolist())
+                                          for d in g["m"]], "")
+    groups = [g for g in groups if g["videos"] >= max(2, len(vids) // 3)]
+    known = {}
+    for other in Path(session).parent.iterdir():
+        if other.is_dir() and other != session and (other / "_ids").exists():
+            for name, sig in identify.known_archers(other).items():
+                known.setdefault(name, []).append(sig)
+    known = {n: identify._mean_sig(s) for n, s in known.items()}
+    thr = float(base.get("identify", {}).get("match_threshold", 0.42))
+    for g in groups:
+        sc = sorted((identify.distance(g["sig"], s), n) for n, s in known.items()) if g["sig"]["torso"] else []
+        g["match"] = sc[0] if sc else (np.inf, None)
+    # only shooting positions: the bow up in a fair share of the samples (bystanders, people
+    # waiting behind the line and spectators at the edge of the frame never are)
+    most = max(g["raised"] for g in groups)
+    shooters = [g for g in groups if g["raised"] >= max(2, 0.25 * most)] or groups
+    matched = [g for g in shooters if g["match"][0] < thr]
+    if matched:
+        best = min(matched, key=lambda g: g["match"][0])
+        why = f"looks like {best['match'][1]} from earlier sessions (distance {best['match'][0]:.2f})"
+    else:
+        best = max(shooters, key=lambda g: (g["videos"], g["raised"]))
+        why = f"shooting there in {best['videos']}/{len(vids)} recordings (no known archer matched)"
+    for g in sorted(groups, key=lambda g: -g["videos"]):
+        print(f"  position x={g['x']:.2f} y={g['y']:.2f}: in {g['videos']}/{len(vids)} recordings, bow up "
+              f"{g['raised']}x, " + (f"nearest known archer {g['match'][1]} ({g['match'][0]:.2f})"
+                                     if g["match"][1] else "no known archers to compare"))
+    W, H = dets[0]["W"], dets[0]["H"]
+    dx, dy = 0.8 * best["torso"] / W, 0.5 * best["torso"] / H
+    box = [round(max(0.0, best["x"] - dx), 3), round(max(0.0, best["y"] - dy), 3),
+           round(min(1.0, best["x"] + dx), 3), round(min(1.0, best["y"] + dy), 3)]
+    print(f"auto spot: {box} - {why}")
+    rdir = session / "_analysis"
+    rdir.mkdir(parents=True, exist_ok=True)
+    img = sample.copy()
+    for g in groups:
+        col = (0, 255, 0) if g is best else (0, 165, 255)
+        cv2.circle(img, (int(g["x"] * W), int(g["y"] * H)), 14, col, -1)
+    cv2.rectangle(img, (int(box[0] * W), int(box[1] * H)), (int(box[2] * W), int(box[3] * H)), (0, 255, 0), 4)
+    cv2.imwrite(str(rdir / "spot_auto.png"), img)
+    if save:
+        sy_path = session / "session.yaml"
+        data = _read_yaml(sy_path)
+        data = _config.merge(data, {"archer": {"select": "spot", "spot": box}, "pose": {"num_poses": 4}})
+        with open(sy_path, "w", encoding="utf-8") as f:
+            yaml.safe_dump(data, f, sort_keys=False)
+    return box

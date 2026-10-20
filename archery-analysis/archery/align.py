@@ -29,11 +29,58 @@ def _smooth_series(a, k=9):
 
 
 def ghost_canvas(cfg):
+    """Canvas size, body scale (T = canvas px per torso length) and where the mid-hip goes.
+
+    ghost.frame: auto (default) fits the archer to the canvas from their own landmarks - head,
+    shoulders, elbows, hands and hips around the loose, over all their analysed shots, plus room
+    for the bow beyond the bow hand - so any camera distance, angle or handedness frames itself.
+    ghost.frame: fixed uses target_torso / hip_y_frac as given."""
     g = cfg.get("ghost", {})
     Wc = int(g.get("width", 720)) & ~1
     Hc = int(g.get("height", 560)) & ~1
-    return dict(Wc=Wc, Hc=Hc, T=float(g.get("target_torso", 150)),
-                Cx=Wc / 2.0, Cy=float(g.get("hip_y_frac", 0.62)) * Hc)
+    fixed = dict(Wc=Wc, Hc=Hc, T=float(g.get("target_torso", 150)),
+                 Cx=Wc / 2.0, Cy=float(g.get("hip_y_frac", 0.62)) * Hc)
+    if str(g.get("frame", "auto")).lower() != "auto":
+        return fixed
+    box = _body_box(cfg)
+    if box is None:
+        return fixed
+    left, right, top, bottom = box
+    T = min(Wc / (right - left), Hc / (bottom - top))
+    return dict(Wc=Wc, Hc=Hc, T=float(T),
+                Cx=float(-left * T + (Wc - (right - left) * T) / 2),
+                Cy=float(-top * T + (Hc - (bottom - top) * T) / 2))
+
+
+def _body_box(cfg):
+    """(left, right, top, bottom) around the archer near the loose, in torso lengths relative to
+    the mid-hip (image axes: y down), from every normalized shot in this output's data dir."""
+    import glob
+    pts = []
+    for f in glob.glob(str(_config.data_dir(cfg) / "*.normalized.npz")):
+        d = np.load(f, allow_pickle=True)
+        grid, c = d["grid"], d["coords"]
+        m = (grid >= -0.5) & (grid <= 0.3)
+        pts.append(np.nanmedian(c[:, m], axis=1))          # (shots, 33, 2)
+    if not pts:
+        return None
+    P = np.concatenate(pts)
+    s = L.sides(cfg["archer"]["handedness"])
+    idx = [L.NOSE, s["draw_shoulder"], s["bow_shoulder"], s["draw_elbow"], s["bow_elbow"],
+           s["draw_wrist"], s["bow_wrist"], L.LEFT_HIP, L.RIGHT_HIP]
+    X, Y = P[:, idx, 0], P[:, idx, 1]
+    if not np.isfinite(X).any():
+        return None
+    left, right = np.nanpercentile(X, 5), np.nanpercentile(X, 95)
+    top, bottom = np.nanpercentile(Y, 5), np.nanpercentile(Y, 95)
+    bow_x = np.nanmedian(P[:, s["bow_wrist"], 0])
+    bow_side_right = bow_x > np.nanmedian(P[:, s["draw_wrist"], 0])
+    # margins (torso lengths): the riser, sight and stabiliser beyond the bow hand; the top of the
+    # head above the nose; a little below the hips and behind the draw elbow
+    bow_m, back_m = 0.7, 0.3
+    left -= back_m if bow_side_right else bow_m
+    right += bow_m if bow_side_right else back_m
+    return float(left), float(right), float(top - 0.6), float(bottom + 0.35)
 
 
 def ghost_grid(cfg):

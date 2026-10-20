@@ -137,6 +137,41 @@ def _spearman(x, y):
     return float(r.statistic), float(r.pvalue)
 
 
+SCORE_COLS = {"score": "arrow score", "ring_r": "distance from centre (rings)",
+              "hit_y": "height on the face (rings, + = high)", "hit_x": "left/right (rings, + = right)"}
+
+
+def score_links(df: pd.DataFrame, outdir: Path) -> pd.DataFrame:
+    """Which measures go with where the arrow landed (Spearman, per archer), plus a plot of the
+    arrows on the face coloured by end. Empty if no scores were recorded."""
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    if "score" not in df or df["score"].notna().sum() < 6:
+        return pd.DataFrame()
+    cols = list(TIMING) + list(_out.FEATURE_INFO) + list(RELEASE)
+    rows = []
+    for a, sub in df[df.score.notna()].groupby("archer"):
+        for target in SCORE_COLS:
+            for c in cols:
+                rho, p = _spearman(sub[c].to_numpy(float), sub[target].to_numpy(float))
+                if np.isfinite(rho):
+                    rows.append(dict(archer=a, landed=target, measure=c, rho=rho, p=p,
+                                     n=int((sub[c].notna() & sub[target].notna()).sum())))
+        fig, ax = plt.subplots(figsize=(5, 5))
+        for r in range(1, 11):
+            ax.add_patch(plt.Circle((0, 0), r, fill=False, color="0.75", lw=0.8))
+        d = sub[sub.hit_x.notna()]
+        sc = ax.scatter(d.hit_x, d.hit_y, c=d["end"], cmap="viridis", s=40, zorder=3)
+        u = sub[sub.hit_x.isna()]
+        ax.text(-10, -10.8, f"{len(u)} arrows scored 9/10 without a direction (not plotted)", fontsize=8)
+        ax.set_xlim(-11, 11); ax.set_ylim(-11.5, 11); ax.set_aspect("equal"); ax.set_xticks([]); ax.set_yticks([])
+        fig.colorbar(sc, ax=ax, label="end", shrink=0.7)
+        ax.set_title(f"{a}: where the arrows went (approximate)", fontsize=10)
+        fig.tight_layout(); fig.savefig(outdir / f"target_{a}.png", dpi=90); plt.close(fig)
+    return pd.DataFrame(rows)
+
+
 def analyse(df: pd.DataFrame, outdir: Path) -> dict:
     """Charts + tables. Returns {'trends': df, 'turn': df, 'spread': df, 'pairs': df}."""
     import matplotlib
@@ -232,13 +267,33 @@ def _table(df, cols, fmt=None):
     return f"<table><tr>{head}</tr>{body}</table>"
 
 
+def _score_section(vs, named, f2, f3, df):
+    if vs is None or not len(vs):
+        return []
+    out = ["<h2>Form vs where the arrow landed</h2>",
+           "<p class=\"sub\">Spearman correlations between each measure and the arrow's score, its "
+           "distance from the centre, and its height / left-right on the face (only arrows with a written "
+           "direction have a height and side). p &lt; 0.1 shown: with this few arrows, pointers only.</p>"]
+    for a in sorted(df.archer.unique()):
+        if (Path(f"target_{a}.png")).name:
+            out.append(f"<img src=\"target_{a}.png\" style=\"max-width:420px\">")
+    v = vs[vs.p < 0.1].sort_values("p").assign(measure=lambda d: d.measure.map(named),
+                                                  landed=lambda d: d.landed.map(SCORE_COLS))
+    out.append(_table(v, ["archer", "landed", "measure", "rho", "p", "n"], {"rho": f2, "p": f3})
+               if len(v) else "<p>Nothing below p = 0.1.</p>")
+    return out
+
+
 def write(session: Path, base: dict, profile: str = "full") -> Path:
     from .gallery import _page
     from .session import results_dir
     session = Path(session).resolve()
     outdir = results_dir(session, profile) / "insights"
     df = shot_table(session, base, profile)
+    from . import scores as _scores
+    df = _scores.attach(df, session)
     res = analyse(df, outdir)
+    res["vs_score"] = score_links(df, outdir)
     f2, f3 = (lambda v: f"{v:+.2f}"), (lambda v: f"{v:.3f}")
     named = lambda c: _label(c)[0]  # noqa: E731
     tr = res["trends"].dropna()
@@ -254,6 +309,7 @@ def write(session: Path, base: dict, profile: str = "full") -> Path:
              "<p class=\"sub\">All of each archer's shots pooled. Exploratory: small samples, so treat "
              "p-values as pointers to look at the video, not proof.</p>",
              _table(counts, ["archer", "ends", "shots"]),
+             *_score_section(res.get("vs_score"), named, f2, f3, df),
              "<h2>Archers side by side</h2><img src=\"archers_compared.png\">",
              "<h2>Through the session</h2><img src=\"through_session.png\">",
              "<h3>Trends with time (Spearman, p &lt; 0.05)</h3>",
