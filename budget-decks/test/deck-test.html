@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>deck.js test</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: #1a1a2e; color: #e0e6f0; padding: 1rem; }
+  textarea { width: 100%; height: 5rem; }
+  pre { white-space: pre-wrap; font-size: 12px; }
+</style>
+</head>
+<body>
+<h1>deck.js test harness</h1>
+<p>Paste a Budget Deckbuilder share link, then compare the totals with what the builder itself shows.
+   (The builder counts snow-covered basics as free; we don't.)</p>
+<textarea id="link"></textarea>
+<button id="go">Analyse</button>
+<pre id="out"></pre>
+<script type="module">
+  import { analyseLink, describeDeck } from '../supabase/functions/mtg-submit/deck.js';
+  const settings = { format: 'modern', budget_main: 25, budget_side: 7.5, min_main: 60, max_side: 15 };
+  const out = document.getElementById('out');
+  const link = document.getElementById('link');
+  link.value = new URLSearchParams(location.search).get('link') || '';
+  async function run() {
+    out.textContent = 'Working…';
+    const t0 = performance.now();
+    try {
+      const a = await analyseLink(link.value, settings);
+      const d = await describeDeck(a.main.rows);
+      window.RESULT = { ...a, ...d };
+      out.textContent = `${Math.round(performance.now() - t0)} ms\n` + JSON.stringify(window.RESULT, null, 2);
+    } catch (e) { out.textContent = `${e.name}: ${e.message}`; }
+  }
+  document.getElementById('go').addEventListener('click', run);
+  if (link.value) run();
+</script>
+</body>
+</html>
