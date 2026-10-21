@@ -33,6 +33,10 @@ we store their share links and link back out rather than rendering decks here.
 - **Share links:** v2 links encode cards as `#tcgplayerId` or `*SET CN` tokens,
   which are decoded through a reverse index. Tokens the index doesn't contain are
   looked up on Scryfall. `#c=` confirmation links are rejected.
+- **Pasted decklists** (`decklist: {main, side}` in the request) are turned into a
+  v1 builder link (plain text, no tokens) by `buildShareLink`, carrying our
+  budgets/format and any name found in the text, then checked exactly like a
+  pasted link. The builder opens these links as-is.
 - **Validity:** a deck that is legal and within budget on the day it is submitted
   is valid from that day for `validity_months`, clamped to month end. It stays
   valid even if prices rise later.

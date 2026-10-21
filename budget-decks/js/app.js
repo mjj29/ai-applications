@@ -150,17 +150,30 @@ document.querySelectorAll('[name=f-when]').forEach(r => r.addEventListener('chan
   $('f-date').disabled = importWhen() !== 'date';
 }));
 
+const submitMode = () => document.querySelector('[name=f-mode]:checked')?.value ?? 'link';
+document.querySelectorAll('[name=f-mode]').forEach(r => r.addEventListener('change', () => {
+  const list = submitMode() === 'list';
+  $('f-link').classList.toggle('hidden', list);
+  $('list-fields').classList.toggle('hidden', !list);
+}));
+
 async function send(dryRun) {
   const importing = state.admin && $('f-import').checked;
   const fromLink = importWhen() === 'link';
+  const pasting = submitMode() === 'list';
+  if (pasting ? !$('f-main').value.trim() : !$('f-link').value.trim()) {
+    flash(pasting ? 'Paste a decklist first' : 'Paste a share link first', 'err'); return;
+  }
   if (importing && !fromLink && !$('f-date').value) { flash('Choose the date it was approved on', 'err'); return; }
+  if (importing && fromLink && pasting) { flash('A pasted decklist has no export date — choose the approval date', 'err'); return; }
   const box = $('result');
   box.className = 'result pending';
   box.innerHTML = 'Checking against today\'s prices…';
   $('btn-check').disabled = $('btn-submit').disabled = true;
   try {
     const res = await submitDeck({
-      link: $('f-link').value.trim(),
+      link: pasting ? undefined : $('f-link').value.trim(),
+      decklist: pasting ? { main: $('f-main').value, side: $('f-side').value } : undefined,
       deckName: $('f-name').value.trim() || undefined,
       dryRun,
       approvedOn: importing ? (fromLink ? 'link' : $('f-date').value) : undefined,
@@ -170,6 +183,8 @@ async function send(dryRun) {
     if (res.status === 'accepted' || res.status === 'refreshed') {
       $('submit-form').reset();
       $('import-detail').classList.add('hidden');
+      $('f-link').classList.remove('hidden');
+      $('list-fields').classList.add('hidden');
       await refreshDecks();
     }
   } catch (err) {
@@ -222,6 +237,7 @@ function renderResult(box, res) {
     ${res.warnings?.length ? `<p class="muted">Overridden for import:</p>${list(res.warnings, 'warnings')}` : ''}
     ${boardSummary('Main', res.main)}${boardSummary('Sideboard', res.side)}
     ${priced}
+    ${res.link ? `<p><a href="${esc(res.link)}" target="_blank" rel="noopener">Open in the Budget Deckbuilder</a></p>` : ''}
     ${res.main ? `<details><summary>Card prices</summary>
       <h4>Main</h4>${cardTable(res.main.rows)}<h4>Sideboard</h4>${cardTable(res.side.rows)}</details>` : ''}`;
 }

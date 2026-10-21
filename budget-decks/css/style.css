@@ -54,12 +54,14 @@ form.grid .row { grid-column: 1 / -1; }
 form.row { flex-direction: row; }
 
 /* ─── Controls ─────────────────────────────────────────────────────────────── */
-input[type=url], input[type=text], input[type=email], input[type=search], input[type=number], input[type=date], select {
+textarea, input[type=url], input[type=text], input[type=email], input[type=search], input[type=number], input[type=date], select {
   background: var(--bg); color: var(--text); border: 1px solid var(--border);
   border-radius: var(--radius); padding: 0.45rem 0.6rem; font: inherit; font-size: 0.9rem; min-width: 0;
 }
 input:focus, select:focus { outline: 2px solid var(--accent-dim); outline-offset: 0; }
-#f-link { width: 100%; }
+#f-link, #list-fields textarea { width: 100%; }
+#list-fields { display: flex; flex-direction: column; gap: 0.5rem; }
+#list-fields textarea { font-family: var(--font-mono, monospace); font-size: 0.85rem; resize: vertical; }
 #f-notes, #a-email { flex: 1; }
 .cbx { display: inline-flex; gap: 0.35rem; align-items: center; font-size: 0.88rem; cursor: pointer; }
 
