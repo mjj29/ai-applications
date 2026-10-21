@@ -41,7 +41,10 @@ we store their share links and link back out rather than rendering decks here.
   flagged `imported`.
 - **Same 75:** `deck_hash` is the SHA-256 of the sorted, lower-cased
   `qty name` lines for main and side.
-  - Resubmitting a deck that is still valid shows the existing entry.
+  - Resubmitting a deck that is still valid and passes today refreshes the
+    existing entry (new window from today, totals re-priced, `refresh_count`
+    bumped) rather than adding a row. Submitters can do this in one click from
+    "My decks" (`refreshId` in the request).
   - Once that entry expires, the deck can be submitted again and gets a new row.
     Old rows are kept as history.
 - **Colours:** the union of `colors` across the non-land main-deck cards, from
