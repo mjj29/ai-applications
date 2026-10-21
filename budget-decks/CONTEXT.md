@@ -47,7 +47,7 @@ we store their share links and link back out rather than rendering decks here.
     "My decks" (`refreshId` in the request).
   - Once that entry expires, the deck can be submitted again and gets a new row.
     Old rows are kept as history.
-- **Colours:** the union of `colors` across the non-land main-deck cards, from
+- **Colours:** `deckColours` in deck.js, from main-deck mana costs (hybrid only adds a colour the deck can't already pay; Phyrexian ignored; colours no land/mana source makes are dropped; any-colour sources ignored). Card data from
   Scryfall `/cards/collection`, looked up by front-face name.
 - **Featured card:** the priciest non-land card, with its Scryfall art crop.
 - **Key cards:** the most-played non-land cards.

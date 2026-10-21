@@ -56,9 +56,9 @@ Deno.serve(async (req) => {
   if (req.method !== 'POST')    return json({ error: 'Method not allowed' }, 405);
 
   let body: { link?: string; refreshId?: string; deckName?: string; dryRun?: boolean;
-              approvedOn?: string; notes?: string };
+              approvedOn?: string; notes?: string; action?: string };
   try { body = await req.json(); } catch { return json({ error: 'Bad JSON' }, 400); }
-  if (!body.link && !body.refreshId) return json({ error: 'Paste a share link first.' }, 400);
+  if (!body.link && !body.refreshId && !body.action) return json({ error: 'Paste a share link first.' }, 400);
 
   const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
   const today = todayUTC();
@@ -75,6 +75,24 @@ Deno.serve(async (req) => {
     const { data } = await admin.from('mtg_admins').select('user_id').eq('user_id', user.id).maybeSingle();
     isAdmin = !!data;
   }
+  // ── Admin: recompute colours of every listing (after a change to deckColours)
+  if (body.action === 'recolor') {
+    if (!isAdmin) return json({ error: 'Only admins can recompute colours.' }, 403);
+    const { data: rows, error } = await admin.from('mtg_submissions').select('id, deck_name, colors, cards');
+    if (error) return json({ error: error.message }, 500);
+    const changed = [];
+    for (const r of rows ?? []) {
+      const main = (r.cards?.main ?? []).map(([qty, name, unit]: [number, string, number | null]) =>
+        ({ qty, name, unit, found: true }));
+      const d = await describeDeck(main).catch(() => null);
+      await new Promise(s => setTimeout(s, 100));            // Scryfall rate limit
+      if (!d || d.colors === r.colors) continue;
+      await admin.from('mtg_submissions').update({ colors: d.colors }).eq('id', r.id);
+      changed.push({ deck_name: r.deck_name, from: r.colors, to: d.colors });
+    }
+    return json({ status: 'recolored', checked: rows?.length ?? 0, changed });
+  }
+
   const importing = !!body.approvedOn && !body.refreshId;
   if (importing && !isAdmin) return json({ error: 'Only admins can import past approvals.' }, 403);
 
