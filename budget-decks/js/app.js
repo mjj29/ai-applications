@@ -125,6 +125,21 @@ $('admin-form').addEventListener('submit', async e => {
   catch (err) { flash(err.message, 'err'); }
 });
 
+$('btn-recolor').addEventListener('click', async () => {
+  const btn = $('btn-recolor');
+  btn.disabled = true;
+  btn.textContent = 'Recomputing…';
+  try {
+    const res = await submitDeck({ action: 'recolor' });
+    flash(res.changed.length
+      ? `Updated ${res.changed.length} of ${res.checked}: ` + res.changed.map(c => `${c.deck_name || 'untitled'} ${c.from || 'C'}→${c.to || 'C'}`).join(', ')
+      : `All ${res.checked} decks already correct`);
+    await refreshDecks();
+  } catch (err) { flash(err.message, 'err'); }
+  btn.disabled = false;
+  btn.textContent = 'Recompute deck colours';
+});
+
 // ─── Submit ───────────────────────────────────────────────────────────────────
 
 $('f-import').addEventListener('change', () => {

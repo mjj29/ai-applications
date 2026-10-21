@@ -392,10 +392,67 @@ async function deckHash(mainRows, sideRows) {
 
 // ─── Colours & featured card (Scryfall) ──────────────────────────────────────
 
+const BASIC_COLOUR = { plains: 'W', island: 'U', swamp: 'B', mountain: 'R', forest: 'G' };
+const BASIC_TYPE = /\b(Plains|Island|Swamp|Mountain|Forest)\b/g;
+
 /**
- * Deck colours = colours of its non-land main-deck cards, in WUBRG order
- * ('' for colourless). Also picks a featured card (priciest non-land spell,
- * else the most-played one) with its art crop for the listing.
+ * Colours the deck actually needs, from mana costs rather than card colour:
+ *   - plain coloured symbols ({R}) are required;
+ *   - two-colour hybrid ({G/W}) only adds a colour if the deck can't already
+ *     pay it, choosing whichever colour covers the most unpaid hybrid symbols;
+ *   - Phyrexian ({U/P}) and {2/W} symbols never add a colour (payable without it);
+ *   - colours the deck's mana sources can't make are dropped: those spells are
+ *     cast for free or never cast (Hollow One, Street Wraith, Archon reanimation).
+ *     Sources of every colour don't count, so a Treasure maker doesn't add colours.
+ * entries: [{ qty, name, card }] for every main-deck card, card = Scryfall object or null.
+ */
+export function deckColours(entries) {
+  const required = new Set(), producible = new Set(), hybrids = [];
+  for (const { qty, name, card } of entries) {
+    const basic = BASIC_COLOUR[norm(name).replace(/^snow-covered\s+/, '')];
+    if (basic) { producible.add(basic); continue; }
+    if (!card) continue;
+    // Any-colour sources (Treasure makers, Mirrex, City of Brass) are fixing, not the deck's colours.
+    const made = card.produced_mana ?? [];
+    if (!COLOR_ORDER.every(c => made.includes(c))) made.forEach(m => producible.add(m));
+    const faces = card.card_faces ?? [card];
+    const isLand = /\bLand\b/.test(faces[0].type_line ?? card.type_line ?? '');
+    if (isLand) {
+      // Fetch lands produce nothing themselves: credit the basic types they can find.
+      if (!card.produced_mana?.length) {
+        const text = faces.map(f => f.oracle_text ?? '').join('\n');
+        const types = [...text.matchAll(BASIC_TYPE)].map(m => BASIC_COLOUR[m[1].toLowerCase()]);
+        if (types.length) types.forEach(c => producible.add(c));
+        else if (/basic land/i.test(text)) COLOR_ORDER.forEach(c => producible.add(c));
+      }
+      continue;
+    }
+    const symbols = faces.flatMap(f => [...(f.mana_cost ?? '').matchAll(/\{([^}]+)\}/g)].map(m => m[1]));
+    if (!symbols.length && !(card.mana_cost ?? faces[0].mana_cost)) {
+      (card.colors ?? faces.flatMap(f => f.colors ?? [])).forEach(c => required.add(c));  // no cost: Living End etc.
+      continue;
+    }
+    for (const s of symbols) {
+      if (COLOR_ORDER.includes(s)) required.add(s);
+      else if (/^[WUBRG]\/[WUBRG]$/.test(s)) hybrids.push({ opts: s.split('/'), qty });
+    }
+  }
+  // Nothing known about the mana (lookups failed): don't filter.
+  const canMake = c => !producible.size || producible.has(c);
+  const colours = new Set([...required].filter(canMake));
+  for (;;) {
+    const unpaid = hybrids.filter(h => !h.opts.some(c => colours.has(c)) && h.opts.some(canMake));
+    if (!unpaid.length) break;
+    const score = c => unpaid.reduce((n, h) => n + (h.opts.includes(c) ? h.qty : 0), 0);
+    colours.add(COLOR_ORDER.filter(canMake).reduce((best, c) => score(c) > score(best) ? c : best));
+  }
+  return COLOR_ORDER.filter(c => colours.has(c)).join('');
+}
+
+/**
+ * Deck colours (see deckColours), in WUBRG order ('' for colourless). Also
+ * picks a featured card (priciest non-land spell, else the most-played one)
+ * with its art crop for the listing.
  */
 export async function describeDeck(mainRows) {
   // Look up by front face: index names for some multi-face cards don't match Scryfall's.
@@ -413,21 +470,19 @@ export async function describeDeck(mainRows) {
   }
   const lookup = n => cards.get(front(n));
 
-  const colours = new Set();
   const spells = [];
   for (const r of mainRows) {
     const c = lookup(r.name);
     if (!c) continue;
     const frontType = c.card_faces?.[0]?.type_line ?? c.type_line ?? '';
     if (/\bLand\b/.test(frontType)) continue;
-    for (const col of c.colors ?? c.card_faces?.flatMap(f => f.colors || []) ?? []) colours.add(col);
     spells.push({ r, c });
   }
   spells.sort((a, b) => (b.r.unit ?? 0) - (a.r.unit ?? 0) || b.r.qty - a.r.qty);
   const pick = spells[0];
   const art = pick && (pick.c.image_uris?.art_crop ?? pick.c.card_faces?.[0]?.image_uris?.art_crop);
   return {
-    colors: COLOR_ORDER.filter(c => colours.has(c)).join(''),
+    colors: deckColours(mainRows.map(r => ({ qty: r.qty, name: r.name, card: lookup(r.name) ?? null }))),
     featured: pick ? { name: pick.c.name, art: art || null, uri: pick.c.scryfall_uri } : null,
     keyCards: [...spells].sort((a, b) => b.r.qty - a.r.qty || (b.r.unit ?? 0) - (a.r.unit ?? 0))
       .slice(0, 4).map(s => s.c.name),
