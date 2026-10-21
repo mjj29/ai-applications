@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Budget Decks</title>
+<meta name="description" content="Registry of budget-validated Magic: the Gathering decklists">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header id="topbar">
+  <h1>Budget Decks</h1>
+  <div id="rules" class="muted"></div>
+  <div id="auth-bar"></div>
+</header>
+
+<main>
+  <!-- ── Submit ─────────────────────────────────────────────────────────── -->
+  <section id="submit" class="panel">
+    <h2>Submit a deck</h2>
+    <p class="muted">
+      Build your deck in the
+      <a href="https://toskicologist.github.io/MTG-draft-sets-infographics/budgetdeckbuilder.html" target="_blank" rel="noopener">Budget Deckbuilder</a>,
+      copy its share link and paste it here. It's re-priced against today's TCGplayer Mid data.
+      If it's within budget and legal, it's valid for <span class="validity-months">6</span> months from today.
+      Submitting a deck that's already listed and still valid refreshes it instead.
+      Only true basic lands are free (snow-covered basics count).
+    </p>
+    <form id="submit-form" autocomplete="off">
+      <input id="f-link" type="url" placeholder="https://toskicologist.github.io/…/budgetdeckbuilder.html#d=…" required>
+      <input id="f-name" type="text" maxlength="80" placeholder="Deck name (optional)">
+      <div id="import-fields" class="admin-only hidden">
+        <label class="cbx"><input type="checkbox" id="f-import"> Admin import: approved in the past (skips the budget and legality check)</label>
+        <div id="import-detail" class="hidden">
+          <div class="row">
+            <label class="cbx"><input type="radio" name="f-when" value="link" checked> Approved on the date the link was exported</label>
+            <label class="cbx"><input type="radio" name="f-when" value="date"> Approved on</label>
+            <input id="f-date" type="date" disabled>
+          </div>
+          <input id="f-notes" type="text" maxlength="500" placeholder="Notes (optional)">
+        </div>
+      </div>
+      <div class="row">
+        <button type="button" class="btn" id="btn-check">Check only</button>
+        <button type="submit" class="btn btn-primary" id="btn-submit">Submit</button>
+        <span id="signin-hint" class="muted hidden">Sign in to submit.</span>
+      </div>
+    </form>
+    <div id="result" class="hidden"></div>
+  </section>
+
+  <!-- ── Mine ───────────────────────────────────────────────────────────── -->
+  <section id="mine" class="panel hidden">
+    <h2>My decks</h2>
+    <p class="muted">Refreshing re-checks a deck against today's prices. If it still passes,
+      it's valid for another <span class="validity-months">6</span> months from today.</p>
+    <div id="mine-list"></div>
+  </section>
+
+  <!-- ── List ───────────────────────────────────────────────────────────── -->
+  <section id="list" class="panel">
+    <div class="list-head">
+      <h2>Decks <span id="count" class="muted"></span></h2>
+      <div class="filters">
+        <input id="q" type="search" placeholder="Search deck, pilot or card">
+        <div id="color-filter" title="Show decks containing all selected colours (C = colourless)"></div>
+        <select id="sort">
+          <option value="expiry">Expires latest</option>
+          <option value="newest">Newest</option>
+          <option value="cheapest">Cheapest</option>
+          <option value="name">Name</option>
+        </select>
+        <label class="cbx"><input type="checkbox" id="show-expired"> Show expired</label>
+      </div>
+    </div>
+    <div id="decks"><p class="muted">Loading…</p></div>
+  </section>
+
+  <!-- ── Admin ──────────────────────────────────────────────────────────── -->
+  <section id="admin" class="panel admin-only hidden">
+    <h2>Admin</h2>
+    <form id="settings-form" class="grid">
+      <label>Main budget ($) <input id="s-bm" type="number" step="0.01" min="0" required></label>
+      <label>Sideboard budget ($) <input id="s-bs" type="number" step="0.01" min="0" required></label>
+      <label>Format
+        <select id="s-fmt">
+          <option>standard</option><option>pioneer</option><option>modern</option><option>legacy</option>
+          <option>vintage</option><option>pauper</option><option>premodern</option><option>commander</option>
+        </select>
+      </label>
+      <label>Valid for (months) <input id="s-vm" type="number" min="1" max="120" required></label>
+      <label>Minimum main deck <input id="s-min" type="number" min="0" required></label>
+      <label>Maximum sideboard <input id="s-max" type="number" min="0" required></label>
+      <div class="row"><button class="btn btn-primary">Save settings</button>
+        <span class="muted">Changes apply to new submissions only.</span></div>
+    </form>
+    <h3>Admins</h3>
+    <ul id="admins"></ul>
+    <form id="admin-form" class="row">
+      <input id="a-email" type="email" placeholder="Email of someone who has signed in" required>
+      <button class="btn">Add admin</button>
+    </form>
+  </section>
+</main>
+
+<footer class="muted">
+  Prices: <a href="https://tcgcsv.com/" target="_blank" rel="noopener">TCGcsv</a> via the
+  <a href="https://toskicologist.github.io/MTG-draft-sets-infographics/budgetdeckbuilder.html" target="_blank" rel="noopener">Budget Deckbuilder</a>'s daily data.
+  Card data &amp; images: <a href="https://scryfall.com" target="_blank" rel="noopener">Scryfall</a>.
+</footer>
+
+<div id="flash"></div>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

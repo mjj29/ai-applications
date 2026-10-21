@@ -1,0 +1,58 @@
+# Budget Decks — context for future work
+
+Public registry of Magic decklists validated against a budget (default $25 main /
+$7.50 side, Modern, valid 6 months; all admin-configurable). Decks are built in
+Toskicologist's [Budget Deckbuilder](https://toskicologist.github.io/MTG-draft-sets-infographics/budgetdeckbuilder.html);
+we store their share links and link back out rather than rendering decks here.
+
+## Pieces
+
+| File | Role |
+|---|---|
+| `index.html`, `css/style.css`, `js/app.js` | The page: deck list (public), submit form (signed in), admin panel |
+| `js/supabase.js`, `js/config.js` | Supabase client, auth, table access, call to the edge function |
+| `supabase/functions/mtg-submit/deck.js` | Decodes share links and prices decks. Plain JS so the browser test page can import it too |
+| `supabase/functions/mtg-submit/index.ts` | Edge function: auth, settings, validity dates, duplicate check, insert |
+| `mtg-setup.sql` | Tables `mtg_settings` (one row), `mtg_admins`, `mtg_submissions`, plus RLS |
+| `test/deck-test.html` | Manual harness: price a link with `deck.js` in the browser |
+
+## Rules
+
+- **Trust:** the totals inside a share link (`x.mt`/`x.sd`) are plain base64 JSON and
+  can be edited, so they're ignored. The edge function re-prices every deck.
+  Only the service role writes `mtg_submissions`. The public can read it, and
+  admins can delete from it.
+- **Pricing** is ported from the builder and uses its daily data
+  (`price-data` branch via jsDelivr: `tcg-prices.json`, `cards-index.json`, `data-meta.json`):
+  - Each card's price is its cheapest printing: the lower of the non-foil and foil
+    TCGplayer Mid across every printing.
+  - Cards the index doesn't know about fall back to a Scryfall prints search.
+  - **Differs from the builder:** snow-covered basics are *not* free. The builder
+    counts them as basics.
+  - Budgets, format and options stored in the link are ignored. Ours apply.
+- **Share links:** v2 links encode cards as `#tcgplayerId` or `*SET CN` tokens,
+  which are decoded through a reverse index. Tokens the index doesn't contain are
+  looked up on Scryfall. `#c=` confirmation links are rejected.
+- **Validity:** a deck that is legal and within budget on the day it is submitted
+  is valid from that day for `validity_months`, clamped to month end. It stays
+  valid even if prices rise later.
+- **Admin import:** an admin enters an approved-on date, or uses the date the link was exported (`x.t` in the link; editable by whoever made it, so admin-only). The budget, legality and
+  unpriced checks are skipped, validity runs from that date, and the deck is
+  flagged `imported`.
+- **Same 75:** `deck_hash` is the SHA-256 of the sorted, lower-cased
+  `qty name` lines for main and side.
+  - Resubmitting a deck that is still valid and passes today refreshes the
+    existing entry (new window from today, totals re-priced, `refresh_count`
+    bumped) rather than adding a row. Submitters can do this in one click from
+    "My decks" (`refreshId` in the request).
+  - Once that entry expires, the deck can be submitted again and gets a new row.
+    Old rows are kept as history.
+- **Colours:** the union of `colors` across the non-land main-deck cards, from
+  Scryfall `/cards/collection`, looked up by front-face name.
+- **Featured card:** the priciest non-land card, with its Scryfall art crop.
+- **Key cards:** the most-played non-land cards.
+
+## Not done (possible follow-ups)
+
+- There is no 4-copy-limit check, matching the builder.
+- Admins can only delete submissions, not edit them.
