@@ -36,7 +36,7 @@ we store their share links and link back out rather than rendering decks here.
 - **Validity:** a deck that is legal and within budget on the day it is submitted
   is valid from that day for `validity_months`, clamped to month end. It stays
   valid even if prices rise later.
-- **Admin import:** an admin enters an approved-on date. The budget, legality and
+- **Admin import:** an admin enters an approved-on date, or uses the date the link was exported (`x.t` in the link; editable by whoever made it, so admin-only). The budget, legality and
   unpriced checks are skipped, validity runs from that date, and the deck is
   flagged `imported`.
 - **Same 75:** `deck_hash` is the SHA-256 of the sorted, lower-cased

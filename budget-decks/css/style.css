@@ -121,6 +121,14 @@ table.cards tr.illegal td { color: var(--red); }
 .deck .key { margin-top: 0.15rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .deck .side { display: flex; flex-direction: column; align-items: flex-end; gap: 0.3rem; padding: 0.5rem 0.8rem 0.5rem 0; }
 
+.mine-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; padding: 0.35rem 0; border-bottom: 1px solid var(--surface2); }
+.mine-row:last-child { border-bottom: none; }
+.mine-row.expired { opacity: 0.55; }
+.mine-row > a { font-weight: 600; }
+.mine-row .btn { margin-left: auto; }
+.mine-result { flex-basis: 100%; margin-top: 0.3rem; }
+#import-detail { display: flex; flex-direction: column; gap: 0.5rem; }
+
 #admins { list-style: none; margin-bottom: 0.5rem; }
 #admins li { display: flex; gap: 0.5rem; align-items: center; padding: 0.2rem 0; font-size: 0.9rem; }
 

@@ -23,6 +23,7 @@
       <a href="https://toskicologist.github.io/MTG-draft-sets-infographics/budgetdeckbuilder.html" target="_blank" rel="noopener">Budget Deckbuilder</a>,
       copy its share link and paste it here. It's re-priced against today's TCGplayer Mid data.
       If it's within budget and legal, it's valid for <span class="validity-months">6</span> months from today.
+      Submitting a deck that's already listed and still valid refreshes it instead.
       Only true basic lands are free (snow-covered basics count).
     </p>
     <form id="submit-form" autocomplete="off">
@@ -30,8 +31,12 @@
       <input id="f-name" type="text" maxlength="80" placeholder="Deck name (optional)">
       <div id="import-fields" class="admin-only hidden">
         <label class="cbx"><input type="checkbox" id="f-import"> Admin import: approved in the past (skips the budget and legality check)</label>
-        <div id="import-detail" class="hidden row">
-          <label>Approved on <input id="f-date" type="date"></label>
+        <div id="import-detail" class="hidden">
+          <div class="row">
+            <label class="cbx"><input type="radio" name="f-when" value="link" checked> Approved on the date the link was exported</label>
+            <label class="cbx"><input type="radio" name="f-when" value="date"> Approved on</label>
+            <input id="f-date" type="date" disabled>
+          </div>
           <input id="f-notes" type="text" maxlength="500" placeholder="Notes (optional)">
         </div>
       </div>
@@ -42,6 +47,14 @@
       </div>
     </form>
     <div id="result" class="hidden"></div>
+  </section>
+
+  <!-- ── Mine ───────────────────────────────────────────────────────────── -->
+  <section id="mine" class="panel hidden">
+    <h2>My decks</h2>
+    <p class="muted">Refreshing re-checks a deck against today's prices. If it still passes,
+      it's valid for another <span class="validity-months">6</span> months from today.</p>
+    <div id="mine-list"></div>
   </section>
 
   <!-- ── List ───────────────────────────────────────────────────────────── -->

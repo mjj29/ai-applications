@@ -338,6 +338,8 @@ export async function analyseLink(url, settings) {
   return {
     link,
     deckName: String(state.n || parsed.title || '').trim().slice(0, 80),
+    // When the builder exported the link (user-editable, so only trusted for admin imports).
+    exportedAt: (state.x && typeof state.x.t === 'string' && !isNaN(Date.parse(state.x.t))) ? state.x.t : null,
     format,
     priceDate: data.meta.generatedAt,
     main, side,

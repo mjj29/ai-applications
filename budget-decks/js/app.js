@@ -130,10 +130,15 @@ $('admin-form').addEventListener('submit', async e => {
 $('f-import').addEventListener('change', () => {
   $('import-detail').classList.toggle('hidden', !$('f-import').checked);
 });
+const importWhen = () => document.querySelector('[name=f-when]:checked')?.value ?? 'link';
+document.querySelectorAll('[name=f-when]').forEach(r => r.addEventListener('change', () => {
+  $('f-date').disabled = importWhen() !== 'date';
+}));
 
 async function send(dryRun) {
   const importing = state.admin && $('f-import').checked;
-  if (importing && !$('f-date').value) { flash('Choose the date it was approved on', 'err'); return; }
+  const fromLink = importWhen() === 'link';
+  if (importing && !fromLink && !$('f-date').value) { flash('Choose the date it was approved on', 'err'); return; }
   const box = $('result');
   box.className = 'result pending';
   box.innerHTML = 'Checking against today\'s prices…';
@@ -143,11 +148,11 @@ async function send(dryRun) {
       link: $('f-link').value.trim(),
       deckName: $('f-name').value.trim() || undefined,
       dryRun,
-      approvedOn: importing ? $('f-date').value : undefined,
+      approvedOn: importing ? (fromLink ? 'link' : $('f-date').value) : undefined,
       notes: importing ? $('f-notes').value.trim() || undefined : undefined,
     });
-    renderResult(res);
-    if (res.status === 'accepted') {
+    renderResult($('result'), res);
+    if (res.status === 'accepted' || res.status === 'refreshed') {
       $('submit-form').reset();
       $('import-detail').classList.add('hidden');
       await refreshDecks();
@@ -181,13 +186,16 @@ function cardTable(rows) {
     </tr>`).join('')}</tbody></table>`;
 }
 
-function renderResult(res) {
-  const box = $('result');
+function renderResult(box, res) {
   const list = (items, cls) => items?.length ? `<ul class="${cls}">${items.map(p => `<li>${esc(p.text)}</li>`).join('')}</ul>` : '';
   const heads = {
     accepted:  ['ok',   `Accepted — valid until ${res.submission ? fmtDate(res.submission.valid_until) : ''}.`],
-    ok:        ['ok',   `Passes. If submitted now it would be valid until ${res.validUntil ? fmtDate(res.validUntil) : ''}.`],
-    duplicate: ['warn', res.existing ? `This exact 75 is already listed${res.existing.deck_name ? ` as “${esc(res.existing.deck_name)}”` : ''}, valid until ${fmtDate(res.existing.valid_until)}.` : 'Already listed.'],
+    refreshed: ['ok',   `Refreshed${res.submission?.deck_name ? ` “${esc(res.submission.deck_name)}”` : ''} — now valid until ${res.submission ? fmtDate(res.submission.valid_until) : ''}` +
+                        (res.previousUntil ? ` (was ${fmtDate(res.previousUntil)}).` : '.')],
+    ok:        ['ok',   res.wouldRefresh
+                        ? `Passes. It's already listed${res.wouldRefresh.deck_name ? ` as “${esc(res.wouldRefresh.deck_name)}”` : ''}; submitting would extend it from ${fmtDate(res.wouldRefresh.valid_until)} to ${fmtDate(res.validUntil)}.`
+                        : `Passes. If submitted now it would be valid until ${res.validUntil ? fmtDate(res.validUntil) : ''}.`],
+    duplicate: ['warn', res.existing ? `This exact 75 is already listed${res.existing.deck_name ? ` as “${esc(res.existing.deck_name)}”` : ''}, valid until ${fmtDate(res.existing.valid_until)} — nothing to extend yet.` : 'Already listed.'],
     rejected:  ['bad',  'Not accepted:'],
   };
   const [cls, head] = heads[res.status] ?? ['bad', esc(res.status)];
@@ -247,6 +255,7 @@ function renderDecks() {
   };
   decks.sort(sorts[$('sort').value]);
 
+  renderMine(today);
   const live = state.decks.filter(d => d.valid_until >= today).length;
   $('count').textContent = `${live} currently valid${state.decks.length > live ? ` · ${state.decks.length - live} expired` : ''}`;
 
@@ -260,6 +269,43 @@ function renderDecks() {
     try { await deleteSubmission(b.dataset.del); await refreshDecks(); flash('Deleted'); }
     catch (err) { flash(err.message, 'err'); }
   }));
+}
+
+function renderMine(today) {
+  const mine = state.user ? state.decks.filter(d => d.submitted_by === state.user.id) : [];
+  $('mine').classList.toggle('hidden', !mine.length);
+  if (!mine.length) return;
+  mine.sort((a, b) => b.valid_until.localeCompare(a.valid_until));
+  $('mine-list').innerHTML = mine.map(d => {
+    const expired = d.valid_until < today;
+    return `
+      <div class="mine-row${expired ? ' expired' : ''}">
+        <span class="pips">${d.colors ? [...d.colors].map(pip).join('') : pip('C')}</span>
+        <a href="${esc(d.link)}" target="_blank" rel="noopener">${esc(d.deck_name || (d.featured ? `${d.featured.name} deck` : 'Untitled deck'))}</a>
+        <span class="muted small">${expired ? 'expired' : 'valid until'} ${fmtDate(d.valid_until)}${d.refreshed_at ? ` · refreshed ${fmtDate(d.refreshed_at.slice(0, 10))}` : ''}</span>
+        ${expired ? '' : `<button class="btn btn-sm" data-refresh="${esc(d.id)}">Refresh</button>`}
+        <div class="mine-result hidden" id="mr-${esc(d.id)}"></div>
+      </div>`;
+  }).join('');
+  $('mine-list').querySelectorAll('[data-refresh]').forEach(b => b.addEventListener('click', () => refreshMine(b)));
+}
+
+async function refreshMine(btn) {
+  const id = btn.dataset.refresh;
+  const box = $(`mr-${id}`);
+  btn.disabled = true;
+  btn.textContent = 'Checking…';
+  try {
+    const res = await submitDeck({ refreshId: id });
+    if (res.status === 'refreshed') { flash(`Valid until ${fmtDate(res.submission.valid_until)}`); await refreshDecks(); return; }
+    renderResult(box, res);
+    box.classList.add('mine-result');
+  } catch (err) {
+    box.className = 'mine-result result bad';
+    box.textContent = err.message;
+  }
+  btn.disabled = false;
+  btn.textContent = 'Refresh';
 }
 
 function deckCard(d, today) {

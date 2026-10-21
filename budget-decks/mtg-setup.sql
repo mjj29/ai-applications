@@ -106,8 +106,13 @@ create table if not exists public.mtg_submissions (
   valid_from     date not null,
   valid_until    date not null,
   imported       boolean not null default false, -- admin import of a past approval
-  notes          text
+  notes          text,
+  refreshed_at   timestamptz,                   -- last time validity was bumped
+  refresh_count  int not null default 0
 );
+-- columns added after the first version of this script
+alter table public.mtg_submissions add column if not exists refreshed_at  timestamptz;
+alter table public.mtg_submissions add column if not exists refresh_count int not null default 0;
 create index if not exists mtg_submissions_valid_until on public.mtg_submissions (valid_until desc);
 create index if not exists mtg_submissions_hash        on public.mtg_submissions (deck_hash);
 alter table public.mtg_submissions enable row level security;
