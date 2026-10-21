@@ -32,6 +32,7 @@ RELEASE = {"creep": "creep before the loose (+ forward / - expanding)",
            "live_release": "draw hand travel back in 0.3s after the loose",
            "hand_drop": "draw hand drop in 0.3s after the loose",
            "elbow_drop": "draw elbow drop in 0.3s after the loose",
+           "finish_rise": "draw hand rise after the loose (to the ear = up)",
            "bow_drop": "bow-hand drop in 0.5s after the loose"}
 
 
@@ -58,10 +59,17 @@ def _release_features(coords, grid, s):
     bw_0, bw_5 = at(s["bow_wrist"], -0.04, 0.0), at(s["bow_wrist"], 0.45, 0.55)
     drop = bw_5[:, 1] - bw_0[:, 1]                                 # + = down (image y down)
     hand_drop = dw_3[:, 1] - dw_0[:, 1]                            # + = down (falls to the chest)
+    # follow-through finish: the hand (wrist, index, pinky) rising from the anchor towards the ear,
+    # 0.2-0.3s after the loose. Checked on 2026-10-20 end 1: to the ear +0.08/+0.09, stayed at the
+    # cheek -0.02 (an archer's own call from the video).
+    hand_pts = [s["draw_wrist"], s["draw_wrist"] + 4, s["draw_wrist"] + 2]   # wrist, index, pinky
+    # measured against the nose: the body moves after the loose, the head-to-hand relation is what counts
+    hy = lambda lo, hi: np.nanmean([at(j, lo, hi)[:, 1] for j in hand_pts], axis=0) - at(L.NOSE, lo, hi)[:, 1]
+    finish_rise = -(hy(0.2, 0.3) - hy(-0.12, -0.03))
     de_0, de_3 = at(s["draw_elbow"], -0.04, 0.0), at(s["draw_elbow"], 0.25, 0.35)
     elbow_drop = de_3[:, 1] - de_0[:, 1]                           # + = the draw elbow collapses down
     return {"creep": creep, "live_release": live, "hand_drop": hand_drop, "elbow_drop": elbow_drop,
-            "bow_drop": drop}
+            "finish_rise": finish_rise, "bow_drop": drop}
 
 
 def shot_table(session: Path, base: dict, profile: str = "full") -> pd.DataFrame:
@@ -267,6 +275,28 @@ def _table(df, cols, fmt=None):
     return f"<table><tr>{head}</tr>{body}</table>"
 
 
+def _finish_section(df, sheets):
+    if "finish_rise" not in df or df.finish_rise.notna().sum() == 0:
+        return []
+    out = ["<h2>Follow-through: back to the ear?</h2>",
+           f"<p class=\"sub\">Target: the draw hand straight back to the ear. Green = got there (hand rose "
+           f"&ge;{FINISH_EAR} torso lengths towards the ear, measured against the nose, 0.2&ndash;0.3s after the "
+           "loose); orange = stayed at the cheek/jaw. Sideways flapping needs a camera directly behind, in line "
+           "with the arrow.</p>"]
+    rows = []
+    for a, sub in df.groupby("archer"):
+        ear = sub.finish_rise >= FINISH_EAR
+        row = dict(archer=a, shots=int(sub.finish_rise.notna().sum()), to_the_ear=int(ear.sum()))
+        if "score" in sub and sub.score.notna().any():
+            row["avg score (ear)"] = round(float(sub[ear].score.mean()), 2) if ear.any() else ""
+            row["avg score (short)"] = round(float(sub[~ear].score.mean()), 2) if (~ear).any() else ""
+        rows.append(row)
+    t = pd.DataFrame(rows)
+    out.append(_table(t, list(t.columns)))
+    out += [f"<img src=\"{f.name}\">" for f in sheets]
+    return out
+
+
 def _score_section(vs, named, f2, f3, df):
     if vs is None or not len(vs):
         return []
@@ -294,6 +324,11 @@ def write(session: Path, base: dict, profile: str = "full") -> Path:
     df = _scores.attach(df, session)
     res = analyse(df, outdir)
     res["vs_score"] = score_links(df, outdir)
+    try:
+        sheets = followthrough_sheet(session, df, base, profile, outdir)
+    except Exception as e:  # noqa: BLE001
+        print(f"  follow-through sheet failed: {e}")
+        sheets = []
     f2, f3 = (lambda v: f"{v:+.2f}"), (lambda v: f"{v:.3f}")
     named = lambda c: _label(c)[0]  # noqa: E731
     tr = res["trends"].dropna()
@@ -309,6 +344,7 @@ def write(session: Path, base: dict, profile: str = "full") -> Path:
              "<p class=\"sub\">All of each archer's shots pooled. Exploratory: small samples, so treat "
              "p-values as pointers to look at the video, not proof.</p>",
              _table(counts, ["archer", "ends", "shots"]),
+             *_finish_section(df, sheets),
              *_score_section(res.get("vs_score"), named, f2, f3, df),
              "<h2>Archers side by side</h2><img src=\"archers_compared.png\">",
              "<h2>Through the session</h2><img src=\"through_session.png\">",
@@ -325,4 +361,69 @@ def write(session: Path, base: dict, profile: str = "full") -> Path:
     out = outdir / "insights.html"
     out.write_text(_page(f"Session {session.name} insights", "\n".join(parts)), encoding="utf-8")
     print(f"insights: {len(df)} shots -> {out}")
+    return out
+
+
+FINISH_EAR = 0.05      # finish_rise at or above this: the hand went back to the ear
+
+
+def followthrough_sheet(session: Path, df: pd.DataFrame, base: dict, profile: str, outdir: Path):
+    """followthrough_<archer>.jpg: every shot's draw hand 0.35s after the loose, cropped round the
+    head, grouped 'to the ear' / 'short' (finish_rise), labelled end, shot and score."""
+    import json
+
+    import cv2
+
+    from .align import open_before
+    from .session import archer_cfg, archers
+    out = []
+    for a, vids in archers(session).items():
+        sub = df[df.archer == a]
+        if sub.empty or "finish_rise" not in sub:
+            continue
+        ddir = _config.data_dir(archer_cfg(base, session, a, profile))
+        path = {v.stem: v for v in vids}
+
+        def tile(r):
+            df_p = pd.read_parquet(ddir / f"{r.stem}.pose.parquet")
+            m = json.loads((ddir / f"{r.stem}.meta.json").read_text(encoding="utf-8"))
+            i = int(np.argmin(np.abs(df_p.t_ms / 1000 - (r.release_t - 0.1))))
+            nx, ny = df_p.x0[i] * m["width"], df_p.y0[i] * m["height"]
+            tor = np.nanmedian(np.hypot((df_p.x11 + df_p.x12 - df_p.x23 - df_p.x24) / 2 * m["width"],
+                                        (df_p.y11 + df_p.y12 - df_p.y23 - df_p.y24) / 2 * m["height"]))
+            cap = open_before(path[r.stem], r.release_t + 0.35)
+            f = None
+            while cap.grab():
+                if cap.get(cv2.CAP_PROP_POS_MSEC) / 1000 >= r.release_t + 0.35 - 0.004:
+                    f = cap.retrieve()[1]
+                    break
+            cap.release()
+            if f is None:
+                return None
+            hw = int(0.75 * tor)
+            x0, y0 = int(max(0, nx - hw)), int(max(0, ny - 0.4 * hw))
+            c = cv2.resize(f[y0:y0 + int(0.9 * hw), x0:x0 + 2 * hw], (220, 200))
+            ear = r.finish_rise >= FINISH_EAR
+            cv2.rectangle(c, (0, 0), (219, 199), (0, 200, 0) if ear else (0, 140, 255), 3)
+            cv2.rectangle(c, (0, 0), (220, 22), (0, 0, 0), -1)
+            sc = "" if not np.isfinite(r.get("score", np.nan)) else f"  scored {int(r.score)}"
+            cv2.putText(c, f"E{r.end} #{r.shot}{sc}", (4, 16), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+            return c
+        rows = []
+        for ear, title in ((True, "TO THE EAR"), (False, "SHORT (stayed at the cheek/jaw)")):
+            g = sub[(sub.finish_rise >= FINISH_EAR) == ear].sort_values(["end", "shot"])
+            tiles = [t for t in (tile(r) for _, r in g.iterrows()) if t is not None]
+            if not tiles:
+                continue
+            hdr = np.zeros((30, 8 * 220, 3), np.uint8)
+            cv2.putText(hdr, f"{a}: {title} - {len(tiles)} shots, hand 0.35s after the release", (6, 22),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
+            rows.append(hdr)
+            for k in range(0, len(tiles), 8):
+                t = tiles[k:k + 8]
+                rows.append(np.hstack(t + [np.zeros_like(t[0])] * (8 - len(t))))
+        if rows:
+            f = outdir / f"followthrough_{a}.jpg"
+            cv2.imwrite(str(f), np.vstack(rows), [cv2.IMWRITE_JPEG_QUALITY, 88])
+            out.append(f)
     return out

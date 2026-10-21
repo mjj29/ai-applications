@@ -146,6 +146,19 @@ def shot_measures(rows, rel_t, cfg):
     out["head_move"] = float(np.linalg.norm(n3 - n0) / torso)
     bw5 = at(s["bow_wrist"], 0.45, 0.55)
     out["bow_drop2"] = float((bw5[1] - bw0[1]) / torso)
+    # Signed sideways measures (image x, + = right in the picture; from behind the archer that is
+    # roughly right on the target), torso lengths:
+    bs0 = at(s["bow_shoulder"], -0.06, -0.01)
+    ds0 = at(s["draw_shoulder"], -0.06, -0.01)
+    out["bow_x_throw"] = float((bw5[0] - bw0[0]) / torso)                 # bow hand thrown sideways after the loose
+    bw_early = at(s["bow_wrist"], -0.65, -0.55)
+    out["bow_x_drift"] = float((bw0[0] - bw_early[0]) / torso)            # bow hand drift in the last 0.6s of aim
+    out["bow_arm_x"] = float((bw0[0] - bs0[0]) / torso)                   # where the bow hand points vs the bow shoulder
+    out["elbow_x_move"] = float((de3[0] - de0[0]) / torso)                # draw elbow sideways in 0.3s
+    out["head_x_move"] = float((n3[0] - n0[0]) / torso)                   # head sideways in 0.3s
+    out["shoulder_line_x"] = float((ds0[0] - bs0[0]) / torso)             # draw vs bow shoulder across the picture
+    sh3 = (at(s["draw_shoulder"], 0.25, 0.32) + at(s["bow_shoulder"], 0.25, 0.32)) / 2
+    out["body_x_move"] = float((sh3[0] - (ds0[0] + bs0[0]) / 2) / torso)  # whole upper body sideways in 0.3s
     win = (t >= rel_t - 0.1) & (t <= rel_t + 0.3)
     out["vis_draw_wrist"] = float(np.nanmedian(P[win, s["draw_wrist"], 2]))
     out["vis_draw_elbow"] = float(np.nanmedian(P[win, s["draw_elbow"], 2]))
