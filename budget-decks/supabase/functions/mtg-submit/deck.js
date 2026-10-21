@@ -79,6 +79,28 @@ function reverseIndex(data) {
 
 // ─── Share link ──────────────────────────────────────────────────────────────
 
+function b64urlEncode(str) {
+  const bytes = new TextEncoder().encode(str);
+  let bin = '';
+  for (const b of bytes) bin += String.fromCharCode(b);
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+/**
+ * Build a builder share link from pasted decklist text (any format the
+ * builder's parser accepts: plain, MTGA, MTGO, Moxfield, "Sideboard"/"SB:").
+ * This is a v1 link — plain text, no card tokens — which the builder opens
+ * as-is. It carries our budgets/format so the builder shows the same rules.
+ */
+export function buildShareLink({ main, side = '', name = '' }, settings) {
+  const state = {
+    d: String(main || ''), s: String(side || ''), n: String(name || '').slice(0, 80),
+    bm: String(Number(settings.budget_main)), bs: String(Number(settings.budget_side)),
+    f: settings.format, c: 1, ib: 1, cc: 1,
+  };
+  return `${BUILDER_URL}#d=${b64urlEncode(JSON.stringify(state))}`;
+}
+
 function b64urlDecode(s) {
   s = s.replace(/-/g, '+').replace(/_/g, '/');
   while (s.length % 4) s += '=';
@@ -209,6 +231,23 @@ function parseDecklist(raw, isKnownCard) {
   return { main, side, title };
 }
 
+// Deck name from pasted text: a title line, MTGA's "Name …", or a "// comment" above the list.
+function extractDeckName(raw, isKnownCard) {
+  const title = deckTitle(raw, isKnownCard);
+  if (title) return title.slice(0, 80);
+  for (const rawLine of (raw || '').split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line) continue;
+    const nm = line.replace(/^[\s/#*=_~>|-]+/, '').match(/^name\s+(.+)$/i);
+    if (nm) return nm[1].trim().slice(0, 80);
+    if (sectionHeader(line) || /^sb:\s*$/i.test(line)) continue;
+    const cm = line.match(/^(?:\/\/+|#+)\s*(\S.*)$/);
+    if (cm) return cm[1].trim().slice(0, 80);
+    return '';
+  }
+  return '';
+}
+
 function parseSideboardBox(raw) {
   const side = new Map();
   for (const rawLine of (raw || '').split(/\r?\n/)) {
@@ -337,7 +376,7 @@ export async function analyseLink(url, settings) {
 
   return {
     link,
-    deckName: String(state.n || parsed.title || '').trim().slice(0, 80),
+    deckName: String(state.n || extractDeckName(d, isKnown) || '').trim().slice(0, 80),
     // When the builder exported the link (user-editable, so only trusted for admin imports).
     exportedAt: (state.x && typeof state.x.t === 'string' && !isNaN(Date.parse(state.x.t))) ? state.x.t : null,
     format,

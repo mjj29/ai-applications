@@ -8,6 +8,7 @@
  *
  * POST /functions/v1/mtg-submit
  * Body: { link?: string,             // a share link to check / submit, or
+ *         decklist?: { main, side? }, // pasted decklist text (built into a share link), or
  *         refreshId?: uuid,          // re-check one of your listed decks and bump its validity
  *         deckName?: string, dryRun?: boolean,
  *         approvedOn?: 'YYYY-MM-DD' | 'link',  // admins only: import a past approval
@@ -23,7 +24,7 @@
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { analyseLink, describeDeck, DeckError } from './deck.js';
+import { analyseLink, buildShareLink, describeDeck, DeckError } from './deck.js';
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
@@ -55,10 +56,14 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: CORS });
   if (req.method !== 'POST')    return json({ error: 'Method not allowed' }, 405);
 
-  let body: { link?: string; refreshId?: string; deckName?: string; dryRun?: boolean;
-              approvedOn?: string; notes?: string; action?: string };
+  let body: { link?: string; decklist?: { main?: string; side?: string }; refreshId?: string;
+              deckName?: string; dryRun?: boolean; approvedOn?: string; notes?: string; action?: string };
   try { body = await req.json(); } catch { return json({ error: 'Bad JSON' }, 400); }
-  if (!body.link && !body.refreshId && !body.action) return json({ error: 'Paste a share link first.' }, 400);
+  const pasted = !body.link && body.decklist && String(body.decklist.main ?? '').trim();
+  if (!body.link && !pasted && !body.refreshId && !body.action)
+    return json({ error: 'Paste a share link or a decklist first.' }, 400);
+  if (pasted && String(body.decklist!.main ?? '').length + String(body.decklist!.side ?? '').length > 20000)
+    return json({ error: 'That decklist is too long.' }, 400);
 
   const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
   const today = todayUTC();
@@ -111,7 +116,16 @@ Deno.serve(async (req) => {
 
   // ── Price it ───────────────────────────────────────────────────────────────
   let a;
-  try { a = await analyseLink(target ? target.link : body.link, settings); }
+  // A pasted decklist becomes a builder link, then goes through exactly the same check.
+  const link = target ? target.link
+    : pasted ? buildShareLink({ main: body.decklist!.main, side: body.decklist!.side, name: body.deckName }, settings)
+    : body.link;
+  try {
+    a = await analyseLink(link, settings);
+    // Carry a name found in the pasted text ("Name …" / title line) into the link the builder opens.
+    if (pasted && !body.deckName && a.deckName)
+      a.link = buildShareLink({ main: body.decklist!.main, side: body.decklist!.side, name: a.deckName }, settings);
+  }
   catch (e) {
     if (e instanceof DeckError) return rejected(e.message);
     console.error(e);

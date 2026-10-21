@@ -21,13 +21,24 @@
     <p class="muted">
       Build your deck in the
       <a href="https://toskicologist.github.io/MTG-draft-sets-infographics/budgetdeckbuilder.html" target="_blank" rel="noopener">Budget Deckbuilder</a>,
-      copy its share link and paste it here. It's re-priced against today's TCGplayer Mid data.
+      copy its share link and paste it here — or paste a decklist exported from Moxfield, MTGA, MTGO etc.
+      and we'll make the builder link for you. It's re-priced against today's TCGplayer Mid data.
       If it's within budget and legal, it's valid for <span class="validity-months">6</span> months from today.
       Submitting a deck that's already listed and still valid refreshes it instead.
       Only true basic lands are free (snow-covered basics count).
     </p>
     <form id="submit-form" autocomplete="off">
-      <input id="f-link" type="url" placeholder="https://toskicologist.github.io/…/budgetdeckbuilder.html#d=…" required>
+      <div class="row" role="radiogroup" aria-label="Submit as">
+        <label class="cbx"><input type="radio" name="f-mode" value="link" checked> Share link</label>
+        <label class="cbx"><input type="radio" name="f-mode" value="list"> Decklist</label>
+      </div>
+      <input id="f-link" type="url" placeholder="https://toskicologist.github.io/…/budgetdeckbuilder.html#d=…">
+      <div id="list-fields" class="hidden">
+        <textarea id="f-main" rows="10" spellcheck="false"
+          placeholder="4 Lightning Bolt&#10;4 Fatal Push (KLR) 84&#10;…&#10;&#10;Sideboard&#10;3 Leyline of the Void"></textarea>
+        <textarea id="f-side" rows="4" spellcheck="false"
+          placeholder="Sideboard (optional — or include a &quot;Sideboard&quot; line above)"></textarea>
+      </div>
       <input id="f-name" type="text" maxlength="80" placeholder="Deck name (optional)">
       <div id="import-fields" class="admin-only hidden">
         <label class="cbx"><input type="checkbox" id="f-import"> Admin import: approved in the past (skips the budget and legality check)</label>
