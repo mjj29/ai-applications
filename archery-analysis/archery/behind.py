@@ -227,6 +227,10 @@ def _clip(out, frames, rows, rel, torso, cfg, slow, ffmpeg_writer):
     m = (t >= rel - 0.3) & (t <= rel + 0.3)
     pts = P[m][:, [L.NOSE, s["draw_wrist"], s["draw_elbow"], s["draw_shoulder"], s["bow_shoulder"]], :2].reshape(-1, 2)
     H, W = frames[0][1].shape[:2]
+    if not np.isfinite(pts).any():                     # nothing tracked right at the loose
+        pts = P[:, [L.NOSE, s["draw_wrist"], s["draw_elbow"], s["draw_shoulder"], s["bow_shoulder"]], :2].reshape(-1, 2)
+    if not np.isfinite(pts).any() or not np.isfinite(torso):
+        return
     cx, cy = np.nanmedian(pts[:, 0]), np.nanmedian(pts[:, 1])
     half_w = min(W / 2, max(1.3 * torso, 0.6 * (np.nanpercentile(pts[:, 0], 95) - np.nanpercentile(pts[:, 0], 5)) + 0.4 * torso))
     half_h = half_w * 0.75

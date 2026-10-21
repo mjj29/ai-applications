@@ -214,7 +214,10 @@ def run_session(session: Path, base: dict, profile: str = "full", only: list[str
                 _sync.run(session, Path(cam2), base, profile, only=vids)
                 from . import behind
                 for v in vids:
-                    behind.run_end(v, cfg, session)
+                    try:
+                        behind.run_end(v, cfg, session)
+                    except Exception:  # noqa: BLE001
+                        print(f"!! {v.stem}: behind view failed:\n{traceback.format_exc()}")
             except Exception:  # noqa: BLE001
                 print(f"!! {name}: second-camera sync failed:\n{traceback.format_exc()}")
         try:

@@ -254,7 +254,8 @@ def _corr(mt, md, ct, cd, offsets, step):
     return np.array(out)
 
 
-def sync_end(main_video: Path, cam_video: Path, main_cfg: dict, search_s: float = 8.0) -> dict:
+def sync_end(main_video: Path, cam_video: Path, main_cfg: dict, search_s: float = 8.0,
+             clock_bias: float = 0.0) -> dict:
     """Offset of cam_video relative to main_video (main time = cam file time / stretch + offset).
 
     The recording clocks put the offset within a few seconds (the two cameras are started by
@@ -271,7 +272,7 @@ def sync_end(main_video: Path, cam_video: Path, main_cfg: dict, search_s: float 
     res = dict(file=Path(cam_video).name, fps=info["fps"], stretch=k, cam_has_audio=info["has_audio"],
                main_releases=[round(float(x), 3) for x in main_rel])
     sm, sc = start_time(main_video), start_time(cam_video)
-    prior = (sc - sm).total_seconds() if sm and sc else 0.0
+    prior = ((sc - sm).total_seconds() if sm and sc else 0.0) + clock_bias
     # turn parts (<stem>_tN) start at the cut, not at the recording's start
     mt, md = motion_curve(main_video, roi=_archer_box(main_video, main_cfg))
     ct, cd = motion_curve(cam_video)
@@ -335,6 +336,22 @@ def run(session: Path, cam2_folder: Path, base: dict, profile: str = "full", onl
         print(f"  {m.stem} <- {c.name}: " + (f"offset {s['offset_s']:+.3f}s (clocks said {s['clock_offset_s']:+.1f}), "
                                               f"x{s['stretch']:g} slow, motion correlation {s['correlation']}, "
                                               f"jump at each release x{s['release_jump']}" if ok else s.get("note", "not synced")))
+    # The two clocks disagree by a steady amount (the cameras name files when they start
+    # differently); learn it from the session and re-check any end far from it, searching close.
+    done = {m: data[m.stem] for m in pairs if data.get(m.stem, {}).get("offset_s") is not None}
+    if len(done) >= 4:
+        bias = float(np.median([d["offset_s"] - d["clock_offset_s"] for d in done.values()]))
+        for m, d in done.items():
+            if abs(d["offset_s"] - d["clock_offset_s"] - bias) > 1.0:
+                cfg = archer_cfg(base, session, owner[m], profile)
+                s2 = sync_end(m, pairs[m], cfg, search_s=1.5, clock_bias=bias)
+                s2.update(path=str(pairs[m]), archer=owner[m], rechecked=f"was {d['offset_s']:+.3f}s, "
+                          f"{d['offset_s'] - d['clock_offset_s'] - bias:+.1f}s off the session's clock gap")
+                s2["clock_offset_s"] = d["clock_offset_s"]
+                data[m.stem] = s2
+                print(f"  {m.stem}: re-checked near the session's usual clock gap ({bias:+.2f}s): "
+                      f"offset {s2['offset_s']:+.3f}s (was {d['offset_s']:+.3f}), correlation "
+                      f"{s2['correlation']} (was {d['correlation']}), jump x{s2['release_jump']}")
     unpaired = [c.name for c in cam2 if c not in pairs.values()]
     if unpaired:
         print(f"  not paired with any end (no overlapping recording time): {', '.join(unpaired)}")

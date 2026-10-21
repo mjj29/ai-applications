@@ -45,7 +45,8 @@ def _when(stem: str) -> str:
 
 def _clips(odir: Path, stem: str) -> list[Path]:
     d = odir / stem
-    return sorted(d.glob("shot_*.mp4"), key=lambda p: int(p.stem.split("_")[1])) if d.is_dir() else []
+    return sorted((p for p in d.glob("shot_*.mp4") if p.stem.split("_")[1].isdigit()),
+                  key=lambda p: int(p.stem.split("_")[1])) if d.is_dir() else []
 
 
 def build(name: str, videos: list[Path], cfg: dict) -> Path | None:

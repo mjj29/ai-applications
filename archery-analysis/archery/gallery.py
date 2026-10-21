@@ -50,7 +50,8 @@ def _shot_clips(odir: Path, stem: str) -> list[Path]:
     d = odir / stem
     if not d.is_dir():
         return []
-    return sorted(d.glob("shot_*.mp4"), key=lambda p: int(p.stem.split("_")[1]))
+    return sorted((p for p in d.glob("shot_*.mp4") if p.stem.split("_")[1].isdigit()),
+                  key=lambda p: int(p.stem.split("_")[1]))
 
 
 def archer_page(name: str, videos: list[Path], cfg: dict) -> Path | None:
