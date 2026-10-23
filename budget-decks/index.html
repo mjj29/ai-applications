@@ -21,18 +21,19 @@
     <p class="muted">
       Build your deck in the
       <a href="https://toskicologist.github.io/MTG-draft-sets-infographics/budgetdeckbuilder.html" target="_blank" rel="noopener">Budget Deckbuilder</a>,
-      copy its share link and paste it here — or paste a decklist exported from Moxfield, MTGA, MTGO etc.
-      and we'll make the builder link for you. It's re-priced against today's TCGplayer Mid data.
+      copy its share link and paste it here. A <a href="https://manabox.app" target="_blank" rel="noopener">ManaBox</a>
+      deck link works too, or paste a decklist exported from Moxfield, MTGA, MTGO etc. — we'll make the builder link for you. It's re-priced against today's TCGplayer Mid data.
       If it's within budget and legal, it's valid for <span class="validity-months">6</span> months from today.
       Submitting a deck that's already listed and still valid refreshes it instead.
       Only true basic lands are free (snow-covered basics count).
+      Note ManaBox's own totals use different TCGplayer prices and are often lower than the TCG Mid used here.
     </p>
     <form id="submit-form" autocomplete="off">
       <div class="row" role="radiogroup" aria-label="Submit as">
         <label class="cbx"><input type="radio" name="f-mode" value="link" checked> Share link</label>
         <label class="cbx"><input type="radio" name="f-mode" value="list"> Decklist</label>
       </div>
-      <input id="f-link" type="url" placeholder="https://toskicologist.github.io/…/budgetdeckbuilder.html#d=…">
+      <input id="f-link" type="url" placeholder="Budget Deckbuilder share link (…#d=…) or https://manabox.app/decks/…">
       <div id="list-fields" class="hidden">
         <textarea id="f-main" rows="10" spellcheck="false"
           placeholder="4 Lightning Bolt&#10;4 Fatal Push (KLR) 84&#10;…&#10;&#10;Sideboard&#10;3 Leyline of the Void"></textarea>

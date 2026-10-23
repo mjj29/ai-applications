@@ -37,6 +37,15 @@ we store their share links and link back out rather than rendering decks here.
   v1 builder link (plain text, no tokens) by `buildShareLink`, carrying our
   budgets/format and any name found in the text, then checked exactly like a
   pasted link. The builder opens these links as-is.
+- **ManaBox links** (`manabox.app/decks/<id>`): the edge function fetches the page
+  (no CORS, so server-side only) and reads the deck from the `<astro-island>`
+  props (Astro `[type, value]` serialization; `parseManaBoxPage` in deck.js).
+  Board categories: 0–2 commander/oathbreaker/signature spell and 3 main → main
+  deck, 4 → sideboard, 5 maybeboard → ignored. It's then handled like a pasted
+  decklist and the *builder* link is stored. ManaBox's `editDate` stands in for
+  the export date for admin imports. ManaBox's displayed TCGplayer prices are
+  lower than TCG Mid, so its totals don't match ours. This relies on ManaBox's
+  page structure, which may change.
 - **Validity:** a deck that is legal and within budget on the day it is submitted
   is valid from that day for `validity_months`, clamped to month end. It stays
   valid even if prices rise later.
