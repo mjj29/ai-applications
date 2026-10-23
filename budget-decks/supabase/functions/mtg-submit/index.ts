@@ -7,7 +7,7 @@
  * can't insert decks the server hasn't priced itself.
  *
  * POST /functions/v1/mtg-submit
- * Body: { link?: string,             // a share link to check / submit, or
+ * Body: { link?: string,             // a builder share link or manabox.app/decks/… link, or
  *         decklist?: { main, side? }, // pasted decklist text (built into a share link), or
  *         refreshId?: uuid,          // re-check one of your listed decks and bump its validity
  *         deckName?: string, dryRun?: boolean,
@@ -24,7 +24,7 @@
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { analyseLink, buildShareLink, describeDeck, DeckError } from './deck.js';
+import { analyseLink, buildShareLink, describeDeck, fetchManaBoxDeck, isManaBoxLink, DeckError } from './deck.js';
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
@@ -115,16 +115,24 @@ Deno.serve(async (req) => {
   }
 
   // ── Price it ───────────────────────────────────────────────────────────────
+  // A pasted decklist or a ManaBox deck becomes a builder link, then goes
+  // through exactly the same check; the builder link is what gets stored.
   let a;
-  // A pasted decklist becomes a builder link, then goes through exactly the same check.
-  const link = target ? target.link
-    : pasted ? buildShareLink({ main: body.decklist!.main, side: body.decklist!.side, name: body.deckName }, settings)
-    : body.link;
   try {
+    let list: { main: string; side: string; name: string; editedAt?: string | null } | null = null;
+    if (!target && pasted) list = { main: body.decklist!.main!, side: body.decklist!.side ?? '', name: body.deckName ?? '' };
+    if (!target && !pasted && isManaBoxLink(body.link)) {
+      const mb = await fetchManaBoxDeck(body.link!);
+      list = { main: mb.main, side: mb.side, name: body.deckName || mb.name, editedAt: mb.editedAt };
+    }
+    const link = target ? target.link : list ? buildShareLink(list, settings) : body.link;
     a = await analyseLink(link, settings);
-    // Carry a name found in the pasted text ("Name …" / title line) into the link the builder opens.
-    if (pasted && !body.deckName && a.deckName)
-      a.link = buildShareLink({ main: body.decklist!.main, side: body.decklist!.side, name: a.deckName }, settings);
+    if (list) {
+      // Carry a name found in the text ("Name …" / title line) into the link the builder opens.
+      if (!list.name && a.deckName) a.link = buildShareLink({ ...list, name: a.deckName }, settings);
+      // ManaBox's last-edited time stands in for the builder's export time (admin "date from link").
+      if (list.editedAt) a.exportedAt = list.editedAt;
+    }
   }
   catch (e) {
     if (e instanceof DeckError) return rejected(e.message);

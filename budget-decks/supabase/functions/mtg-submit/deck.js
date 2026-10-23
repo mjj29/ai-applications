@@ -101,6 +101,70 @@ export function buildShareLink({ main, side = '', name = '' }, settings) {
   return `${BUILDER_URL}#d=${b64urlEncode(JSON.stringify(state))}`;
 }
 
+// ─── ManaBox share links ─────────────────────────────────────────────────────
+// manabox.app/decks/<id> is server-rendered (Astro): the deck is in the page as
+// the props of an <astro-island>, in Astro's [type, value] serialization.
+// There's no CORS header, so this has to run server-side.
+
+const MANABOX_RE = /^https?:\/\/(?:www\.)?manabox\.app\/decks\/([A-Za-z0-9_-]+)/i;
+export const isManaBoxLink = url => MANABOX_RE.test(String(url || '').trim());
+
+// ManaBox board categories: 0 commander, 1 oathbreaker, 2 signature spell
+// (ManaBox counts those as main), 3 main, 4 sideboard, 5 maybeboard (ignored).
+const MB_MAIN = new Set([0, 1, 2, 3]), MB_SIDE = 4;
+
+function unescapeHtml(s) {
+  return s.replace(/&(#x[0-9a-f]+|#\d+|quot|amp|lt|gt|apos|#39);/gi, (_, e) => {
+    const l = e.toLowerCase();
+    if (l[0] === '#') return String.fromCodePoint(l[1] === 'x' ? parseInt(l.slice(2), 16) : parseInt(l.slice(1), 10));
+    return { quot: '"', amp: '&', lt: '<', gt: '>', apos: "'" }[l];
+  });
+}
+
+// Astro serializes props as [0, value] / [1, array] (other tags: dates, maps… not used here).
+function astroValue(v) {
+  if (Array.isArray(v) && v.length === 2 && typeof v[0] === 'number') {
+    const [t, x] = v;
+    if (t === 1) return x.map(astroValue);
+    if (t === 0) return x && typeof x === 'object' && !Array.isArray(x) ? astroObject(x) : x;
+    return x;
+  }
+  return v;
+}
+const astroObject = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, astroValue(v)]));
+
+/** Deck from a ManaBox deck page's HTML: { name, format, editedAt, main, side } as decklist text. */
+export function parseManaBoxPage(html) {
+  let deck = null;
+  for (const m of String(html).matchAll(/<astro-island\b[^>]*\bprops="([^"]*)"/g)) {
+    let props;
+    try { props = JSON.parse(unescapeHtml(m[1])); } catch { continue; }
+    if (props?.deck) { deck = astroValue(props.deck); break; }
+  }
+  if (!deck || !Array.isArray(deck.cards)) throw new DeckError('Could not read the deck from that ManaBox page — is the deck shared publicly?');
+  const lines = pred => deck.cards.filter(c => pred(c.boardCategory) && c.quantity > 0 && c.name)
+    .map(c => `${c.quantity} ${c.name}`).join('\n');
+  const main = lines(b => MB_MAIN.has(b)), side = lines(b => b === MB_SIDE);
+  if (!main) throw new DeckError('That ManaBox deck has no main-deck cards.');
+  return {
+    name: String(deck.name || '').trim().slice(0, 80),
+    format: deck.format || null,
+    editedAt: Number.isFinite(deck.editDate) ? new Date(deck.editDate).toISOString() : null,
+    main, side,
+  };
+}
+
+export async function fetchManaBoxDeck(url) {
+  const id = MANABOX_RE.exec(String(url).trim())?.[1];
+  if (!id) throw new DeckError('That does not look like a ManaBox deck link.');
+  const r = await fetch(`https://manabox.app/decks/${id}`, {
+    headers: { 'Accept': 'text/html', 'User-Agent': 'Mozilla/5.0 (compatible; mjj29-budget-decks/1.0)' },
+  });
+  if (r.status === 404) throw new DeckError('ManaBox says that deck does not exist (or is private).');
+  if (!r.ok) throw new Error(`ManaBox HTTP ${r.status}`);
+  return parseManaBoxPage(await r.text());
+}
+
 function b64urlDecode(s) {
   s = s.replace(/-/g, '+').replace(/_/g, '/');
   while (s.length % 4) s += '=';
