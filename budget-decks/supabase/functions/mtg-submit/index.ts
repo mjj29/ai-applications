@@ -167,11 +167,14 @@ Deno.serve(async (req) => {
     return rejected(`An approval from ${validFrom} would have expired on ${validUntil}.`, 'expired', summary);
 
   // ── Same 75 already listed and valid? Refresh it rather than duplicate it ──
+  // Only match listings this person can see: someone else's private deck must not
+  // be revealed (or refreshed) because you happen to submit the same 75.
   let existing = target;
   if (!existing) {
-    const { data } = await admin.from('mtg_submissions').select('*')
-      .eq('deck_hash', a.hash).gte('valid_until', today)
-      .order('valid_until', { ascending: false }).limit(1).maybeSingle();
+    let q = admin.from('mtg_submissions').select('*')
+      .eq('deck_hash', a.hash).gte('valid_until', today);
+    if (!isAdmin) q = user ? q.or(`is_public.eq.true,submitted_by.eq.${user.id}`) : q.eq('is_public', true);
+    const { data } = await q.order('valid_until', { ascending: false }).limit(1).maybeSingle();
     existing = data;
   }
   const result = { validFrom, validUntil, warnings, ...summary };
@@ -227,6 +230,7 @@ Deno.serve(async (req) => {
     valid_from:  validFrom,
     valid_until: validUntil,
     imported:    importing,
+    is_public:   !settings.private_by_default,
     notes:       body.notes ? String(body.notes).slice(0, 500) : null,
   };
   const { data: saved, error: insErr } = await admin.from('mtg_submissions').insert(row).select().single();

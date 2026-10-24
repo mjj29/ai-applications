@@ -6,7 +6,7 @@
 import {
   signIn, signOut, getUser, onAuthChange,
   loadSettings, saveSettings, loadSubmissions, deleteSubmission,
-  isAdmin, listAdmins, addAdmin, removeAdmin, submitDeck,
+  isAdmin, listAdmins, addAdmin, removeAdmin, submitDeck, setPublic, publishAll,
 } from './supabase.js';
 
 const $ = id => document.getElementById(id);
@@ -80,7 +80,8 @@ function renderRules() {
   const s = state.settings;
   if (!s) return;
   $('rules').textContent =
-    `${money(s.budget_main)} main · ${money(s.budget_side)} side · ${s.format[0].toUpperCase()}${s.format.slice(1)} · valid ${s.validity_months} months`;
+    `${money(s.budget_main)} main · ${money(s.budget_side)} side · ${s.format[0].toUpperCase()}${s.format.slice(1)} · valid ${s.validity_months} months` +
+    (s.private_by_default ? ' · new decks private until published' : '');
   document.querySelectorAll('.validity-months').forEach(el => { el.textContent = s.validity_months; });
 }
 
@@ -89,6 +90,7 @@ function renderSettingsForm() {
   if (!s) return;
   $('s-bm').value = s.budget_main; $('s-bs').value = s.budget_side; $('s-fmt').value = s.format;
   $('s-vm').value = s.validity_months; $('s-min').value = s.min_main; $('s-max').value = s.max_side;
+  $('s-private').checked = !!s.private_by_default;
 }
 
 $('settings-form').addEventListener('submit', async e => {
@@ -97,6 +99,7 @@ $('settings-form').addEventListener('submit', async e => {
     state.settings = await saveSettings({
       budget_main: Number($('s-bm').value), budget_side: Number($('s-bs').value), format: $('s-fmt').value,
       validity_months: Number($('s-vm').value), min_main: Number($('s-min').value), max_side: Number($('s-max').value),
+      private_by_default: $('s-private').checked,
     });
     renderRules();
     flash('Settings saved');
@@ -219,7 +222,8 @@ function cardTable(rows) {
 function renderResult(box, res) {
   const list = (items, cls) => items?.length ? `<ul class="${cls}">${items.map(p => `<li>${esc(p.text)}</li>`).join('')}</ul>` : '';
   const heads = {
-    accepted:  ['ok',   `Accepted — valid until ${res.submission ? fmtDate(res.submission.valid_until) : ''}.`],
+    accepted:  ['ok',   `Accepted — valid until ${res.submission ? fmtDate(res.submission.valid_until) : ''}.` +
+                        (res.submission?.is_public === false ? ' It\'s private: only you and the admins can see it until you publish it (under My decks).' : '')],
     refreshed: ['ok',   `Refreshed${res.submission?.deck_name ? ` “${esc(res.submission.deck_name)}”` : ''} — now valid until ${res.submission ? fmtDate(res.submission.valid_until) : ''}` +
                         (res.previousUntil ? ` (was ${fmtDate(res.previousUntil)}).` : '.')],
     ok:        ['ok',   res.wouldRefresh
@@ -288,13 +292,16 @@ function renderDecks() {
 
   renderMine(today);
   const live = state.decks.filter(d => d.valid_until >= today).length;
-  $('count').textContent = `${live} currently valid${state.decks.length > live ? ` · ${state.decks.length - live} expired` : ''}`;
+  const hidden = state.decks.filter(d => d.is_public === false).length;
+  $('count').textContent = `${live} currently valid${state.decks.length > live ? ` · ${state.decks.length - live} expired` : ''}` +
+    (hidden ? ` · ${hidden} private` : '');
 
   if (!decks.length) {
     $('decks').innerHTML = `<p class="muted">${state.decks.length ? 'No decks match.' : 'No decks submitted yet.'}</p>`;
     return;
   }
   $('decks').innerHTML = decks.map(d => deckCard(d, today)).join('');
+  bindVisibility($('decks'));
   $('decks').querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', async () => {
     if (!confirm('Delete this submission permanently?')) return;
     try { await deleteSubmission(b.dataset.del); await refreshDecks(); flash('Deleted'); }
@@ -314,12 +321,46 @@ function renderMine(today) {
         <span class="pips">${d.colors ? [...d.colors].map(pip).join('') : pip('C')}</span>
         <a href="${esc(d.link)}" target="_blank" rel="noopener">${esc(d.deck_name || (d.featured ? `${d.featured.name} deck` : 'Untitled deck'))}</a>
         <span class="muted small">${expired ? 'expired' : 'valid until'} ${fmtDate(d.valid_until)}${d.refreshed_at ? ` · refreshed ${fmtDate(d.refreshed_at.slice(0, 10))}` : ''}</span>
-        ${expired ? '' : `<button class="btn btn-sm" data-refresh="${esc(d.id)}">Refresh</button>`}
+        ${d.is_public !== false ? '' : '<span class="badge warn" title="Only you and the admins can see this deck">private</span>'}
+        <span class="mine-actions">
+          ${visibilityButton(d)}
+          ${expired ? '' : `<button class="btn btn-sm" data-refresh="${esc(d.id)}">Refresh</button>`}
+        </span>
         <div class="mine-result hidden" id="mr-${esc(d.id)}"></div>
       </div>`;
   }).join('');
   $('mine-list').querySelectorAll('[data-refresh]').forEach(b => b.addEventListener('click', () => refreshMine(b)));
+  bindVisibility($('mine-list'));
 }
+
+// Publish / Hide: owners can publish their own decks (and hide them again while
+// private-by-default is on); admins can do either to any deck. The database
+// function mtg_set_public enforces the same rules.
+function visibilityButton(d) {
+  const mine = state.user && d.submitted_by === state.user.id;
+  if (d.is_public === false && (state.admin || mine))
+    return `<button class="btn btn-sm" data-vis="${esc(d.id)}" data-pub="1" title="Make this deck visible to everyone">Publish</button>`;
+  if (d.is_public !== false && (state.admin || (mine && state.settings?.private_by_default)))
+    return `<button class="btn btn-sm" data-vis="${esc(d.id)}" data-pub="0" title="Hide this deck from everyone but its submitter and the admins">Hide</button>`;
+  return '';
+}
+
+function bindVisibility(root) {
+  root.querySelectorAll('[data-vis]').forEach(b => b.addEventListener('click', async () => {
+    const pub = b.dataset.pub === '1';
+    b.disabled = true;
+    try { await setPublic(b.dataset.vis, pub); flash(pub ? 'Published' : 'Hidden'); await refreshDecks(); }
+    catch (err) { flash(err.message, 'err'); b.disabled = false; }
+  }));
+}
+
+$('btn-publish-all').addEventListener('click', async () => {
+  const n = state.decks.filter(d => d.is_public === false).length;
+  if (!n) { flash('There are no hidden decks'); return; }
+  if (!confirm(`Publish all ${n} hidden deck${n === 1 ? '' : 's'}? Everyone will be able to see them.`)) return;
+  try { const done = await publishAll(); flash(`Published ${done} deck${done === 1 ? '' : 's'}`); await refreshDecks(); }
+  catch (err) { flash(err.message, 'err'); }
+});
 
 async function refreshMine(btn) {
   const id = btn.dataset.refresh;
@@ -355,6 +396,7 @@ function deckCard(d, today) {
           <span class="pips">${pips}</span>
           <a href="${esc(d.link)}" target="_blank" rel="noopener">${esc(name)}</a>
           ${d.imported ? '<span class="badge" title="Imported by an admin from an earlier approval">imported</span>' : ''}
+          ${d.is_public !== false ? '' : '<span class="badge warn" title="Only the submitter and the admins can see this deck">private</span>'}
         </div>
         <div class="muted small">
           ${esc(d.submitter_name || 'Anonymous')} · ${esc(d.format)} · ${d.main_count}+${d.side_count} cards ·
@@ -366,7 +408,10 @@ function deckCard(d, today) {
       </div>
       <div class="side">
         ${status}
-        ${state.admin ? `<button class="btn btn-sm btn-danger" data-del="${esc(d.id)}">Delete</button>` : ''}
+        <span class="deck-actions">
+          ${visibilityButton(d)}
+          ${state.admin ? `<button class="btn btn-sm btn-danger" data-del="${esc(d.id)}">Delete</button>` : ''}
+        </span>
       </div>
     </article>`;
 }

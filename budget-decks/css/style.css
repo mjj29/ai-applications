@@ -127,7 +127,9 @@ table.cards tr.illegal td { color: var(--red); }
 .mine-row:last-child { border-bottom: none; }
 .mine-row.expired { opacity: 0.55; }
 .mine-row > a { font-weight: 600; }
-.mine-row .btn { margin-left: auto; }
+.mine-row .mine-actions { margin-left: auto; display: flex; gap: 0.35rem; }
+.deck .deck-actions { display: flex; gap: 0.35rem; }
+form.grid .wide { grid-column: 1 / -1; color: var(--text); flex-direction: row; }
 .mine-result { flex-basis: 100%; margin-top: 0.3rem; }
 #import-detail { display: flex; flex-direction: column; gap: 0.5rem; }
 

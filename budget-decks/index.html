@@ -103,6 +103,8 @@
       <label>Valid for (months) <input id="s-vm" type="number" min="1" max="120" required></label>
       <label>Minimum main deck <input id="s-min" type="number" min="0" required></label>
       <label>Maximum sideboard <input id="s-max" type="number" min="0" required></label>
+      <label class="cbx wide"><input type="checkbox" id="s-private">
+        Keep new decks private until published (only the submitter and admins can see them)</label>
       <div class="row"><button class="btn btn-primary">Save settings</button>
         <span class="muted">Changes apply to new submissions only.</span></div>
     </form>
@@ -116,6 +118,10 @@
     <div class="row">
       <button class="btn" id="btn-recolor">Recompute deck colours</button>
       <span class="muted">Re-derives every listing's colours from its cards (after a change to the colour rules).</span>
+    </div>
+    <div class="row">
+      <button class="btn" id="btn-publish-all">Publish all hidden decks</button>
+      <span class="muted">Makes every private deck public, e.g. after the event.</span>
     </div>
   </section>
 </main>
