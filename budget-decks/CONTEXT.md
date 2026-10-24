@@ -46,6 +46,16 @@ we store their share links and link back out rather than rendering decks here.
   the export date for admin imports. ManaBox's displayed TCGplayer prices are
   lower than TCG Mid, so its totals don't match ours. This relies on ManaBox's
   page structure, which may change.
+- **Private lists:** `mtg_settings.private_by_default` makes new submissions
+  `is_public = false`. RLS lets a row be read only if it's public, it's yours, or
+  you're an admin, so a private deck's existence and contents are hidden from
+  everyone else. Changing visibility goes through `mtg_set_public`: owners can
+  publish their own deck, and can hide it again only while the setting is on;
+  admins can do either. `mtg_publish_all` lets admins publish everything (e.g.
+  after an event). Duplicate/refresh matching only considers listings the
+  submitter can see, so submitting the same 75 as someone's private deck makes
+  a separate listing rather than revealing or refreshing theirs. Turning the
+  setting on or off doesn't change existing decks.
 - **Validity:** a deck that is legal and within budget on the day it is submitted
   is valid from that day for `validity_months`, clamped to month end. It stays
   valid even if prices rise later.

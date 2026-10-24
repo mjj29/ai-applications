@@ -55,6 +55,14 @@ export async function loadSubmissions() {
   return check(await supabase.from('mtg_submissions').select('*').order('valid_until', { ascending: false }));
 }
 
+export async function setPublic(id, makePublic) {
+  return check(await supabase.rpc('mtg_set_public', { submission_id: id, make_public: makePublic }));
+}
+
+export async function publishAll() {
+  return check(await supabase.rpc('mtg_publish_all'));
+}
+
 export async function deleteSubmission(id) {
   check(await supabase.from('mtg_submissions').delete().eq('id', id));
 }

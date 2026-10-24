@@ -62,6 +62,7 @@ create table if not exists public.mtg_settings (
   validity_months int not null default 6 check (validity_months between 1 and 120),
   min_main        int not null default 60,
   max_side        int not null default 15,
+  private_by_default boolean not null default false,  -- new decks hidden until published
   updated_at      timestamptz not null default now(),
   updated_by      uuid references auth.users on delete set null
 );
@@ -113,14 +114,53 @@ create table if not exists public.mtg_submissions (
 -- columns added after the first version of this script
 alter table public.mtg_submissions add column if not exists refreshed_at  timestamptz;
 alter table public.mtg_submissions add column if not exists refresh_count int not null default 0;
+alter table public.mtg_submissions add column if not exists is_public boolean not null default true;
+alter table public.mtg_settings    add column if not exists private_by_default boolean not null default false;
 create index if not exists mtg_submissions_valid_until on public.mtg_submissions (valid_until desc);
 create index if not exists mtg_submissions_hash        on public.mtg_submissions (deck_hash);
 alter table public.mtg_submissions enable row level security;
 
 drop policy if exists "mtg_submissions: public read"  on public.mtg_submissions;
 drop policy if exists "mtg_submissions: admin delete" on public.mtg_submissions;
-create policy "mtg_submissions: public read"  on public.mtg_submissions for select using (true);
+drop policy if exists "mtg_submissions: read visible" on public.mtg_submissions;
+-- Private (unpublished) decks are visible only to their submitter and admins.
+create policy "mtg_submissions: read visible" on public.mtg_submissions for select
+  using (is_public or submitted_by = auth.uid() or public.is_mtg_admin());
 create policy "mtg_submissions: admin delete" on public.mtg_submissions for delete using (public.is_mtg_admin());
+
+-- Publish or hide one deck. Owners can publish their own, and hide them again
+-- while private-by-default is on; admins can do either to any deck.
+-- (A function rather than an update policy, so nothing else on the row can be changed.)
+create or replace function public.mtg_set_public(submission_id uuid, make_public boolean)
+returns boolean language plpgsql security definer set search_path = public as $$
+declare owner uuid;
+begin
+  select submitted_by into owner from public.mtg_submissions where id = submission_id;
+  if not found then raise exception 'No such deck'; end if;
+  if not public.is_mtg_admin() then
+    if owner is distinct from auth.uid() then raise exception 'You can only publish or hide your own decks'; end if;
+    if not make_public and not (select private_by_default from public.mtg_settings where id = 1) then
+      raise exception 'Hiding decks is turned off';
+    end if;
+  end if;
+  update public.mtg_submissions set is_public = make_public where id = submission_id;
+  return make_public;
+end $$;
+revoke execute on function public.mtg_set_public(uuid, boolean) from public, anon;
+grant  execute on function public.mtg_set_public(uuid, boolean) to authenticated;
+
+-- Admin: publish every hidden deck (e.g. after the event). Returns how many.
+create or replace function public.mtg_publish_all()
+returns int language plpgsql security definer set search_path = public as $$
+declare n int;
+begin
+  if not public.is_mtg_admin() then raise exception 'Only admins can publish all decks'; end if;
+  update public.mtg_submissions set is_public = true where not is_public;
+  get diagnostics n = row_count;
+  return n;
+end $$;
+revoke execute on function public.mtg_publish_all() from public, anon;
+grant  execute on function public.mtg_publish_all() to authenticated;
 
 -- ─── Bootstrap ───────────────────────────────────────────────────────────────
 -- After you have signed in to the site once, make yourself the first admin:
