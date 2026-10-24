@@ -128,8 +128,8 @@ create policy "mtg_submissions: read visible" on public.mtg_submissions for sele
   using (is_public or submitted_by = auth.uid() or public.is_mtg_admin());
 create policy "mtg_submissions: admin delete" on public.mtg_submissions for delete using (public.is_mtg_admin());
 
--- Publish or hide one deck. Owners can publish their own, and hide them again
--- while private-by-default is on; admins can do either to any deck.
+-- Publish or hide one deck. Owners can publish their own (one-way: once public,
+-- only an admin can hide it again); admins can do either to any deck.
 -- (A function rather than an update policy, so nothing else on the row can be changed.)
 create or replace function public.mtg_set_public(submission_id uuid, make_public boolean)
 returns boolean language plpgsql security definer set search_path = public as $$
@@ -139,9 +139,7 @@ begin
   if not found then raise exception 'No such deck'; end if;
   if not public.is_mtg_admin() then
     if owner is distinct from auth.uid() then raise exception 'You can only publish or hide your own decks'; end if;
-    if not make_public and not (select private_by_default from public.mtg_settings where id = 1) then
-      raise exception 'Hiding decks is turned off';
-    end if;
+    if not make_public then raise exception 'Only admins can hide a published deck'; end if;
   end if;
   update public.mtg_submissions set is_public = make_public where id = submission_id;
   return make_public;
