@@ -50,8 +50,7 @@ we store their share links and link back out rather than rendering decks here.
   `is_public = false`. RLS lets a row be read only if it's public, it's yours, or
   you're an admin, so a private deck's existence and contents are hidden from
   everyone else. Changing visibility goes through `mtg_set_public`: owners can
-  publish their own deck, and can hide it again only while the setting is on;
-  admins can do either. `mtg_publish_all` lets admins publish everything (e.g.
+  publish their own deck but never hide it again (one-way); admins can do either. `mtg_publish_all` lets admins publish everything (e.g.
   after an event). Duplicate/refresh matching only considers listings the
   submitter can see, so submitting the same 75 as someone's private deck makes
   a separate listing rather than revealing or refreshing theirs. Turning the

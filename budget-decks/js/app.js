@@ -333,14 +333,13 @@ function renderMine(today) {
   bindVisibility($('mine-list'));
 }
 
-// Publish / Hide: owners can publish their own decks (and hide them again while
-// private-by-default is on); admins can do either to any deck. The database
-// function mtg_set_public enforces the same rules.
+// Publish / Hide: owners can publish their own decks, one-way; admins can
+// publish or hide any deck. The database function mtg_set_public enforces this.
 function visibilityButton(d) {
   const mine = state.user && d.submitted_by === state.user.id;
   if (d.is_public === false && (state.admin || mine))
     return `<button class="btn btn-sm" data-vis="${esc(d.id)}" data-pub="1" title="Make this deck visible to everyone">Publish</button>`;
-  if (d.is_public !== false && (state.admin || (mine && state.settings?.private_by_default)))
+  if (d.is_public !== false && state.admin)
     return `<button class="btn btn-sm" data-vis="${esc(d.id)}" data-pub="0" title="Hide this deck from everyone but its submitter and the admins">Hide</button>`;
   return '';
 }
@@ -348,6 +347,7 @@ function visibilityButton(d) {
 function bindVisibility(root) {
   root.querySelectorAll('[data-vis]').forEach(b => b.addEventListener('click', async () => {
     const pub = b.dataset.pub === '1';
+    if (pub && !state.admin && !confirm('Publish this deck? Everyone will be able to see it, and you won’t be able to hide it again.')) return;
     b.disabled = true;
     try { await setPublic(b.dataset.vis, pub); flash(pub ? 'Published' : 'Hidden'); await refreshDecks(); }
     catch (err) { flash(err.message, 'err'); b.disabled = false; }
