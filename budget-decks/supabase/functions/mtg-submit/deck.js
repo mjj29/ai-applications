@@ -59,6 +59,46 @@ export async function loadPriceData() {
   return _data;
 }
 
+// The daily index is keyed by Scryfall card name, which splits some cards:
+//   - reversible printings are named "A // A" (or "A // B // A" for an
+//     Omen/Adventure/two-faced card), so e.g. Bloomvine Regent's TDM #381 sits
+//     apart from #136 / #136p;
+//   - the front-face key ("bloomvine regent") can point only at that odd printing.
+// Pricing "cheapest printing" needs every printing of the card, so lookups go
+// through one merged view: repeated faces are collapsed into the card's own
+// name, and a front-face key that only holds that card's printings becomes an
+// alias of the full name. Entries legal nowhere (art series, tokens) are kept
+// out of a legal card so they can't undercut its price.
+const dedupeFaces = k => [...new Set(k.split(' // '))].join(' // ');
+const legalNowhere = e => !/[lbr]/.test(e.l || '');
+
+function cardLookup(data) {
+  if (data.look) return data.look;
+  const cards = data.index.cards;
+  const merged = new Map();                       // canonical name -> { p: Map(id -> printing), l }
+  for (const k in cards) {
+    const c = dedupeFaces(k), e = cards[k], base = cards[c];
+    if (c !== k && base && legalNowhere(e) && !legalNowhere(base)) continue;
+    let m = merged.get(c);
+    if (!m) merged.set(c, m = { p: new Map(), l: (base || e).l });
+    for (const pr of e.p) m.p.set(pr[0], pr);
+  }
+  const alias = new Map();
+  for (const [c, m] of merged) {
+    if (!c.includes(' // ')) continue;
+    const front = merged.get(c.split(' // ')[0]);
+    if (front && [...front.p.keys()].every(id => m.p.has(id))) alias.set(c.split(' // ')[0], c);
+  }
+  const resolve = name => {
+    const c = dedupeFaces(norm(name));
+    return alias.get(c) ?? (merged.has(c) ? c : null);
+  };
+  return (data.look = { resolve, entry: c => merged.get(c) });
+}
+
+/** Stable identity for a card name: its merged index name, or the name itself if unknown. */
+const canonicalName = (name, data) => cardLookup(data).resolve(name) ?? dedupeFaces(norm(name));
+
 // tcgplayer id / "set/cn" -> card name, for v2 link tokens. Longest name wins
 // (a DFC's full "A // B" name over its front face), as in the builder.
 function reverseIndex(data) {
@@ -336,17 +376,21 @@ function productPrice(id, data) {
 }
 
 function priceFromIndex(name, data) {
-  const e = data.index.cards[norm(name)];
-  if (!e) return null;
+  const look = cardLookup(data);
+  const key = look.resolve(name);
+  if (!key) return null;
+  const e = look.entry(key);
   let best = null;
-  for (const [id, set, cn] of e.p) {
+  for (const [id, set, cn] of e.p.values()) {
     const pp = productPrice(id, data);
     if (pp && (best == null || pp.price < best.price))
       best = { ...pp, set: (set || '').toUpperCase(), cn };
   }
   const legal = {};
   (data.index.fmt || []).forEach((f, k) => { legal[f] = LEGWORD[e.l[k]] ?? null; });
-  return { name, found: true, price: best?.price ?? null, foil: !!best?.foil,
+  // Keep the name as written unless it resolved to a different card name
+  // ("Bloomvine Regent" -> "bloomvine regent // claim territory", title-cased later).
+  return { name: norm(name) === key ? name : key, found: true, price: best?.price ?? null, foil: !!best?.foil,
            set: best?.set ?? null, cn: best?.cn ?? null, legal };
 }
 
@@ -407,8 +451,9 @@ function titleCase(s) {
   return String(s).split(/(\s+)/).map(tok => {
     if (/^\s*$/.test(tok)) return tok;
     if (tok === '//') { firstOfFace = true; return tok; }
+    // Hyphenated parts are capitalised too: "Mirror-Breaker", "Kiki-Jiki", "First-Year".
     const out = (!firstOfFace && SMALL_WORDS.has(tok.toLowerCase())) ? tok.toLowerCase()
-              : tok.charAt(0).toUpperCase() + tok.slice(1);
+              : tok.replace(/(^|-)([a-z])/g, (_, h, c) => h + c.toUpperCase());
     firstOfFace = false;
     return out;
   }).join('');
@@ -429,7 +474,7 @@ export async function analyseLink(url, settings) {
     d = await detokenizeBoard(d, rev);
     s = await detokenizeBoard(s, rev);
   }
-  const isKnown = n => !!data.index.cards[norm(n)];
+  const isKnown = n => !!cardLookup(data).resolve(n);
   const parsed = parseDecklist(d, isKnown);
   for (const [n, q] of parseSideboardBox(s)) addTo(parsed.side, n, q);
   if (!parsed.main.size) throw new DeckError('The link contains no main-deck cards.');
@@ -446,7 +491,7 @@ export async function analyseLink(url, settings) {
     format,
     priceDate: data.meta.generatedAt,
     main, side,
-    hash: await deckHash(main.rows, side.rows),
+    hash: await deckHash(main.rows, side.rows, n => canonicalName(n, data)),
     problems: findProblems(main, side, settings),
   };
 }
@@ -481,16 +526,24 @@ export function findProblems(main, side, settings) {
   return out;
 }
 
-// Identity of "this exact 75": order- and case-insensitive.
-async function deckHash(mainRows, sideRows) {
+// Identity of "this exact 75": order- and case-insensitive, and by canonical card
+// name, so "Bloomvine Regent" and "Bloomvine Regent // Claim Territory" match.
+async function deckHash(mainRows, sideRows, canon = norm) {
   const board = rows => {
     const m = new Map();
-    for (const r of rows) m.set(norm(r.name), (m.get(norm(r.name)) || 0) + r.qty);
+    for (const r of rows) m.set(canon(r.name), (m.get(canon(r.name)) || 0) + r.qty);
     return [...m].sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0).map(([n, q]) => `${q} ${n}`).join('\n');
   };
   const text = board(mainRows) + '\n--side--\n' + board(sideRows);
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
   return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/** Re-derive a stored listing's deck_hash from its cards ({ main:[[qty,name,…]], side }). */
+export async function storedDeckHash(cards) {
+  const data = await loadPriceData();
+  const rows = b => (cards?.[b] ?? []).map(([qty, name]) => ({ qty, name }));
+  return deckHash(rows('main'), rows('side'), n => canonicalName(n, data));
 }
 
 // ─── Colours & featured card (Scryfall) ──────────────────────────────────────

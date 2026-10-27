@@ -134,13 +134,15 @@ $('btn-recolor').addEventListener('click', async () => {
   btn.textContent = 'Recomputing…';
   try {
     const res = await submitDeck({ action: 'recolor' });
-    flash(res.changed.length
-      ? `Updated ${res.changed.length} of ${res.checked}: ` + res.changed.map(c => `${c.deck_name || 'untitled'} ${c.from || 'C'}→${c.to || 'C'}`).join(', ')
-      : `All ${res.checked} decks already correct`);
+    const parts = [];
+    if (res.changed.length)
+      parts.push(`colours updated on ${res.changed.length}: ` + res.changed.map(c => `${c.deck_name || 'untitled'} ${c.from || 'C'}→${c.to || 'C'}`).join(', '));
+    if (res.rehashed) parts.push(`fingerprints updated on ${res.rehashed}`);
+    flash(parts.length ? `Checked ${res.checked} decks — ${parts.join('; ')}` : `All ${res.checked} decks already correct`);
     await refreshDecks();
   } catch (err) { flash(err.message, 'err'); }
   btn.disabled = false;
-  btn.textContent = 'Recompute deck colours';
+  btn.textContent = 'Recompute colours & fingerprints';
 });
 
 // ─── Submit ───────────────────────────────────────────────────────────────────
