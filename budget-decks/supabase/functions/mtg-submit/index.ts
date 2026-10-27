@@ -24,7 +24,7 @@
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { analyseLink, buildShareLink, describeDeck, fetchManaBoxDeck, isManaBoxLink, DeckError } from './deck.js';
+import { analyseLink, buildShareLink, describeDeck, fetchManaBoxDeck, isManaBoxLink, storedDeckHash, DeckError } from './deck.js';
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
@@ -80,22 +80,29 @@ Deno.serve(async (req) => {
     const { data } = await admin.from('mtg_admins').select('user_id').eq('user_id', user.id).maybeSingle();
     isAdmin = !!data;
   }
-  // ── Admin: recompute colours of every listing (after a change to deckColours)
+  // ── Admin: recompute colours and deck fingerprints of every listing
+  //    (after a change to deckColours or to how card names are matched)
   if (body.action === 'recolor') {
     if (!isAdmin) return json({ error: 'Only admins can recompute colours.' }, 403);
-    const { data: rows, error } = await admin.from('mtg_submissions').select('id, deck_name, colors, cards');
+    const { data: rows, error } = await admin.from('mtg_submissions').select('id, deck_name, colors, deck_hash, cards');
     if (error) return json({ error: error.message }, 500);
     const changed = [];
+    let rehashed = 0;
     for (const r of rows ?? []) {
       const main = (r.cards?.main ?? []).map(([qty, name, unit]: [number, string, number | null]) =>
         ({ qty, name, unit, found: true }));
       const d = await describeDeck(main).catch(() => null);
       await new Promise(s => setTimeout(s, 100));            // Scryfall rate limit
-      if (!d || d.colors === r.colors) continue;
-      await admin.from('mtg_submissions').update({ colors: d.colors }).eq('id', r.id);
-      changed.push({ deck_name: r.deck_name, from: r.colors, to: d.colors });
+      const hash = await storedDeckHash(r.cards).catch(() => r.deck_hash);
+      const update: Record<string, string> = {};
+      if (d && d.colors !== r.colors) update.colors = d.colors;
+      if (hash !== r.deck_hash) update.deck_hash = hash;
+      if (!Object.keys(update).length) continue;
+      await admin.from('mtg_submissions').update(update).eq('id', r.id);
+      if (update.colors !== undefined) changed.push({ deck_name: r.deck_name, from: r.colors, to: d!.colors });
+      if (update.deck_hash) rehashed++;
     }
-    return json({ status: 'recolored', checked: rows?.length ?? 0, changed });
+    return json({ status: 'recolored', checked: rows?.length ?? 0, changed, rehashed });
   }
 
   const importing = !!body.approvedOn && !body.refreshId;

@@ -29,6 +29,13 @@ we store their share links and link back out rather than rendering decks here.
   - Cards the index doesn't know about fall back to a Scryfall prints search.
   - **Differs from the builder:** snow-covered basics are *not* free. The builder
     counts them as basics.
+  - **Also differs from the builder:** the daily index is keyed by Scryfall name,
+    which splits some cards. Reversible printings are named "A // A" or
+    "A // B // A" (e.g. Bloomvine Regent TDM #381), and a front-face key can point
+    only at that printing. `cardLookup` in deck.js merges these into one card, so
+    every printing counts for "cheapest". The builder still shows the higher price
+    for these cards. Deck fingerprints use the merged name, so "Bloomvine Regent"
+    and "Bloomvine Regent // Claim Territory" are the same 75.
   - Budgets, format and options stored in the link are ignored. Ours apply.
 - **Share links:** v2 links encode cards as `#tcgplayerId` or `*SET CN` tokens,
   which are decoded through a reverse index. Tokens the index doesn't contain are
