@@ -138,7 +138,9 @@ $('btn-recolor').addEventListener('click', async () => {
     if (res.changed.length)
       parts.push(`colours updated on ${res.changed.length}: ` + res.changed.map(c => `${c.deck_name || 'untitled'} ${c.from || 'C'}→${c.to || 'C'}`).join(', '));
     if (res.rehashed) parts.push(`fingerprints updated on ${res.rehashed}`);
-    flash(parts.length ? `Checked ${res.checked} decks — ${parts.join('; ')}` : `All ${res.checked} decks already correct`);
+    if (res.failed?.length) parts.push(`couldn't reach Scryfall for ${res.failed.join(', ')} (left unchanged; try again)`);
+    flash(parts.length ? `Checked ${res.checked} decks — ${parts.join('; ')}` : `All ${res.checked} decks already correct`,
+      res.failed?.length ? 'err' : 'ok');
     await refreshDecks();
   } catch (err) { flash(err.message, 'err'); }
   btn.disabled = false;

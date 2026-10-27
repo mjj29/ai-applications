@@ -86,13 +86,14 @@ Deno.serve(async (req) => {
     if (!isAdmin) return json({ error: 'Only admins can recompute colours.' }, 403);
     const { data: rows, error } = await admin.from('mtg_submissions').select('id, deck_name, colors, deck_hash, cards');
     if (error) return json({ error: error.message }, 500);
-    const changed = [];
+    const changed = [], failed = [];
     let rehashed = 0;
     for (const r of rows ?? []) {
       const main = (r.cards?.main ?? []).map(([qty, name, unit]: [number, string, number | null]) =>
         ({ qty, name, unit, found: true }));
-      const d = await describeDeck(main).catch(() => null);
-      await new Promise(s => setTimeout(s, 100));            // Scryfall rate limit
+      // A Scryfall failure leaves the stored colours alone (never "colourless").
+      const d = await describeDeck(main).catch(e => { failed.push(r.deck_name || r.id); console.error(e); return null; });
+      await new Promise(s => setTimeout(s, 500));            // Scryfall limits /cards/collection to ~2 requests/s
       const hash = await storedDeckHash(r.cards).catch(() => r.deck_hash);
       const update: Record<string, string> = {};
       if (d && d.colors !== r.colors) update.colors = d.colors;
@@ -102,7 +103,7 @@ Deno.serve(async (req) => {
       if (update.colors !== undefined) changed.push({ deck_name: r.deck_name, from: r.colors, to: d!.colors });
       if (update.deck_hash) rehashed++;
     }
-    return json({ status: 'recolored', checked: rows?.length ?? 0, changed, rehashed });
+    return json({ status: 'recolored', checked: rows?.length ?? 0, changed, rehashed, failed });
   }
 
   const importing = !!body.approvedOn && !body.refreshId;
@@ -211,7 +212,9 @@ Deno.serve(async (req) => {
   if (body.dryRun) return json({ status: 'ok', dryRun: true, ...result });
 
   // ── Save a new listing ─────────────────────────────────────────────────────
-  const d = await describeDeck(a.main.rows).catch(() => ({ colors: '', featured: null, keyCards: [] }));
+  // If Scryfall is down, save the deck anyway; "Recompute colours" fills these in later.
+  const d = await describeDeck(a.main.rows)
+    .catch(e => { console.error('describeDeck', e); return { colors: '', featured: null, keyCards: [] }; });
   const meta = user!.user_metadata ?? {};
   const row = {
     submitted_by:   user!.id,
