@@ -419,10 +419,19 @@ async function priceFromScryfall(name, data) {
            set: best?.set ?? null, cn: best?.cn ?? null, legal };
 }
 
+// Scryfall rate-limits its search/collection endpoints and answers 429 when
+// pushed; back off (honouring Retry-After) and retry rather than failing.
 async function scryfall(path, opts = {}) {
-  const r = await fetch(SCRYFALL + path, { ...opts, headers: { ...SCRYFALL_HEADERS, ...(opts.headers || {}) } });
-  if (!r.ok) throw new Error(`Scryfall ${r.status}`);
-  return r.json();
+  for (let attempt = 0; ; attempt++) {
+    const r = await fetch(SCRYFALL + path, { ...opts, headers: { ...SCRYFALL_HEADERS, ...(opts.headers || {}) } });
+    if (r.ok) return r.json();
+    if ((r.status === 429 || r.status >= 500) && attempt < 3) {
+      const wait = Number(r.headers.get('Retry-After')) * 1000 || 500 * 2 ** attempt;
+      await sleep(Math.min(wait, 5000));
+      continue;
+    }
+    throw new Error(`Scryfall ${r.status}`);
+  }
 }
 
 async function priceBoard(map, data, format) {
@@ -609,6 +618,8 @@ export function deckColours(entries) {
  * Deck colours (see deckColours), in WUBRG order ('' for colourless). Also
  * picks a featured card (priciest non-land spell, else the most-played one)
  * with its art crop for the listing.
+ * Throws if Scryfall can't be reached, so callers never mistake an outage for
+ * a colourless deck.
  */
 export async function describeDeck(mainRows) {
   // Look up by front face: index names for some multi-face cards don't match Scryfall's.
@@ -620,10 +631,11 @@ export async function describeDeck(mainRows) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ identifiers: names.slice(i, i + 75).map(name => ({ name })) }),
-    }).catch(() => null);
+    });
     for (const c of res?.data || []) cards.set(front(c.name), c);
-    if (i + 75 < names.length) await sleep(100);
+    if (i + 75 < names.length) await sleep(500);
   }
+  if (names.length && !cards.size) throw new Error('Scryfall returned none of the deck\'s cards');
   const lookup = n => cards.get(front(n));
 
   const spells = [];
